@@ -40,7 +40,7 @@ PandaEditor is being developed and maintained by only one person, including writ
 * [Editor plugins](https://github.com/barbarian77/PandaEditor#editor-plugins)
 * [Other](https://github.com/barbarian77/PandaEditor#other)
 * [Known issues](https://github.com/barbarian77/PandaEditor#known-issues)
-* [Getting started](https://github.com/rehmanx/PandaEditor/blob/main/README.md#getting-started)
+* [Getting started](https://github.com/barbarian77/PandaEditor#getting-started)
 
 ### Starting a new project
 When you start PandaEditor a default project with some samples is setup for you.
