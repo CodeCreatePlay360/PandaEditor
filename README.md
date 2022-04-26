@@ -1,5 +1,6 @@
 ## A level editor for Panda3d game engine with bare minimum features to provide an editor centric workflow.
 
+![Image](images//00.gif)
 ![Image](images//01.png)
 
 #### Current features include
@@ -32,13 +33,13 @@ PandaEditor is using the Gizmos package and InfoPanel from another open source p
 PandaEditor is being developed and maintained by only one person, including writing documentation, if you found **PandaEditor** useful... help me buy some grapes and drinks for this summer, this matters a lot to me when I am coding or fixing bugs.
 
 ## Manual
-* [Starting a new project](https://github.com/rehmanx/PandaEditor/blob/main/README.md#starting-a-new-project "")
-* [Assets management](https://github.com/rehmanx/PandaEditor/blob/main/README.md#assets-management)
-* [Object manipulation](https://github.com/rehmanx/PandaEditor/blob/main/README.md#object-manipulation)
-* [Runtime modules](https://github.com/rehmanx/PandaEditor/blob/main/README.md#runtime-user-modules)
-* [Editor plugins](https://github.com/rehmanx/PandaEditor/blob/main/README.md#editor-plugins)
-* [Other](https://github.com/rehmanx/PandaEditor/blob/main/README.md#other)
-* [Known issues](https://github.com/rehmanx/PandaEditor/blob/main/README.md#known-issues)
+* [Starting a new project](https://github.com/barbarian77/PandaEditor#starting-a-new-project "")
+* [Assets management](https://github.com/barbarian77/PandaEditor#assets-management)
+* [Object manipulation](https://github.com/barbarian77/PandaEditor#object-manipulation)
+* [Runtime modules](https://github.com/barbarian77/PandaEditor#runtime-user-modules)
+* [Editor plugins](https://github.com/barbarian77/PandaEditor#editor-plugins)
+* [Other](https://github.com/barbarian77/PandaEditor#other)
+* [Known issues](https://github.com/barbarian77/PandaEditor#known-issues)
 * [Getting started](https://github.com/rehmanx/PandaEditor/blob/main/README.md#getting-started)
 
 ### Starting a new project
