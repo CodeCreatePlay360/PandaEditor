@@ -29,8 +29,8 @@
 #### Attributions
 PandaEditor is using the Gizmos package and InfoPanel from another open source panda3d project [link](https://github.com/Derfies/panda3d-editor).
 
-### Support
-PandaEditor is being developed and maintained by only one person, including writing documentation, if you found **PandaEditor** useful... help me buy some grapes and drinks for this summer, this matters a lot to me when I am coding or fixing bugs.
+## Support
+**_PandaEditor is being developed and maintained by only one person, including writing documentation, if you found **PandaEditor** useful... help me buy some grapes and drinks for this summer, this matters a lot to me when I am coding or fixing bugs. Link to [Patreon](https://www.patreon.com/PandaEditor_?fan_landing=true) page._**
 
 ## Manual
 * [Starting a new project](https://github.com/barbarian77/PandaEditor#starting-a-new-project "")
