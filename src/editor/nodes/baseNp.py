@@ -21,10 +21,7 @@ class BaseNp(NodePath):
         self.setPythonTag("PICKABLE", self)
 
     def create_properties(self):
-        name = ed_utils.EdProperty.FuncProperty(name="Name      ",
-                                                value=self.get_name(),
-                                                setter=self.set_name,
-                                                getter=self.get_name)
+        label = ed_utils.EdProperty.Label(name="Transform", is_bold=True)
 
         pos = ed_utils.EdProperty.FuncProperty(name="Position",
                                                value=self.getPos(),
@@ -42,7 +39,7 @@ class BaseNp(NodePath):
                                                  setter=self.set_scale,
                                                  getter=self.getScale)
 
-        # self.properties.append(name)
+        self.properties.append(label)
         self.properties.append(pos)
         self.properties.append(rot)
         self.properties.append(scale)
@@ -75,6 +72,8 @@ class BaseNp(NodePath):
 
     def update_properties(self):
         for prop in self.properties:
+            if prop._type == "label" or prop._type == "space":
+                continue
             x = prop.getter
             if x:
                 prop.set_value(x())
@@ -87,3 +86,9 @@ class BaseNp(NodePath):
 
     def on_remove(self):
         pass
+
+    def has_ed_property(self, name: str):
+        for prop in self.properties:
+            if prop.name == name:
+                return True
+        return False

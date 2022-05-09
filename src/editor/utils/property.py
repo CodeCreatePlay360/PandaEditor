@@ -149,21 +149,25 @@ class ChoiceProperty(FuncProperty):
         # choices must be greater than 1
         if len(self.choices) <= 1:
             self.is_valid = False
+            print("{0} minimum 2 choices".format(self.name))
             return
 
         # all choices must be string
         for item in self.choices:
             if type(item) is not str:
                 self.is_valid = False
+                print("{0} all choices must be of type str".format(self.name))
                 return
 
         # value must be int
         if type(self.val) is not int:
             self.is_valid = False
+            print("{0} value must be of type int".format(self.name))
             return
 
         if self.setter is None or self.getter is None:
             self.is_valid = False
+            print("{0} setter or getter is null".format(self.name))
             return
 
         self.is_valid = True

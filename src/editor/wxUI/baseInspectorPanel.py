@@ -1,8 +1,9 @@
 import wx
-import editor.wxUI.wxCustomProperties as wxProperty
-
 from wx.lib.scrolledpanel import ScrolledPanel
-from panda3d.core import Vec2, Vec3, LColor, LPoint3f, LVecBase3f
+
+from panda3d.core import Vec2, Vec3, LColor, LPoint3f, LVecBase3f, LVecBase2f
+
+import editor.wxUI.wxCustomProperties as wxProperty
 from editor.wxUI.wxFoldPanel import WxFoldPanelManager
 from editor.colourPalette import ColourPalette as Colours
 
@@ -40,31 +41,35 @@ class BaseInspectorPanel(ScrolledPanel):
         self.wxMain = parent
 
         self.property_and_type = {
-            int: wxProperty.IntProperty,  # -1
-            float: wxProperty.FloatProperty,  # -2
-            str: wxProperty.StringProperty,  # -3
-            bool: wxProperty.BoolProperty,  # -4
+            int: wxProperty.IntProperty,
+            float: wxProperty.FloatProperty,
+            str: wxProperty.StringProperty,
+            bool: wxProperty.BoolProperty,
 
-            # list: wxProperty.ContainerProperty,  # -5
+            # list: wxProperty.ContainerProperty,
 
-            Vec3: wxProperty.Vector3Property,  # -6
-            Vec2: wxProperty.Vector2Property,  # -7
-            LColor: wxProperty.ColorProperty,  # -8
+            Vec3: wxProperty.Vector3Property,
+            Vec2: wxProperty.Vector2Property,
+            LVecBase2f: wxProperty.Vector2Property,
+            LColor: wxProperty.ColorProperty,
 
             LPoint3f: wxProperty.Vector3Property,
             LVecBase3f: wxProperty.Vector3Property,
 
-            "label": wxProperty.LabelProperty,  # -9
-            "choice": wxProperty.EnumProperty,  # -10
-            "button": wxProperty.ButtonProperty,  # -11
-            "slider": wxProperty.SliderProperty,  # -12
-            "space": wxProperty.EmptySpace,  # -13
+            "label": wxProperty.LabelProperty,
+            "choice": wxProperty.EnumProperty,
+            "button": wxProperty.ButtonProperty,
+            "slider": wxProperty.SliderProperty,
+            "space": wxProperty.EmptySpace,
 
-            "static_box": wxProperty.StaticBox,  # -14
+            "static_box": wxProperty.StaticBox,
         }
 
         self.property_and_name = {}
+
         self.selected_object = None
+        self.name = ""
+        self.properties = []
 
         self.fold_manager = None  # a FoldPanelManager for laying out variables of a python module
         self.text_panel = None  # a text_panel for displaying .txt files
@@ -99,6 +104,8 @@ class BaseInspectorPanel(ScrolledPanel):
         self.reset()
 
         self.selected_object = obj
+        self.name = name
+        self.properties = properties
 
         name = name[0].upper() + name[1:]
 
@@ -121,7 +128,6 @@ class BaseInspectorPanel(ScrolledPanel):
 
         fold_panel.update_controls()
         self.fold_manager.expand(fold_panel)
-
         fold_panel.Show()
 
     def get_wx_prop_object(self, _property, parent):
@@ -143,13 +149,25 @@ class BaseInspectorPanel(ScrolledPanel):
         for key in self.property_and_name.keys():
             wx_prop = self.property_and_name[key]
 
+            if not self.selected_object.has_ed_property(wx_prop.label):
+                self.layout_object_properties(self.selected_object, self.name, self.properties)
+                break
+
             if wx_prop.property.get_type() in ["button"]:
                 continue
 
             if not force_update_all and wx_prop.property.get_type() is "choice":
                 continue
 
-            wx_prop.set_control_value(wx_prop.property.get_value())
+            # to avoid triggering on_event_text
+            # see wxCustomProperties.py bind and unbind methods
+            wx_prop.unbind_events()
+
+            if not wx_prop.has_focus():
+                wx_prop.set_control_value(wx_prop.property.get_value())
+
+            # bind them again
+            wx_prop.bind_events()
 
     def set_text(self, text_file):
         self.reset()
@@ -162,9 +180,6 @@ class BaseInspectorPanel(ScrolledPanel):
 
         self.sizer.Add(self.text_panel, 1, wx.EXPAND | wx.ALL, border=10)
         self.Layout()
-
-    def refresh(self, obj=None):
-        self.layout_object_properties(self.selected_object)
 
     def reset(self):
         self.selected_object = None

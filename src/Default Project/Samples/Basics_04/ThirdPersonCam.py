@@ -9,7 +9,7 @@ class ThirdPersonCam(PModBase):
         PModBase.__init__(self, *args, **kwargs)
 
         # movement settings
-        self.targetPosOffset = Vec3(0, 0, 45)
+        self.targetPosOffset = Vec3(0, 0, 35)
         self.lookSmooth = 100
         self.distanceToTarget = 150
 
@@ -21,21 +21,20 @@ class ThirdPersonCam(PModBase):
         self._xRotation = 0.0
         self._yRotation = 0.0
 
-        self.zoomSmooth = 150
-        self.orbitSmooth = 300.0
+        self.zoomSmooth = 500
+        self.orbitSmooth = 1000.0
 
-        self.mouseZoom = False
-
-        self.targetPos = Vec3(0, 0, 0)
-        self.zoom_dir = 0
+        self.__targetPos = Vec3(0, 0, 0)
+        self.__zoom_dir = 0
         self.target = None
         self.input_manager = None
         self.cam = None
 
-        self.should_start = False
+        self.mouseZoom = False
+        self.shouldStart = False
 
     def on_start(self):
-        if not self.should_start:
+        if not self.shouldStart:
             return
 
         self.target = self._render.find("**/Ralph")               # find player
@@ -44,7 +43,7 @@ class ThirdPersonCam(PModBase):
         self.reset()
 
     def on_update(self):
-        if not self.should_start:
+        if not self.shouldStart:
             return
 
         if self.input_manager.key_map["r-up"] > 0:
@@ -53,7 +52,7 @@ class ThirdPersonCam(PModBase):
         # keyboard orbit
 
     def on_late_update(self):
-        if not self.should_start:
+        if not self.shouldStart:
             return
 
         self.move_to_target()
@@ -67,10 +66,10 @@ class ThirdPersonCam(PModBase):
         self.move_to_target()
                     
     def move_to_target(self):
-        self.targetPos = self.target.getPos()
-        self.targetPos.y -= self.distanceToTarget
+        self.__targetPos = self.target.getPos()
+        self.__targetPos.y -= self.distanceToTarget
         
-        dist = self.target.getPos() - self.targetPos
+        dist = self.target.getPos() - self.__targetPos
         dist = dist.length()
 
         # orbit rotation on y-axis
@@ -89,7 +88,7 @@ class ThirdPersonCam(PModBase):
 
     def orbit(self):
         self._xRotation = 0
-        self._yRotation += self.input_manager.mouseInput.x * self.orbitSmooth * globalClock.getDt()
+        self._yRotation += -self.input_manager.mouseInput.x * self.orbitSmooth * globalClock.getDt()
         self._yRotation = common_maths.clamp_angle(self._yRotation, -360, 360)
 
         '''

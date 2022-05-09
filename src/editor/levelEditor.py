@@ -12,6 +12,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import taskMgr
 from editor.project import Project
 from editor.selection import Selection
+from game.scene import Scene
 
 
 class LevelEditor(DirectObject):
@@ -50,7 +51,7 @@ class LevelEditor(DirectObject):
         self.setup_gizmo_manager()
 
         # create event map for various keyboard events and bind them
-        self.key_event_map = {"q": (self.set_active_gizmo, None),
+        self.key_event_map = {"q": (self.set_active_gizmo, "None"),
                               "w": (self.set_active_gizmo, "pos"),
                               "e": (self.set_active_gizmo, "rot"),
                               "r": (self.set_active_gizmo, "scl"),
@@ -95,7 +96,7 @@ class LevelEditor(DirectObject):
         self.create_default_project(constants.DEFAULT_PROJECT_PATH)
 
     def update(self, task):
-        """this method is called ever frame in editor_state and play_state"""
+        """this method should be called ever frame in editor_state and play_state"""
         if task.time > self.current_time:
             constants.obs.trigger("XFormTask")
             self.current_time += self.x_form_delay
@@ -170,6 +171,7 @@ class LevelEditor(DirectObject):
         obj.setHpr(90, 90, 0)
 
         self.toggle_scene_lights()
+        self.set_active_gizmo("pos")
         constants.obs.trigger("ToggleSceneLights", True)
 
     def clean_scene(self):
@@ -598,30 +600,39 @@ class LevelEditor(DirectObject):
             mod.reload_data()
 
     LIGHT_MAP = {"PointLight": (p3d_core.PointLight, ed_node_paths.EdPointLight, constants.POINT_LIGHT_MODEL),
-                 "Spotlight": (p3d_core.Spotlight, ed_node_paths.EdSpotLight, constants.SPOT_LIGHT_MODEL),
+                 "SpotLight": (p3d_core.Spotlight, ed_node_paths.EdSpotLight, constants.SPOT_LIGHT_MODEL),
                  "DirectionalLight": (p3d_core.DirectionalLight, ed_node_paths.EdDirectionalLight,
-                                      constants.DIR_LIGHT_MODEL)}
+                                      constants.DIR_LIGHT_MODEL),
+                 "AmbientLight": (p3d_core.AmbientLight, ed_node_paths.EdAmbientLight, constants.AMBIENT_LIGHT_MODEL)}
 
     NODE_TYPE_MAP = {"ModelNp": ed_node_paths.ModelNp,
                      "DirectionalLight": ed_node_paths.EdDirectionalLight,
                      "PointLight": ed_node_paths.EdPointLight,
                      "SpotLight": ed_node_paths.EdSpotLight,
+                     "AmbientLight": ed_node_paths.EdAmbientLight,
                      "EdCameraNp": ed_node_paths.EdCameraNp}
 
     def add_nodepath(self, path, geo=constants.SCENE_GEO, reparent_to_render=True):
         # TODO insert an exception handler here
-        # TODO replace showbase.loader with a new loader instance
+        # TODO replace show-base loader with a new loader instance
+
+        def add_children(_np):
+            if len(_np.getChildren()) > 0:
+                for child in _np.getChildren():
+                    if not type(child) is p3d_core.NodePath:
+                        print("not np")
+                        continue
+                    child = ed_node_paths.ModelNp(child, uid="ModelNp")
+                    child.setColor(p3d_core.LColor(1, 1, 1, 1))
+                    child.setPythonTag(constants.TAG_PICKABLE, child)
+                    add_children(child)
 
         np = self.panda_app.showbase.loader.loadModel(path)
         np = ed_node_paths.ModelNp(np, uid="ModelNp")
+        np.setColor(p3d_core.LColor(1, 1, 1, 1))
+        np.setPythonTag(constants.TAG_PICKABLE, np)
 
-        # set a default model colour
-        np.setColor(1, 1, 1, 1)
-
-        # setup a default material
-        mat = p3d_core.Material()
-        mat.setDiffuse((1, 1, 1, 1))
-        np.setMaterial(mat)
+        add_children(np)
 
         # parent only if asked to do so !
         if geo == constants.EDITOR_GEO and reparent_to_render:
@@ -642,7 +653,7 @@ class LevelEditor(DirectObject):
             return False
 
         constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, np)
-
+        self.set_selected([np])
         return np
 
     def add_actor(self, path):
@@ -650,12 +661,18 @@ class LevelEditor(DirectObject):
         actor.setPythonTag(constants.TAG_PICKABLE, actor)
         actor.reparentTo(self.scene_render)
         constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, actor)
+        self.set_selected([actor])
 
     def reparent_np(self, src_np, target_np):
         if target_np is None:
             src_np.wrtReparentTo(self.scene_render)
         else:
-            src_np.wrtReparentTo(target_np)
+            try:
+                src_np.wrtReparentTo(target_np)
+            except AssertionError as assertion:
+                print("[Exception] {0}".format(assertion))
+                return False
+
         return True
 
     def add_camera(self, *args):
@@ -663,20 +680,15 @@ class LevelEditor(DirectObject):
             print("[LevelEditor] currently support is limited to one camera per scene.")
             return
 
-        # create lens
-        lens = p3d_core.PerspectiveLens()
-        lens.set_fov(60)
-        lens.setAspectRatio(800 / 600)
-
         # create a panda3d camera
         cam_np = p3d_core.NodePath(p3d_core.Camera("Camera"))
-        cam_np.node().setLens(lens)
         cam_np.node().setCameraMask(constants.GAME_GEO_MASK)
 
         # and wrap it into editor camera
         cam_np = ed_node_paths.EdCameraNp(cam_np, uid="EdCameraNp")
         cam_np.setPythonTag(constants.TAG_PICKABLE, cam_np)
         cam_np.reparent_to(self.scene_render)
+        cam_np.set_scale(8)
 
         # create a handle
         cam_handle = self.panda_app.showbase.loader.loadModel(constants.CAMERA_MODEL)
@@ -695,11 +707,19 @@ class LevelEditor(DirectObject):
         self.panda_app.showbase.update_aspect_ratio()
 
         constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, cam_np)
-
+        self.set_selected([cam_np])
         return cam_np
 
     def add_object(self, path):
         np = self.panda_app.showbase.loader.loadModel(path, noCache=True)
+        np.set_scale(0.5)
+
+        # fix this name otherwise folder name also gets included
+        name = np.get_name()
+        name = name.split("\\")[-1]
+        np.set_name(name)
+        # --------------------------------------------------------
+
         np = ed_node_paths.ModelNp(np, uid="ModelNp")
         np.setPythonTag(constants.TAG_PICKABLE, np)
         np.reparent_to(self.scene_render)
@@ -743,8 +763,9 @@ class LevelEditor(DirectObject):
             model = self.panda_app.showbase.loader.loadModel(model)
             model.reparentTo(light_np)
 
+            # update selection
             constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, light_np)
-
+            self.set_selected([light_np])
             return light_np
 
     def rename_object(self, np, name):
@@ -805,10 +826,7 @@ class LevelEditor(DirectObject):
         constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, new_selections)
 
         if select:
-            self.selection.deselect_all()
-            self.selection.set_selected(new_selections)
-            self.update_gizmo()
-
+            self.set_selected(new_selections)
             constants.obs.trigger("LevelEditorEvent", constants.le_Evt_NodePath_Selected, new_selections)
 
         return new_selections
@@ -830,7 +848,7 @@ class LevelEditor(DirectObject):
             if _np is None:
                 return
 
-            if _np.uid in ["PointLight", "SpotLight", "DirectionalLight"]:
+            if _np.uid in ["PointLight", "SpotLight", "DirectionalLight", "AmbientLight"]:
                 self.scene_lights.remove(_np)
                 self.panda_app.showbase.render.clearLight(_np)
 
@@ -885,6 +903,13 @@ class LevelEditor(DirectObject):
 
         self.gizmo_mgr_root_np.setLightOff()
         return self.scene_lights_on
+
+    def set_selected(self, selections: list):
+        self.selection.deselect_all()
+        self.selection.set_selected(selections)
+        self.update_gizmo()
+
+        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_NodePath_Selected, selections)
 
     def get_save_data(self):
         pass

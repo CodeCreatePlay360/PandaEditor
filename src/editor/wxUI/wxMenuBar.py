@@ -58,8 +58,8 @@ OBJECT_EVENTS = {
 LIGHT_EVENTS = {
     EVT_ADD_SUN_LIGHT: "DirectionalLight",
     EVT_ADD_POINT_LIGHT: "PointLight",
-    EVT_ADD_SPOT_LIGHT: "Spotlight",
-    EVT_ADD_AMBIENT_LIGHT: "Area"
+    EVT_ADD_SPOT_LIGHT: "SpotLight",
+    EVT_ADD_AMBIENT_LIGHT: "AmbientLight"
 }
 
 PROJ_EVENTS = {

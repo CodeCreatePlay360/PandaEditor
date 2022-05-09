@@ -7,6 +7,7 @@ from editor.colourPalette import ColourPalette as Colours
 
 
 EVT_RENAME_ITEM = wx.NewId()
+EVT_REMOVE_ITEM = wx.NewId()
 
 
 class SceneBrowserPanel(ScrolledPanel):
@@ -63,7 +64,8 @@ class SceneBrowser(BaseTreeControl):
 
         self.saved_state = None
 
-        self.evt_map = {EVT_RENAME_ITEM: self.rename_item}
+        self.evt_map = {EVT_RENAME_ITEM: self.rename_item,
+                        EVT_REMOVE_ITEM: self.remove_item}
 
         # bind events
         self.Bind(wx.EVT_MENU, self.on_evt_popup_menu)
@@ -95,8 +97,10 @@ class SceneBrowser(BaseTreeControl):
     def add_np(self, selection):
         """recursively add a panda3d node-path into the tree along with its children"""
         def add_np_to_tree(_np):
-            if _np.hasPythonTag(constants.TAG_PICKABLE):
+            if _np.hasNetPythonTag(constants.TAG_PICKABLE):
                 _np = _np.getPythonTag(constants.TAG_PICKABLE)
+                if _np is None:
+                    return
                 parent_scene_graph_item = self.np_to_tree_item_map[_np.get_parent()]
                 scene_graph_item = self.AppendItem(parent_scene_graph_item, _np.get_name(), data=_np)
                 self.np_to_tree_item_map[_np] = scene_graph_item
@@ -105,7 +109,11 @@ class SceneBrowser(BaseTreeControl):
             if len(_np.getChildren()) > 0:
                 for child in _np.getChildren():
                     add_np_to_tree(child)
+                    # print(child)
                     add_children(child)
+
+        if type(selection) is not list:
+            selection = [selection]
 
         if type(selection) is list:
             for np in selection:
@@ -191,8 +199,12 @@ class SceneBrowser(BaseTreeControl):
         popup_menu = wx.Menu()
 
         # create menu items
-        import_assets_item = wx.MenuItem(popup_menu, EVT_RENAME_ITEM, "RenameItem")
-        popup_menu.Append(import_assets_item)
+        rename_menu = wx.MenuItem(popup_menu, EVT_RENAME_ITEM, "RenameItem")
+        popup_menu.Append(rename_menu)
+
+        remove_menu = wx.MenuItem(popup_menu, EVT_REMOVE_ITEM, "RemoveItem")
+        popup_menu.Append(remove_menu)
+
         popup_menu.AppendSeparator()
 
         self.PopupMenu(popup_menu, evt.GetPoint())
@@ -237,6 +249,9 @@ class SceneBrowser(BaseTreeControl):
         constants.obs.trigger("RenameItem",
                               self.GetItemData(self.GetSelection()),
                               self.GetItemText(self.GetSelection()))
+
+    def remove_item(self):
+        constants.obs.trigger("RemoveObject(s)")
 
     def get_selected_np(self):
         sel = self.GetSelection()

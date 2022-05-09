@@ -10,8 +10,13 @@ class ModelNp(BaseNp):
     def create_properties(self):
         super().create_properties()
 
+        space = EdUtils.EdProperty.EmptySpace(0, 10)
+        label = EdUtils.EdProperty.Label(name="Node Settings", is_bold=True)
         color = EdUtils.EdProperty.FuncProperty(name="Colour", value=self.get_ed_colour(), setter=self.set_ed_colour,
                                                 getter=self.get_ed_colour)
+
+        self.properties.append(space)
+        self.properties.append(label)
         self.properties.append(color)
 
     def create_save_data(self):

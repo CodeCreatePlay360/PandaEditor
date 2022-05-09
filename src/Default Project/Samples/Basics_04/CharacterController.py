@@ -23,6 +23,7 @@ class CharacterController(PModBase):
 
         self.input_manager = self._le.get_module("InputManager")
         self.ralph = self._render.find("**/Ralph").getPythonTag("PICKABLE")
+        self.ralph.set_scale(6)
         anims = {"walk": self.walkAnim}
         self.ralph.load_anims(anims)
 
@@ -38,13 +39,13 @@ class CharacterController(PModBase):
             self.ralph.setH(self.ralph.getH() - self.turnSpeed * dt)
 
         if self.input_manager.key_map["a"]:
-            self.ralph.setH(self.ralph.getH()  + self.turnSpeed * dt)
+            self.ralph.setH(self.ralph.getH() + self.turnSpeed * dt)
 
         if self.input_manager.key_map["w"]:
             self.ralph.setY(self.ralph, self.walkSpeed * dt)
 
         # if ralph is moving, loop the run animation.
-        # if he is standing still, stop the animation.
+        # if standing still, stop the animation.
 
         if self.input_manager.key_map["w"] or self.input_manager.key_map["d"] or self.input_manager.key_map["a"]:
             if not self.__isMoving:

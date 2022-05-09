@@ -105,11 +105,8 @@ class WxCustomProperty(wx.Window):
     def get_type(self):
         return self.property.get_type()
 
-    '''
-    def on_event_text(self, evt, val):
-        obs.trigger("PropertyModified", self.property, val)
-        evt.Skip()
-    '''
+    def has_focus(self):
+        return False
 
 
 class EmptySpace(WxCustomProperty):
@@ -142,7 +139,7 @@ class LabelProperty(WxCustomProperty):
 
         self.ctrlLabel = wx.StaticText(self, label=self.label)
         self.ctrlLabel.SetFont(self.font)
-        self.ctrlLabel.SetForegroundColour(self.text_colour)
+        self.ctrlLabel.SetForegroundColour((255, 255, 255, 255))
 
         self.sizer.Add(self.ctrlLabel, 0)
 
@@ -175,11 +172,7 @@ class IntProperty(WxCustomProperty):
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
-        # bind events
-        self.text_ctrl.Bind(wx.EVT_CHAR, self.on_event_char)
-        self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.text_ctrl.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
+        self.bind_events()
         self.Refresh()
 
     def set_control_value(self, val):
@@ -187,6 +180,7 @@ class IntProperty(WxCustomProperty):
         self.text_ctrl.SetValue(str(val))
 
     def on_event_text(self, evt):
+        print("not being called")
         if is_valid_int(self.text_ctrl.GetValue()):
             self.set_value(int(self.text_ctrl.GetValue()))
             self.old_value = self.text_ctrl.GetValue()
@@ -199,25 +193,16 @@ class IntProperty(WxCustomProperty):
 
         evt.Skip()
 
-    def on_event_char(self, evt):
-        evt.Skip()
+    def has_focus(self):
+        if self.text_ctrl.HasFocus():
+            return True
+        return False
 
-    def on_key_down(self, evt):
-        evt.Skip()
-        return
-        key_code = evt.GetKeyCode()
-        # Allow ASCII numerics
-        if ord('0') <= key_code <= ord('9'):
-            evt.Skip()
+    def bind_events(self):
+        self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
 
-        # Allow decimal points
-        if key_code == 46:
-            evt.Skip()
-
-        else:
-            return
-
-        evt.Skip()
+    def unbind_events(self):
+        self.text_ctrl.Unbind(wx.EVT_TEXT)
 
 
 class FloatProperty(WxCustomProperty):
@@ -245,18 +230,12 @@ class FloatProperty(WxCustomProperty):
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
         # bind events
-        self.text_ctrl.Bind(wx.EVT_CHAR, self.on_event_char)
-        self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.text_ctrl.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
+        self.bind_events()
         self.Refresh()
 
     def set_control_value(self, val):
         val = get_rounded_value(val)
         self.text_ctrl.SetValue(str(val))
-
-    def on_event_char(self, evt):
-        evt.Skip()
 
     def on_event_text(self, evt):
         if is_valid_float(self.text_ctrl.GetValue()):
@@ -266,23 +245,21 @@ class FloatProperty(WxCustomProperty):
             # self.text_ctrl_x.SetValue will call this method, so
             # temporarily unbind evt_text to prevent stack overflow
             self.text_ctrl.Unbind(wx.EVT_TEXT)
-
             self.text_ctrl.SetValue(str(self.old_value))
-
             self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
 
         evt.Skip()
 
-    def on_key_down(self, evt):
-        evt.Skip()
-        '''
-        key_code = evt.GetKeyCode()
-        # Allow ASCII numerics, decimals
-        if ord('0') <= key_code <= ord('9') or key_code == 46:
-            evt.Skip()
-        else:
-            return
-        '''
+    def has_focus(self):
+        if self.text_ctrl.HasFocus():
+            return True
+        return False
+
+    def bind_events(self):
+        self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
+
+    def unbind_events(self):
+        self.text_ctrl.Unbind(wx.EVT_TEXT)
 
 
 class StringProperty(WxCustomProperty):
@@ -301,15 +278,12 @@ class StringProperty(WxCustomProperty):
         property_value = self.get_value()
         self.text_ctrl.SetValue(property_value)
 
-        # bind events
-        self.text_ctrl.Bind(wx.EVT_CHAR, self.on_event_char)
-        self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
-
         # add to sizers
         self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
+        self.bind_events()
         self.Refresh()
 
     def set_control_value(self, val):
@@ -321,11 +295,16 @@ class StringProperty(WxCustomProperty):
 
         evt.Skip()
 
-    def on_event_char(self, evt):
-        evt.Skip()
+    def has_focus(self):
+        if self.text_ctrl.HasFocus():
+            return True
+        return False
 
-    def on_key_down(self, evt):
-        evt.Skip()
+    def bind_events(self):
+        self.text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
+
+    def unbind_events(self):
+        self.text_ctrl.Unbind(wx.EVT_TEXT)
 
 
 class BoolProperty(WxCustomProperty):
@@ -340,13 +319,12 @@ class BoolProperty(WxCustomProperty):
         # initial value
         property_value = self.get_value()
         self.toggle.SetValue(property_value)
-        # bind events
-        self.toggle.Bind(wx.EVT_CHECKBOX, self.on_event_toggle)
         # add to sizers
         self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND | wx.TOP, border=-1)
         self.sizer.Add(self.toggle, 0)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
+        self.bind_events()
         self.Refresh()
 
     def set_control_value(self, val):
@@ -355,6 +333,12 @@ class BoolProperty(WxCustomProperty):
     def on_event_toggle(self, evt):
         self.set_value(self.toggle.GetValue())
         evt.Skip()
+
+    def bind_events(self):
+        self.toggle.Bind(wx.EVT_CHECKBOX, self.on_event_toggle)
+
+    def unbind_events(self):
+        self.toggle.Unbind(wx.EVT_CHECKBOX)
 
 
 class ColorProperty(WxCustomProperty):
@@ -458,10 +442,8 @@ class ColorProperty(WxCustomProperty):
         self.sizer.Add(self.color_panel, 1, wx.EXPAND)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
-        self.color_panel.Bind(wx.EVT_LEFT_DOWN, self.on_evt_clicked)
-        self.Bind(wx.EVT_SIZE, self.on_evt_size)
 
-        # self.Refresh()
+        self.bind_events()
 
     def set_control_value(self, val):
         # convert from panda3d.core.LColor to wx.Colour object
@@ -487,6 +469,14 @@ class ColorProperty(WxCustomProperty):
     def on_evt_size(self, evt):
         self.color_panel.SetMaxSize((self.GetSize().x - self.ctrlLabel.GetSize().x - 8, 18))
         evt.Skip()
+
+    def bind_events(self):
+        self.color_panel.Bind(wx.EVT_LEFT_DOWN, self.on_evt_clicked)
+        self.Bind(wx.EVT_SIZE, self.on_evt_size)
+
+    def unbind_events(self):
+        self.color_panel.Unbind(wx.EVT_LEFT_DOWN)
+        self.Unbind(wx.EVT_SIZE)
 
 
 class ColourTemperatureProperty(WxCustomProperty):
@@ -538,14 +528,6 @@ class Vector2Property(WxCustomProperty):
         self.bind_events()
         self.Refresh()
 
-    def bind_events(self):
-        self.text_ctrl_x.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.text_ctrl_y.Bind(wx.EVT_TEXT, self.on_event_text)
-
-    def unbind_events(self):
-        self.text_ctrl_x.Unbind(wx.EVT_TEXT)
-        self.text_ctrl_y.Unbind(wx.EVT_TEXT)
-
     def set_control_value(self, val):
         x = get_rounded_value(val.x)
         y = get_rounded_value(val.y)
@@ -589,8 +571,18 @@ class Vector2Property(WxCustomProperty):
 
         evt.Skip()
 
-    def on_key_down(self, evt):
-        evt.Skip()
+    def has_focus(self):
+        if self.text_ctrl_x.HasFocus() or self.text_ctrl_y.HasFocus():
+            return True
+        return False
+
+    def bind_events(self):
+        self.text_ctrl_x.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.text_ctrl_y.Bind(wx.EVT_TEXT, self.on_event_text)
+
+    def unbind_events(self):
+        self.text_ctrl_x.Unbind(wx.EVT_TEXT)
+        self.text_ctrl_y.Unbind(wx.EVT_TEXT)
 
 
 class Vector3Property(WxCustomProperty):
@@ -654,32 +646,6 @@ class Vector3Property(WxCustomProperty):
         self.bind_events()
 
         self.Refresh()
-
-    def bind_events(self):
-        # self.text_ctrl_x.Bind(wx.EVT_CHAR, self.on_event_char)
-        # self.text_ctrl_y.Bind(wx.EVT_CHAR, self.on_event_char)
-        # self.text_ctrl_z.Bind(wx.EVT_CHAR, self.on_event_char)
-
-        self.text_ctrl_x.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.text_ctrl_y.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.text_ctrl_z.Bind(wx.EVT_TEXT, self.on_event_text)
-
-        # self.text_ctrl_x.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        # self.text_ctrl_y.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        # self.text_ctrl_z.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-
-    def unbind_events(self):
-        # self.text_ctrl_x.Unbind(wx.EVT_CHAR)
-        # self.text_ctrl_y.Unbind(wx.EVT_CHAR)
-        # self.text_ctrl_z.Unbind(wx.EVT_CHAR)
-
-        self.text_ctrl_x.Unbind(wx.EVT_TEXT)
-        self.text_ctrl_y.Unbind(wx.EVT_TEXT)
-        self.text_ctrl_z.Unbind(wx.EVT_TEXT)
-
-        # self.text_ctrl_x.Unbind(wx.EVT_KEY_DOWN)
-        # self.text_ctrl_y.Unbind(wx.EVT_KEY_DOWN)
-        # self.text_ctrl_z.Unbind(wx.EVT_KEY_DOWN)
 
     def set_control_value(self, val):
         x = get_rounded_value(val.x)
@@ -746,8 +712,20 @@ class Vector3Property(WxCustomProperty):
 
         evt.Skip()
 
-    def on_key_down(self, evt):
-        evt.Skip()
+    def has_focus(self):
+        if self.text_ctrl_x.HasFocus() or self.text_ctrl_y.HasFocus() or self.text_ctrl_z.HasFocus():
+            return True
+        return False
+
+    def bind_events(self):
+        self.text_ctrl_x.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.text_ctrl_y.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.text_ctrl_z.Bind(wx.EVT_TEXT, self.on_event_text)
+
+    def unbind_events(self):
+        self.text_ctrl_x.Unbind(wx.EVT_TEXT)
+        self.text_ctrl_y.Unbind(wx.EVT_TEXT)
+        self.text_ctrl_z.Unbind(wx.EVT_TEXT)
 
 
 class EnumProperty(WxCustomProperty):
@@ -773,12 +751,7 @@ class EnumProperty(WxCustomProperty):
         self.sizer.Add(self.ctrlLabel, 0, wx.TOP, border=3)
         self.sizer.Add(self.choice_control, 0)
 
-        self.Bind(wx.EVT_SIZE, self.on_evt_size)
-        self.Bind(wx.EVT_CHOICE, self.on_event_choice)
-
-        self.choice_control.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_enter)
-        self.choice_control.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
-
+        self.bind_events()
         self.Refresh()
 
     def set_control_value(self, val):
@@ -801,6 +774,20 @@ class EnumProperty(WxCustomProperty):
         LevelEditorEventHandler.UPDATE_XFORM_TASK = True
         evt.Skip()
 
+    def bind_events(self):
+        self.Bind(wx.EVT_SIZE, self.on_evt_size)
+        self.Bind(wx.EVT_CHOICE, self.on_event_choice)
+
+        self.choice_control.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_enter)
+        self.choice_control.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
+
+    def unbind_events(self):
+        self.Unbind(wx.EVT_SIZE)
+        self.Unbind(wx.EVT_CHOICE)
+
+        self.choice_control.Unbind(wx.EVT_ENTER_WINDOW)
+        self.choice_control.Unbind(wx.EVT_LEAVE_WINDOW)
+
 
 class SliderProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
@@ -818,7 +805,7 @@ class SliderProperty(WxCustomProperty):
         self.sizer.Add(self.ctrlLabel, 0, wx.TOP, border=2)
         self.sizer.Add(self.slider, 1)
 
-        self.Bind(wx.EVT_SLIDER, self.on_event_slider)
+        self.bind_events()
 
     def set_control_value(self, val):
         self.slider.SetValue(int(val))
@@ -829,6 +816,12 @@ class SliderProperty(WxCustomProperty):
 
     def on_evt_size(self, evt):
         evt.Skip()
+
+    def bind_events(self):
+        self.Bind(wx.EVT_SLIDER, self.on_event_slider)
+
+    def unbind_events(self):
+        self.Unbind(wx.EVT_SLIDER)
 
 
 class ButtonProperty(WxCustomProperty):
@@ -844,12 +837,17 @@ class ButtonProperty(WxCustomProperty):
         self.btn = gbtn.GradientButton(self, label=self.property.get_name())
         self.sizer.Add(self.btn, 1, wx.LEFT | wx.RIGHT)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
-
-        self.Bind(wx.EVT_BUTTON, self.on_evt_btn)
+        self.bind_events()
 
     def on_evt_btn(self, evt):
         self.property.execute()
         evt.Skip()
+
+    def bind_events(self):
+        self.Bind(wx.EVT_BUTTON, self.on_evt_btn)
+
+    def unbind_events(self):
+        self.Unbind(wx.EVT_BUTTON)
 
 
 class ContainerProperty(WxCustomProperty):

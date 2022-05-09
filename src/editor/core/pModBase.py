@@ -219,3 +219,9 @@ class PModBase(DirectObject):
         xx = extra_args.copy()
         xx.append(method)
         super(PModBase, self).accept(event, execute, extraArgs=xx)
+
+    def has_ed_property(self, name: str):
+        for prop in self._properties:
+            if prop.name == name:
+                return True
+        return False

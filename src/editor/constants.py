@@ -30,6 +30,8 @@ DEFAULT_PROJECT_PATH = "src/Default Project"
 POINT_LIGHT_MODEL = MODELS_PATH + "\\" + "Pointlight.egg.pz"
 DIR_LIGHT_MODEL = MODELS_PATH + "\\" + "Dirlight.egg.pz"
 SPOT_LIGHT_MODEL = MODELS_PATH + "\\" + "Spotlight.egg.pz"
+AMBIENT_LIGHT_MODEL = MODELS_PATH + "\\" + "AmbientLight.obj"
+
 CAMERA_MODEL = MODELS_PATH + "\\" + "camera.egg.pz"
 
 CUBE_PATH = MODELS_PATH_2 + "\\" + "cube.fbx"
@@ -76,7 +78,7 @@ class DirectoryEventHandler:
         proj_browser.create_or_rebuild_tree("", rebuild_event=True)  # rebuild resources panel
 
         # reload all the resources
-        le.load_all_mods(proj_browser.resources["py"])     # reload all user mods and editor plugins
+        le.load_all_mods(proj_browser.resources["py"])  # reload all user mods and editor plugins
         le.load_text_files(proj_browser.resources["txt"])  # reload all text files
 
         proj_browser.reload_state()
@@ -256,16 +258,15 @@ le_Evt_Remove_NodePaths = "RemoveSelectedNodePaths"
 le_EVT_On_Enable_Ed_Mode = "OnEnableEdMode"
 le_Evt_On_Enable_Game_Mode = "OnEnableGameMode"
 
-
 le_event_handler = {
-                    le_Evt_Start: LevelEditorEventHandler.on_le_start,
-                    le_Evt_On_Scene_Start: LevelEditorEventHandler.on_scene_start,
-                    le_Evt_On_Add_NodePath: LevelEditorEventHandler.on_add_np,
-                    le_Evt_NodePath_Selected: LevelEditorEventHandler.np_selected,
-                    le_Evt_Deselect_All: LevelEditorEventHandler.deselect_all,
-                    le_Evt_Remove_NodePaths: LevelEditorEventHandler.on_remove_selected,
-                    le_EVT_On_Enable_Ed_Mode: LevelEditorEventHandler.on_enable_ed_mode,
-                    le_Evt_On_Enable_Game_Mode: LevelEditorEventHandler.on_enable_game_mode,}
+    le_Evt_Start: LevelEditorEventHandler.on_le_start,
+    le_Evt_On_Scene_Start: LevelEditorEventHandler.on_scene_start,
+    le_Evt_On_Add_NodePath: LevelEditorEventHandler.on_add_np,
+    le_Evt_NodePath_Selected: LevelEditorEventHandler.np_selected,
+    le_Evt_Deselect_All: LevelEditorEventHandler.deselect_all,
+    le_Evt_Remove_NodePaths: LevelEditorEventHandler.on_remove_selected,
+    le_EVT_On_Enable_Ed_Mode: LevelEditorEventHandler.on_enable_ed_mode,
+    le_Evt_On_Enable_Game_Mode: LevelEditorEventHandler.on_enable_game_mode, }
 
 
 class ProjectEventHandler:
@@ -431,7 +432,7 @@ class ProjectEventHandler:
                 file_.write("def __init__(self, *args, **kwargs):\n")
 
                 indent_file(file_, 8)
-                file_.write(base_class+".__init__(self, *args, **kwargs)\n")
+                file_.write(base_class + ".__init__(self, *args, **kwargs)\n")
 
                 if _is_ed_plugin:
                     indent_file(file_, 8)
@@ -497,7 +498,7 @@ class ProjectEventHandler:
 
         cls_name = path.split(".")[0]
         cls_name = cls_name.split("/")[-1]
-        cls_name = cls_name[0].upper() + cls_name[1:]   # capitalize class name
+        cls_name = cls_name[0].upper() + cls_name[1:]  # capitalize class name
 
         # write_to_file(module_name, base_cls, cls_name)
         if module_name == "object":
@@ -543,31 +544,28 @@ class WxEventHandler:
         le.selection.set_selected(args, append=len(args) > 1)
         le.update_gizmo()
 
-        if len(args) > 0:
-            np = args[0]
-            object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
-            # unselect this otherwise current ProjectBrowser item won't be selected again
-            object_manager.get("ProjectBrowser").UnselectAll()
+        obs.trigger("UpdateInspector", *args)
 
     @staticmethod
     def add_model(*args):
         le = object_manager.get("LevelEditor")
 
         model_path = args[0]
-        xx = model_path[len(le.project.project_path)+1:]
+        xx = model_path[len(le.project.project_path) + 1:]
         le.add_nodepath(xx)
 
     def add_actor(*args):
         le = object_manager.get("LevelEditor")
 
         actor_path = args[0]
-        xx = actor_path[len(le.project.project_path)+1:]
+        xx = actor_path[len(le.project.project_path) + 1:]
         le.add_actor(xx)
 
     @staticmethod
     @obs.on("SelectTreeItem")
     def on_tree_item_select(selections):
         """event called when a resource item is selected in resource browser"""
+
         def on_module_selected(module):
             scene_graph_panel.deselect_all()
             le.deselect_all()
@@ -604,16 +602,9 @@ class WxEventHandler:
             object_manager.get("SceneGraphPanel").reparent(src_np, target_np)
 
     @staticmethod
-    @obs.on("EventWxSize")
-    def event_size(size, *args):
-        pass
-        # object_manager.get("SceneUI").on_resize(size.x, size.y)
-
-    @staticmethod
     @obs.on("EventAddTab")
     def evt_add_tab(tab):
         """event called when a request to a new tab is made from main menu bar"""
-
         object_manager.get("WxMain").add_tab(tab)
 
     @staticmethod
@@ -654,13 +645,13 @@ ui_Evt_Load_Model = "LoadModel"
 ui_Evt_Load_Actor = "LoadActor"
 ui_Evt_Reparent_NodePath = "ReparentNodePath"
 
-
 wx_event_handler = {ui_Evt_On_NodePath_Selected: WxEventHandler.on_np_selected,
                     ui_Evt_Load_Model: WxEventHandler.add_model,
                     ui_Evt_Load_Actor: WxEventHandler.add_actor,
                     ui_Evt_Reparent_NodePath: WxEventHandler.reparent_np}
 
 
+# ---------------------------------------- LEVEL EDITOR EVENTs ---------------------------------------- #
 @obs.on("RenameItem")
 def rename_item(np, np_name):
     def on_ok(*args):
@@ -677,11 +668,61 @@ def rename_item(np, np_name):
                      initial_text=np_name)
 
 
+@obs.on("RemoveObject(s)")
+def on_remove_selected():
+    def on_ok(*args):
+        le = object_manager.get("LevelEditor")
+        scene_graph_panel = object_manager.get("SceneGraphPanel")
+        properties_panel = object_manager.get("PropertiesPanel")
+
+        selections = []
+        for np in le.selection.selected_nps:
+            selections.append(np)
+        le.selection.deselect_all()
+
+        scene_graph_panel.on_remove_nps(selections)
+        le.remove_selected_nps(selections)
+        properties_panel.reset()
+
+    wx_main = object_manager.get("WxMain")
+    dm = wx_main.dialogue_manager
+    dm.create_dialog("YesNoDialog", "Delete Item",
+                     dm,
+                     descriptor_text="Are you sure you want to delete this selection ?",
+                     ok_call=on_ok)
+
+
+# ---------------------------------------- Wx EVENTs ---------------------------------------- #
 @obs.on("PropertyModified")
 def property_modified(*args):
     object_manager.get("PropertiesPanel").update_properties_panel(*args)
     le = object_manager.get("LevelEditor")
     le.update_gizmo()
+
+
+@obs.on("UpdateInspector")
+def update_inspector(*args):
+    pp = object_manager.get("PropertiesPanel")
+    pr = object_manager.get("ProjectBrowser")
+    le = object_manager.get("LevelEditor")
+
+    if len(args) > 0:
+        np = args[0]
+    elif len(le.selection.selected_nps) > 0:
+        np = le.selection.selected_nps[0]
+        np = np.getPythonTag(TAG_PICKABLE)
+    else:
+        return
+
+    pp.layout_object_properties(np, np.get_name(), np.get_properties())
+    # unselect this otherwise current ProjectBrowser item if already selected cannot be selected again
+
+
+# ---------------------------------------- APP EVENTs ---------------------------------------- #
+@obs.on("ResizeEvent")
+def resize_event(*args):
+    showbase = object_manager.get("P3dApp").showbase
+    showbase.update_aspect_ratio()
 
 
 @obs.on("EvtCloseApp")
