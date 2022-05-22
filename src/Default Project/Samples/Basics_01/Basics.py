@@ -1,13 +1,13 @@
 import panda3d.core as p3dCore
-from editor.core.pModBase import PModBase
+from editor.core.runtimeModule import RuntimeModule
 from editor.utils import EdProperty
 
 
-class Basics(PModBase):
+class Basics(RuntimeModule):
     def __init__(self, *args, **kwargs):
         """__init__ should not be used for anything but variable declaration"""
 
-        PModBase.__init__(self, *args, **kwargs)
+        RuntimeModule.__init__(self, *args, **kwargs)
 
         # --------------------------------------------------------------------
         # create some properties that will be displayed in inspector
@@ -27,9 +27,9 @@ class Basics(PModBase):
         self.add_property(EdProperty.ButtonProperty("Button", self.on_button))  # button property
 
         # a slider property
-        self.__temperature = 5  # private to hide in inspector
+        self.temperature = 5  # private to hide in inspector
         self.add_property(EdProperty.Slider("Temperature",
-                                            value=self.__temperature,  # initial value
+                                            value=self.temperature,  # initial value
                                             min_value=0,
                                             max_value=10,
                                             setter=self.set_temperature,
@@ -45,23 +45,20 @@ class Basics(PModBase):
                                                     getter=self.get_choice))
         # --------------------------------------------------------------------
 
-        win = self._win  # the window we are rendering into currently
+        win = self._win                                # the window we are rendering into currently
         mouse_watcher_node = self._mouse_watcher_node  # mouse watcher node
-        render = self._render  # this is the current scene parent node-path
-        player_cam = self._game_cam  # this is camera rendering the game view
-        le = self._le  # instance of LevelEditor
+        render = self._render                          # this is the current scene's parent node-path
+        game = self._game                              # instance of current running game
 
     def on_start(self):
         """on_start method is called only once"""
 
-        test_module = self._le.get_module("TestModule")  # get a reference to other modules or editor plugins
+        test_module = self._game.get_module("TestModule")  # get a reference to other modules or editor plugins
         if test_module is not None:
             test_module.foo()
 
         self.accept("q", self.bar, [])  # event handling
-
-        smiley = self._render.find("**/smiley")  # searching the scene graph, you should have a smiley in the scene
-                                                 # beforehand.
+        smiley = self._render.find("**/smiley")
 
     def foo(self):
         return self.bar
@@ -81,10 +78,10 @@ class Basics(PModBase):
         print("button pressed")
 
     def set_temperature(self, val):
-        self.__temperature = val
+        self.temperature = val
 
     def get_temperature(self):
-        return self.__temperature
+        return self.temperature
 
     def set_choice(self, val):
         self.curr_choice = val

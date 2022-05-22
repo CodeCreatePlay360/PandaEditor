@@ -33,7 +33,7 @@ class BaseNp(NodePath):
                                                setter=self.setHpr,
                                                getter=self.getHpr)
 
-        scale = ed_utils.EdProperty.FuncProperty(name="Scale    ",
+        scale = ed_utils.EdProperty.FuncProperty(name="Scale     ",
                                                  value=self.getScale(),
                                                  value_limit=Vec3(0.01, 0.01, 0.01),
                                                  setter=self.set_scale,

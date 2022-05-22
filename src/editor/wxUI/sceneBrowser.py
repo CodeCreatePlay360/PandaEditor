@@ -45,7 +45,7 @@ class SceneBrowser(BaseTreeControl):
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
-        agw_win_styles |= wx.TR_TWIST_BUTTONS  # | wx.TR_NO_LINES
+        agw_win_styles |= wx.TR_TWIST_BUTTONS | wx.TR_NO_LINES
 
         self.SetAGWWindowStyleFlag(agw_win_styles)
         self.SetIndent(10)

@@ -10,4 +10,4 @@ from editor.app import MyApp
 
 app = MyApp()
 app.init()
-app.showbase.run()
+app.show_base.run()

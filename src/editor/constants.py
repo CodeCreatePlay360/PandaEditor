@@ -105,13 +105,13 @@ class LevelEditorEventHandler:
     def on_scene_start(*args):
         scene_graph = object_manager.get("SceneGraphPanel")
         le = object_manager.get("LevelEditor")
-        scene_graph.init(le.scene_render)
+        scene_graph.init(le.active_scene.render)
 
     @staticmethod
     def on_enable_ed_mode(*args):
         scene_graph = object_manager.get("SceneGraphPanel")
         scene_graph.save_state()
-        scene_graph.rebuild(object_manager.get("LevelEditor").scene_render)  # update SceneGraphPanel panel
+        scene_graph.rebuild(object_manager.get("LevelEditor").active_scene.render)  # update SceneGraphPanel panel
         scene_graph.reload_state()
 
         # x_form task updates inspector panel according to current selection
@@ -160,8 +160,6 @@ class LevelEditorEventHandler:
         # else resets object inspection panel
         properties_panel.reset()
 
-    @staticmethod
-    @obs.on("ToggleSceneLights")
     def toggle_scene_lights(val=None):
         le = object_manager.get("LevelEditor")
 
@@ -386,8 +384,6 @@ class ProjectEventHandler:
             print("Exit game mode to append new library..!")
             return
 
-        default_path_to = "C:/Users/Obaid ur Rehman/Desktop/Panda3d/P3dLevelEditor/game"
-
         dir_dialog = wx.DirDialog(None, style=wx.DD_DEFAULT_STYLE)
 
         if dir_dialog.ShowModal() == wx.ID_OK:
@@ -434,10 +430,6 @@ class ProjectEventHandler:
                 indent_file(file_, 8)
                 file_.write(base_class + ".__init__(self, *args, **kwargs)\n")
 
-                if _is_ed_plugin:
-                    indent_file(file_, 8)
-                    file_.write("self.is_ed_plugin(True)\n")
-
                 indent_file(file_, 8)
                 file_.write("# __init__ should not contain anything except for variable declaration...!\n\n")
 
@@ -474,13 +466,13 @@ class ProjectEventHandler:
         is_ed_plugin = False
 
         if _type == "p3d_user_mod":
-            module_name = "pModBase"
-            base_cls = "PModBase"
+            module_name = "runtimeModule"
+            base_cls = "RuntimeModule"
             path += ".py"
 
         elif _type == "p3d_ed_tool":
-            module_name = "pModBase"
-            base_cls = "PModBase"
+            module_name = "editorPlugin"
+            base_cls = "EditorPlugin"
             path += ".py"
             is_ed_plugin = True
 
@@ -603,9 +595,9 @@ class WxEventHandler:
 
     @staticmethod
     @obs.on("EventAddTab")
-    def evt_add_tab(tab):
+    def evt_add_tab(panel):
         """event called when a request to a new tab is made from main menu bar"""
-        object_manager.get("WxMain").add_tab(tab)
+        object_manager.get("WxMain").add_panel(panel)
 
     @staticmethod
     @obs.on("UILayoutEvent")
@@ -652,6 +644,35 @@ wx_event_handler = {ui_Evt_On_NodePath_Selected: WxEventHandler.on_np_selected,
 
 
 # ---------------------------------------- LEVEL EDITOR EVENTs ---------------------------------------- #
+# all events thrown from level editor
+@obs.on("OnSceneStart")
+def on_scene_start():
+    """should be called as soon as a new scene is started"""
+    scene_graph = object_manager.get("SceneGraphPanel")
+    le = object_manager.get("LevelEditor")
+    scene_graph.init(le.active_scene.render)
+
+
+@obs.on("ToggleSceneLights")
+def toggle_lights(value):
+    le = object_manager.get("LevelEditor")
+    wx_main = object_manager.get("WxMain")
+
+    if value is None:
+        # invert scene lights on or off status
+        current_status = le.toggle_scene_lights()
+    else:
+        current_status = value
+
+    # change graphics
+    if current_status:
+        wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_on_icon)
+    elif not current_status:
+        wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_off_icon)
+
+    wx_main.aui_manager.Update()
+
+
 @obs.on("RenameItem")
 def rename_item(np, np_name):
     def on_ok(*args):
@@ -693,8 +714,23 @@ def on_remove_selected():
 
 
 # ---------------------------------------- Wx EVENTs ---------------------------------------- #
+@obs.on("PluginFailed")
+def plugin_execution_failed(plugin):
+    print("Plugin {0} execution failed".format(plugin._name))
+    le = object_manager.get("LevelEditor")
+    le.unregister_editor_plugins(plugin)
+
+
+# all events thrown from wx widgets
+@obs.on("LoadEdPluginPanel")
+def load_ed_plugin(panel):
+    wx_main = object_manager.get("WxMain")
+    wx_main.add_panel(panel)
+
+
 @obs.on("PropertyModified")
 def property_modified(*args):
+    """should be called when property from object inspector is modified"""
     object_manager.get("PropertiesPanel").update_properties_panel(*args)
     le = object_manager.get("LevelEditor")
     le.update_gizmo()
@@ -715,19 +751,17 @@ def update_inspector(*args):
         return
 
     pp.layout_object_properties(np, np.get_name(), np.get_properties())
-    # unselect this otherwise current ProjectBrowser item if already selected cannot be selected again
 
 
-# ---------------------------------------- APP EVENTs ---------------------------------------- #
 @obs.on("ResizeEvent")
 def resize_event(*args):
-    showbase = object_manager.get("P3dApp").showbase
-    showbase.update_aspect_ratio()
+    """emitted from wx-main when wx-window is resized"""
+    show_base = object_manager.get("P3dApp").show_base
+    show_base.update_aspect_ratio()
 
 
 @obs.on("EvtCloseApp")
 def exit_app(close_wx=True):
-    # print("PandaEditor --> GoodBye")
     if close_wx:
         object_manager.get("WxMain").Close()
     object_manager.get("P3dApp").Quit()

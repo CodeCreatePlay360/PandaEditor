@@ -1,11 +1,9 @@
-from editor.constants import *
-
 
 class ActionManager:
-    def __init__(self, actns_count):
+    def __init__(self, actions_count=30):
         self.undo_list = []
         self.redo_list = []
-        self.max_actions_count = actns_count
+        self.max_actions_count = actions_count
 
     def undo(self):
         pass

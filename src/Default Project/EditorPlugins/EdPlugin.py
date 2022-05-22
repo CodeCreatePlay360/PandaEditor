@@ -1,15 +1,15 @@
 import math
 import panda3d.core as p3dCore
-from editor.core.pModBase import PModBase
+from editor.core.editorPlugin import EditorPlugin
 from editor.utils import EdProperty
+import wx
 
 
-class EdPlugin(PModBase):
+class EdPlugin(EditorPlugin):
     def __init__(self, *args, **kwargs):
-        PModBase.__init__(self, *args, **kwargs)
-        self.is_ed_plugin(True)
+        EditorPlugin.__init__(self, *args, **kwargs)
 
-        # __init__ should contain anything except for variable declaration...!
+        # __init__ should not contain anything except for variable declaration...!
         self.curr_game_viewport_style = 0
         self.add_hidden_variable("curr_game_viewport_style")
         self.add_property(EdProperty.ChoiceProperty("GameViewPortStyle",
@@ -18,9 +18,31 @@ class EdPlugin(PModBase):
                                                     setter=self.set_game_viewport_style,
                                                     getter=self.get_game_viewport_style))
 
+        self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
+
+        self.grid_size = 200
+        self.gridStep = 40
+        self.sub_divisions = 5
+
+        self.add_hidden_variable("grid_size")
+        self.add_hidden_variable("gridStep")
+        self.add_hidden_variable("sub_divisions")
+
+        self.add_property(EdProperty.Label(name="GridSettings", is_bold=True))
+        self.add_property(EdProperty.ObjProperty(name="grid_size", value=self.grid_size, _type=float, obj=self))
+        self.add_property(EdProperty.ObjProperty(name="gridStep", value=self.gridStep, _type=float, obj=self))
+        self.add_property(EdProperty.ObjProperty(name="sub_divisions", value=self.sub_divisions, _type=float, obj=self))
+        self.add_property(EdProperty.ButtonProperty("SetGrid", self.set_grid))  # button property
+
+        self.request_unique_panel("MyFirstPanel")
+
     # on_start method is called once
     def on_start(self):
-        pass
+
+        le = self._le              # level editor
+        wx_panel = self._wx_panel  # the top most parent "Panel" of wxPython, if request to unique panel is
+                                   # successful, otherwise return value of self._wx_panel is None.
+                                   # All wx UI elements should be child of this.
 
     # update method is called every frame
     def on_update(self):
@@ -28,11 +50,11 @@ class EdPlugin(PModBase):
 
     def set_game_viewport_style(self, val: int):
         self.curr_game_viewport_style = val
-
-        if val == 0:
-            self._le._game_view_minimized = True
-        elif val == 1:
-            self._le._game_view_minimized = False
+        self._le.set_game_viewport_style(1 == val)
 
     def get_game_viewport_style(self):
         return self.curr_game_viewport_style
+
+    def set_grid(self):
+        self._le.create_grid(self.grid_size, self.gridStep, self.sub_divisions)
+        self._le.create_grid(self.grid_size, self.gridStep, self.sub_divisions)

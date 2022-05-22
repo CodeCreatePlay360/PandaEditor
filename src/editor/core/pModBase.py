@@ -9,9 +9,9 @@ def execute(*args, **kwargs):
     ed_utils.try_execute(foo, *args, **kwargs)
 
 
-def stop_execution(is_ed_plugin):
-    if is_ed_plugin:
-        constant.obs.trigger("UserModuleEvent", "PluginExecutionFailed")
+def stop_execution(module):
+    if module._editor_plugin:
+        constant.obs.trigger("PluginFailed", module)
     else:
         constant.obs.trigger("ProjectEvent", "SwitchEdState", 0)
 
@@ -20,13 +20,15 @@ class PModBase(DirectObject):
     def __init__(self, *args, **kwargs):
         DirectObject.__init__(self)
 
+        # these fields are defined here for convenience only,
+        # all these fields are defined in project.game as well.
         self._name = kwargs.pop("name", None)
         self._win = kwargs.pop("win", None)
-        self._mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
-        self._le = kwargs.pop("level_editor", None)
         self._render = kwargs.pop("render", None)
-        self._render2d = kwargs.pop("render2d", None)
-        self._game_cam = kwargs.pop("game_cam", None)
+        self._aspect2d = kwargs.pop("aspect2d", None)
+        self.dr = kwargs.pop("dr", None)
+        self.dr2d = kwargs.pop("dr2d", None)
+        self._mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
 
         self._task = None
         self._late_task = None
@@ -36,7 +38,6 @@ class PModBase(DirectObject):
         self._enabled = True  # is this module enabled
         self._initialized = True
         self._error = False  # set this to true if there is an error
-        self._editor_plugin = False  # is it editor plugin ?
 
         self._user_properties = []
         self._hidden_properties = []
@@ -48,10 +49,11 @@ class PModBase(DirectObject):
             "_MSGRmessengerId",
 
             "_name",
-            "_le",
             "_render",
             "_mouse_watcher",
             "_win",
+
+            "_editor_plugin",
 
             "_task",
             "_late_task",
@@ -61,21 +63,18 @@ class PModBase(DirectObject):
             "_enabled",
             "_initialized",
             "_error",
-            "_editor_plugin",
 
             "_user_properties",
+            "_hidden_properties",
             "_properties",
 
             "_discarded_attrs"]
 
-    def is_ed_plugin(self, value: bool):
-        self._editor_plugin = value
-
     def start(self, sort=None, late_update_sort=None, priority=None):
-        if sort is not None:
+        if sort:
             self._sort = sort
 
-        if late_update_sort is not None:
+        if late_update_sort:
             self._late_update_sort = late_update_sort
 
         def _start():
@@ -89,6 +88,7 @@ class PModBase(DirectObject):
                                          priority=priority)
 
             # start the object's late update loop
+            # self._editor_plugin is generated on the fly do not declare it here
             if not self._editor_plugin and not self.is_running(1):
                 self._late_task = taskMgr.add(self.late_update,
                                               "{0} LateUpdate".format(self._name),
@@ -97,7 +97,7 @@ class PModBase(DirectObject):
 
         res = ed_utils.try_execute(_start)
         if not res:
-            stop_execution(self._editor_plugin)
+            stop_execution(self)
             return False
         return True
 
@@ -109,7 +109,7 @@ class PModBase(DirectObject):
         if res is True:
             return task.cont
         else:
-            stop_execution(self._editor_plugin)
+            stop_execution(self)
             return False
 
     def on_update(self):
@@ -120,7 +120,7 @@ class PModBase(DirectObject):
         if res is True:
             return task.cont
         else:
-            stop_execution(self._editor_plugin)
+            stop_execution(self)
             return False
 
     def on_late_update(self):
@@ -169,12 +169,13 @@ class PModBase(DirectObject):
         self._properties = []
 
         for name, value in self.get_savable_atts():
+
+            # hidden variables should be ignored
             if name in self._hidden_properties:
-                # hidden variables should be ignored
                 continue
 
+            # private variables should be ignored
             if name[0] == "_":
-                # private variables should be ignored
                 continue
 
             prop = ed_utils.EdProperty.ObjProperty(name=name, value=value, _type=type(value), obj=self)
@@ -208,7 +209,7 @@ class PModBase(DirectObject):
                 value = getattr(self, name)
                 prop.set_value(value)
 
-    def accept(self, event, method, extra_args=None):
+    def accept(self, event, method, extra_args: list = None):
         if extra_args is None:
             extra_args = []
         if type(extra_args) is not list:

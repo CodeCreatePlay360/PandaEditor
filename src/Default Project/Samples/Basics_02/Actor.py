@@ -1,11 +1,11 @@
 import math
 import panda3d.core as p3dCore
-from editor.core.pModBase import PModBase
+from editor.core.runtimeModule import RuntimeModule
 
 
-class Actor(PModBase):
+class Actor(RuntimeModule):
     def __init__(self, *args, **kwargs):
-        PModBase.__init__(self, *args, **kwargs)
+        RuntimeModule.__init__(self, *args, **kwargs)
 
         # __init__ should contain anything except for variable declaration...!
 

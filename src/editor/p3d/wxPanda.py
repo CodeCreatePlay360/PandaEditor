@@ -128,10 +128,10 @@ class Viewport(wx.Panel):
         evt.Skip()
 
     def OnMouseEnter(self):
-        le = self.wx_main.panda_app.level_editor
+        le = self.wx_main.app.level_editor
         resource_browser = object_manager.get("ProjectBrowser")
 
-        if not resource_browser.mouse_left_down or not self.wx_main.panda_app.on_mouse1_down:
+        if not resource_browser.mouse_left_down or not self.wx_main.app.on_mouse1_down:
             return
 
         '''
@@ -155,8 +155,8 @@ class Viewport(wx.Panel):
             object_manager.get("ProjectBrowser").end_drag()
 
     def OnMouseHover(self, x, y):
-        cam = self.wx_main.panda_app.level_editor.panda_app.showbase.ed_camera
-        mousePointer = self.wx_main.panda_app.showbase.ed_mouse_watcher_node
+        cam = self.wx_main.app.level_editor.app.show_base.ed_camera
+        mousePointer = self.wx_main.app.show_base.ed_mouse_watcher_node
 
         for model in self.models:
 

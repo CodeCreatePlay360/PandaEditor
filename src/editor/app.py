@@ -3,20 +3,23 @@ from editor.showBase import ShowBase
 from editor.wxUI.wxMain import WxFrame
 from editor.levelEditor import LevelEditor
 from editor.p3d import wxPanda
-from editor.constants import *
+from editor.constants import object_manager, wx
+from editor.actionManager import ActionManager
 
 
 class MyApp(wxPanda.App):
     wx_main = None
-    showbase = None
+    show_base = None
     _mouse_mode = None
     level_editor = None
+    obs = None
 
     def init(self):
         object_manager.add_object("P3dApp", self)
 
+        # self.obs = Observable()
         self.wx_main = WxFrame(parent=None, title="PandaEditor (Default Project)", size=(800, 600))
-        self.showbase = ShowBase(self.wx_main.ed_viewport_panel)
+        self.show_base = ShowBase(self.wx_main.ed_viewport_panel)
 
         self.wx_main.Show()
         self.ReplaceEventLoop()
@@ -24,7 +27,7 @@ class MyApp(wxPanda.App):
         wx.CallAfter(self.finish_init)
 
     def finish_init(self):
-        self.showbase.finish_init()
+        self.show_base.finish_init()
         self.level_editor = LevelEditor(self)
         self.wx_main.finish_init()
         self.level_editor.start()

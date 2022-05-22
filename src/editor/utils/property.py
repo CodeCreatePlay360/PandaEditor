@@ -56,11 +56,12 @@ class ObjProperty(Property):
         self.obj = obj
 
     def validate(self):
+        super().validate()
+
         if hasattr(self.obj, self.name):
             self.is_valid = True
-            return
-
-        super().validate()
+        else:
+            self.is_valid = False
 
     def set_value(self, val):
         setattr(self.obj, self.name, val)
@@ -77,10 +78,12 @@ class FuncProperty(Property):
         self.getter = getter
 
     def validate(self):
+        super().validate()
+
         if self.setter is None or self.getter is None:
             self.is_valid = False
-
-        super().validate()
+        else:
+            self.is_valid = True
 
     def get_value(self, *args, **kwargs):
         getter = self.getter
@@ -98,11 +101,12 @@ class EmptySpace(Property):
         self.y = y  # vertical spacing
 
     def validate(self):
+        super().validate()
+
         if type(self.x) is not int or type(self.y) is not int:
             self.is_valid = False
-            return
-
-        super().validate()
+        else:
+            self.is_valid = True
 
 
 class Label(Property):
@@ -113,10 +117,12 @@ class Label(Property):
         self.text_color = text_color
 
     def validate(self):
+        super().validate()
+
         if type(self.is_bold) is not bool:
             self.is_valid = False
-            return
-        super().validate()
+        else:
+            self.is_valid = True
 
 
 class ButtonProperty(Property):

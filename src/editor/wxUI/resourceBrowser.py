@@ -7,6 +7,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.baseTreeControl import BaseTreeControl
 from editor.colourPalette import ColourPalette as Colours
 from editor.utils.exceptionHandler import try_execute
+from editor.utils import DirWatcher
 
 # icons / thumbnails names
 FOLDER_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "folder16.png"
@@ -85,7 +86,7 @@ def build_menu(menu, items):
 class _ResourceBrowser(ScrolledPanel):
 
     class State:
-        """class representing a saved state of SceneBrowser"""
+        """class representing a saved state of ResourceBrowser"""
         def __init__(self):
             self.selected_items = []
 
@@ -109,15 +110,16 @@ class ResourceBrowser(BaseTreeControl):
         BaseTreeControl.__init__(self, parent, *args, **kwargs)
 
         self.wx_main = wx_main
+        self.organize_tree = True  # should tree be organized based on file extensions ?
+
         constants.object_manager.add_object("ProjectBrowser", self)
-        self.organize_tree = True  # organize a tree based on file_extensions
 
         # ---------------------------------------------------------------------------- #
         self.SetBackgroundColour(Colours.NORMAL_GREY)
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
-        agw_win_styles |= wx.TR_TWIST_BUTTONS  # | wx.TR_NO_LINES
+        agw_win_styles |= wx.TR_TWIST_BUTTONS
 
         self.SetAGWWindowStyleFlag(agw_win_styles)
         self.SetIndent(10)
@@ -147,7 +149,7 @@ class ResourceBrowser(BaseTreeControl):
         self.SetImageList(self.image_list)
         # ---------------------------------------------------------------------------- #
 
-        self.root_node = self.AddRoot("RootNode", image=self.image_index["folder"], data="")
+        self.root_node = self.AddRoot("RootNode", data="")
         self.root_path = ""
 
         # for drag drop operations
@@ -157,10 +159,10 @@ class ResourceBrowser(BaseTreeControl):
         self.saved_state = None
 
         # ---------------------------------------------------------------------------- #
-        self.libraries = {}  # all current loaded libraries
-        self.resources = {}  # maps and saves all loaded resources e.g [py] = {all .py resources}...
+        self.libraries = {}     # all current loaded libraries
+        self.resources = {}     # maps and saves all loaded resources e.g [py] = {all .py resources}...
         self.name_to_item = {}  # maps a file's or directory's name to it's corresponding tree item
-        # e.g. name_to_item[file_name] = item
+                                # e.g. name_to_item[file_name] = item
 
         # ---------------------------------------------------------------------------- #
         # file menus associates a file extension with, or an extension with a function,
@@ -195,16 +197,14 @@ class ResourceBrowser(BaseTreeControl):
             EVT_IMPORT_ASSETS: (self.import_assets, None),
         }
 
-        # bind event handlers with corresponding method calls
+        # start the directory watcher
+        self.dir_watcher = DirWatcher()
+
+        # finally, bind event handlers with corresponding function calls
         self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.on_item_expanded)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.on_item_collapsed)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_selected)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_item_activated)
-
-        # self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
-        # self.Bind(wx.EVT_LEFT_UP, self.on_evt_left_up)
-        # self.Bind(wx.EVT_MOTION, self.on_evt_mouse_move)
-
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.create_popup_menu)
         self.Bind(wx.EVT_MENU, self.on_select_context)
 
@@ -277,13 +277,11 @@ class ResourceBrowser(BaseTreeControl):
             # then recreate it from scratch
             # print("ResourceBrowser --> Building resources")
 
-            assert os.path.exists(path), "error: path does not exist"
-            assert os.path.isdir(path), "error: path is not a directory"
-
             self.libraries.clear()
             self.resources.clear()
             self.name_to_item.clear()
             self.DeleteChildren(self.GetRootItem())
+            self.UnselectAll()
 
             self.root_path = path
 
@@ -293,41 +291,36 @@ class ResourceBrowser(BaseTreeControl):
 
             # setup a default project library
             parent_item = self.AppendItem(self.root_node, "Project", data=path, image=self.image_index["folder"])
-            self.name_to_item["Project"] = parent_item
             self.libraries["Project"] = path
 
-            self.UnselectAll()
             self.create_tree_from_dir(dir_path=path, parent=parent_item)
-            self.ExpandAll()
+            self.dir_watcher.schedule(path, append=False)  # start monitoring
+            self.Expand(parent_item)
         else:
             print("[ResourceBrowser] Rebuilding resources")
 
-            selection = self.GetSelection()
-            if selection:
-                selection = self.GetItemText(selection)
-            self.UnselectAll()
+            # TODO unschedule and re-schedule directory watcher
 
-            self.DeleteChildren(self.GetRootItem())  # delete all children
-            self.resources.clear()  # unload all resources
-
-            # save the root parent item before clearing name_to_items
-            parent = self.name_to_item["Project"]
+            self.resources.clear()
             self.name_to_item.clear()
-            self.name_to_item["Project"] = parent
-            del parent
+            self.DeleteChildren(self.GetRootItem())
+            self.UnselectAll()
 
             # create a key for each know file type
             for ext in EXTENSIONS.keys():
                 self.resources[ext] = []
 
+            root_node = None
             # recreate all the libraries
             for key in self.libraries.keys():
                 path = self.libraries[key]
                 parent_item = self.AppendItem(self.root_node, key, data=path, image=self.image_index["folder"])
+                if key == "Project":
+                    root_node = parent_item
                 self.create_tree_from_dir(path, parent_item)
 
-            self.ExpandAll()
             self.Refresh()
+            self.Expand(root_node)
 
     def create_tree_from_dir(self, dir_path=None, parent=None):
         def append_item(_file_path, _file_name):
@@ -394,7 +387,11 @@ class ResourceBrowser(BaseTreeControl):
 
     def append_library(self, name, path):
         self.libraries[name] = path
-        return True
+        self.dir_watcher.schedule(path)
+
+    def remove_library(self, name):
+        self.dir_watcher.unschedule(self.libraries[name])
+        del self.libraries[name]
 
     # ----------------- All methods for building context menus ----------------- #
     def create_add_menu_items(self, parent_menu):
@@ -453,31 +450,34 @@ class ResourceBrowser(BaseTreeControl):
         elif op == "remove_item" and can_perform_operation():
             self.remove_item()
 
-    def do_drag_drop(self, src_item: str, target_item: str):
-        src_file = self.GetItemData(src_item)
-        target_dir = self.GetItemData(target_item)
+    def do_drag_drop(self, src_path: str, target_path: str):
+        """src_path = the file/dir being dragged
+        target_path = the file/dir src_path is dropped onto"""
 
-        # move a source file to target directory, the source file and target directory must exist,
-        """src=source file, target=target directory"""
-        # make sure source is a file & target directory exists
-        if not os.path.isfile(src_file) or not os.path.isdir(target_dir):
-            print("file move operation failed")
-            return False
+        src_path = self.GetItemData(src_path)
+        target_path = self.GetItemData(target_path)
 
-        # generate a new target file path, to move src_file to, by combining target_dir with src_file_name
-        target_file = target_dir + "/" + src_file.split("/")[-1]
-
-        # ---------------TO:DO---------------
-        # make sure the target_file already does not exist, if it does exist then ask
-        # user for a file overwrite operation
-        if os.path.isfile(target_file):
-            msg = "file {0} already exists in directory {1}".format(src_file, target_dir)
-            print(msg)
+        # move source file / dir to target path
+        # target directory must exist
+        if not os.path.isdir(target_path):
+            print("[ResourceBrowser] Invalid target dir {0}".format(target_path))
             return
 
-        shutil.move(src_file, target_file)
-        # print("from {0} <==TO==> {1}".format(src_file, target_dir))
-        return True
+        # source file / dir must exist
+        if os.path.isfile(src_path) or os.path.isdir(src_path):
+
+            # generate a new target path (to move src_path to) by combining target_path with src file/dir name
+            new_target_path = target_path + "/" + src_path.split("/")[-1]
+
+            # make sure the new_target_path already does not exist
+            if os.path.isdir(new_target_path) or os.path.isfile(new_target_path):
+                print("[ResourceBrowser] File/directory already exists {0}".format(new_target_path))
+                return
+
+            shutil.move(src_path, new_target_path)
+
+        else:
+            print("[ResourceBrowser] Invalid source file or directory {0}".format(src_path))
 
     @staticmethod
     def show_in_explorer(path):
@@ -494,6 +494,12 @@ class ResourceBrowser(BaseTreeControl):
 
             curr_dir = curr_directory
             new_dir = curr_dir + "/" + _new_dir_name
+
+            # make sure new_dir already does not exist
+            if os.path.isdir(new_dir):
+                print("[ResourceBrowser] Directory already exists")
+                return
+
             os.mkdir(new_dir)
             return _new_dir_name
 
@@ -503,30 +509,34 @@ class ResourceBrowser(BaseTreeControl):
 
     def rename_item(self):
         def on_ok(text):
-            if text == "" or text in self.name_to_item:
-                print("FileRenameError: incorrect name entry or name already exits")
+            if text == "":
+                print("[ResourceBrowser] Invalid item name}")
                 return
 
             selection = self.GetSelection()
 
             old_dir_path = self.GetItemData(selection)
             old_dir_name = old_dir_path.split("/")[-1]
+
             new_dir = old_dir_path[:len(old_dir_path) - len(old_dir_name) - 1]
             new_dir = new_dir + "/" + text
 
+            item_text = self.GetItemText(selection)
+
             # if the selected item is a library item, then remove existing library entry,
             # and create a new one with existing data as of original entry
-            item_text = self.GetItemText(selection)
+            # also make sure libraries does not have an existing entry matching new text
             if item_text in self.libraries.keys():
-                # also make sure libraries does not have an existing entry matching new text
                 if text not in self.libraries.keys():
                     del self.libraries[item_text]
                     self.libraries[text] = old_dir_path
                 else:
-                    print("ProjectBrowser: rename op failed")
-            else:
+                    print("[ResourceBrowser]: Failed to rename item")
+            elif not os.path.exists(new_dir):
                 os.rename(old_dir_path, new_dir)
                 self.SetItemData(self.GetSelection(), new_dir)
+            else:
+                print("[ResourceBrowser]: Failed to rename item")
 
             # update tree controls
             self.SetItemText(self.GetSelection(), text)
@@ -537,6 +547,9 @@ class ResourceBrowser(BaseTreeControl):
                          initial_text=self.GetItemText(self.GetSelection()))
 
     def duplicate(self, *args):
+        print("[ResourceBrowser] Not implemented")
+        return
+
         def get_unique_file_name(_file_name, _ext, _original):
             """Provided a file_name, it's extension and original file this function returns
             a unique file_name with same name, extension and path as of original"""
@@ -573,17 +586,15 @@ class ResourceBrowser(BaseTreeControl):
 
         selections = self.GetSelections()
 
-        if len(selections) > 20:
-            print("max 20 duplicates allowed...!")
-            return
-
         for sel in selections:
             path = self.GetItemData(sel)
-            if os.path.isdir(path):
-                pass
+
+            # only allow files
+            if not os.path.isfile(path):
+                continue
 
             item = self.GetItemText(sel)
-            file_name, extension = os.path.splitext(item)  # get file_name and extension
+            file_name, extension = os.path.splitext(item)  # separate file_name and extension
 
             unique_name = get_unique_file_name(file_name, extension, path)  # get a unique file name
             if unique_name:
@@ -597,15 +608,13 @@ class ResourceBrowser(BaseTreeControl):
                 item_path = self.GetItemData(item)
 
                 if item_text == "Project":
-                    print("cannot remove project path...!")
+                    print("[ResourceBrowser] Cannot remove project path...!")
                     continue
 
                 if item_text in self.libraries.keys():
-                    del self.libraries[item_text]
-                    constants.obs.trigger("OnRemoveLibrary", item_path)
+                    self.remove_library(item_text)
                 else:
                     result = try_execute(os.remove, item_path)
-
                     if result:
                         del self.name_to_item[item_text]  # remove from name_to_items
                         self.Delete(item)

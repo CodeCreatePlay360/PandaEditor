@@ -15,8 +15,7 @@
 * Action manager ( undo / redo system )
 * Project management and scene save / reload system
 * Some parts of code needs refactoring
-* Making editor workflow more intuitive
-* Currently GUI for inspector panel can only be automatically generated, this needs improvement so users can create custom inspectors using wxPython. 
+* Support for editor plugins and custom inspector panels needs improvements
 
 #### Dependencies
 1. WxPython
@@ -30,7 +29,7 @@
 PandaEditor is using the Gizmos package and InfoPanel from another open source panda3d project [link](https://github.com/Derfies/panda3d-editor).
 
 ## Support
-**_PandaEditor is being developed and maintained by only one person, including writing documentation, if you found **PandaEditor** useful... help me buy some grapes and drinks for this summer, this matters a lot to me when I am coding or fixing bugs. Link to [Patreon](https://www.patreon.com/PandaEditor_?fan_landing=true) page._**
+**Maintaining PandaEditor and keeping it bug free takes a lot of time and effort, not to mention writing documentation and creating sample programs, so if you found PandaEditor useful in any way than consider supporting it on [Patreon](https://www.patreon.com/PandaEditor_?fan_landing=true) page.**
 
 ## Manual
 * [Starting a new project](https://github.com/barbarian77/PandaEditor#starting-a-new-project "")
@@ -43,38 +42,42 @@ PandaEditor is using the Gizmos package and InfoPanel from another open source p
 * [Getting started](https://github.com/barbarian77/PandaEditor#getting-started)
 
 ### Starting a new project
-When you start PandaEditor a default project with some samples is setup for you.
-Its located in current working directory and should not be deleted. You can use default project for any purpose, however to create a new project go to
-**_Menubar > Project > Start New Project_** and choose a valid name and path.
+PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is setup for you.
+Its located in current working directory and should not be deleted. You can use default project for any purpose, however to create a new project
+**Menubar > Project > Start New Project** and choose a valid name and path.
 
-### Assets management
-* To import assets in your project go to **_Resource browser > ( select any folder) > Import Assets_**.
-* In PandaEditor you can also append a folder outside of your current working project, to append an external folder go to **_Menubar > Project > AppendLibrary_**, editor will start monitoring changes to any appended directory, the appended assets exists in you project like any other imported assets.
+### Resource management
+* To import resources in your project go to **Resource browser > ( select any folder) > Import Resources**.
+* In PandaEditor you can also append a folder outside of your current working project, to append an external folder go to **Menubar > Project > AppendLibrary ( and select the folder containing resources you want to append for your project )**, editor will start monitoring changes to any appended directory, the appended resources exists in you project like any other imported resources.
 
 ### Object manipulation 
 * alt + right mouse button to rotate
 * alt + middle mouse to dolly
 * alt + left mouse button drag to zoom
+* control + D to duplicate selected objects
+* X to remove / delete selected objects
 
-### Runtime user modules
+### Runtime modules
 
 ![Image](images//module.png)
 
-PandaEditor has two states, Editor and Game state. Editor state is for level design, object manipulation, creating user modules and defining behaviors etc. and game state is what you would expect as final game view.  
-**Runtime user modules** are only executed in game state and are used to define behaviors of objects or nodepaths while in game state, any changes made to scene graph via user modules in game state are reverted as soon as game state is exited, . 
-A user module in PandaEditor is basically a python file which the editor loads as an asset, however for the editor to consider this python file as PandaEditor's user module,
-* The python file should contain a class with same name as of python file.
-* Class should inherit from PModBase.
+PandaEditor has two states **EditorState** and **GameState**.  
+The **EditorState** is your scene creation state, this is where you would set up your 2D or 3D scenes, write **runtime modules** and define object behaviors.  
+The object behaviors defined using **runtime modules** during editor state are executed in **GameState**, the game state is also what you would expect as final game view.  
+**Runtime modules** are simple python scripts, they are automatically loaded as resources, however for editor to consider any python script as a **runtime module**,
 
-Basic syntax of a **PandaEditor** user module
+* The class name should be exactly same as that of python file.
+* Class should inherit from **RuntimeModule** base class.
+
+Basic syntax of a **PandaEditor's runtime module**.
 
 ```
-from editor.core.pModBase import PModBase
+from editor.core.runtimeModule import RuntimeModule
 
 
-class CharacterController(PModBase):
+class CharacterController(RuntimeModule):
     def __init__(self, *args, **kwargs):
-        PModBase.__init__(self, *args, **kwargs)
+        RuntimeModule.__init__(self, *args, **kwargs)
         # __init__ should not contain anything except for variable declaration...!
 
     def on_start(self):
@@ -86,18 +89,99 @@ class CharacterController(PModBase):
         pass
 ```
 
-To create a new user module **_Resource Browser > Project > ( select a folder, left click to open context menu ) > Add > UserModule_**.  
-To see some example usages of user modules, see samples included with default project.  
+The **RuntimeModule** base class also extends any user defined **runtime modules** with some base methods and attributes, the base attributes act as a link between PandaEditor and Panda3D engine. 
+
+```
+from editor.core.runtimeModule import RuntimeModule
+
+
+class CharacterController(RuntimeModule):
+    def __init__(self, *args, **kwargs):
+        RuntimeModule.__init__(self, *args, **kwargs)
+        # __init__ should not contain anything except for variable declaration...!
+        
+        win = self._win                                # the window we are rendering into currently
+        mouse_watcher_node = self._mouse_watcher_node  # mouse watcher node
+        render = self._render                          # this is the current scene's parent node-path
+        game = self._game                              # instance of current running game
+        self.accept("x", self.on_x)                    # basic Panda3d event handling
+        
+    def on_start(self):
+        # this method is called only once
+        pass
+
+    def on_update(self):
+        # this method is called every frame
+        pass
+        
+```
+
+To get a complete listing of all base methods and attributes see **Basics.py** in sample programs included with default project.  
+To create a new user module **Resource Browser > Project > ( select a folder > left click open context menu ) > Add > RuntimeModule**.  
+To see some example usages of user modules, see samples programs also included with the default project.  
 
 ### Editor plugins
-Editor plugins are executed both in editor and game state. They also inherit from **PModBase**, can be used to create tools and extend editor.  
-To see some example usages of editor plugins, see samples included with default project.  
+To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **runtime modules** editor plugins are only executed in in **EditorState**, their execution is paused in **GameState**, the execution is resumed as soon as **EditorState** is enabled again.  
+Same as **runtime modules**, **the editor plugins** are python scripts, for the editor to consider any python script as an **editor plugin**,
+
+* The class name should be exactly same as that of python file.
+* Class should inherit from **EditorPlugin** base class.
+
+Basic syntax of an editor plugin.
+
+```
+from editor.core.editorPlugin import EditorPlugin
+
+
+class EdPlugin(EditorPlugin):
+    def __init__(self, *args, **kwargs):
+        EditorPlugin.__init__(self, *args, **kwargs)
+        
+        # request a separate wxPython panel for this 
+        # plugin instead of default inspector.
+        # However is this case you are responsible ofr
+        # create editor UI yourself.
+        self.request_unique_panel("MyFirstPanel")
+
+    # on_start method is called once
+    def on_start(self):
+        pass
+
+    # update method is called every frame
+    def on_update(self):
+        pass
+```
+ 
+And just like **runtime modules** the **EditorPlugin** base class also extends any user defined **editor plugins** with some base methods and attributes, the base attributes act as a link between **PandaEditor**, **wxPython** and the **Panda3D engine**. 
+
+```
+from editor.core.editorPlugin import EditorPlugin
+
+
+class EdPlugin(EditorPlugin):
+    def __init__(self, *args, **kwargs):
+        EditorPlugin.__init__(self, *args, **kwargs)
+
+    # on_start method is called once
+    def on_start(self):
+        win = self._win
+        mouse_watcher_node = self._mouse_watcher_node
+        render = self._render
+        le = self._le              # level editor
+        wx_panel = self._wx_panel  # the top most parent "Panel" of wxPython, if request to unique panel is
+                                   # successful, otherwise return value of self._wx_panel is None.
+                                   # All wx UI elements should be child of this.
+```
+
+To see an example usage of **editor plugins**, see **SampleEdPlugin.py** included with sample programs.
 
 ### Other
-1. PandaEditor can also load and display **.txt** files, just import **.txt** files in your project like any other asset. 
+1. PandaEditor can also load plain text files as a resource, just import or create a new **.txt** file in your project like any other resource.  
+Click on any **.txt** files to display their contents in the **InspectorTab**. 
   ![Image](images//text_file.png)
 
 ### Known issues
+
 ### Getting started
 To get started, there are samples included with the default project, a more comprehensive getting started section will soon be created.  
 

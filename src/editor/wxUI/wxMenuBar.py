@@ -8,17 +8,16 @@ EVT_OPEN = wx.NewId()
 EVT_SAVE = wx.NewId()
 EVT_SAVE_AS = wx.NewId()
 EVT_APPEND_LIBRARY = wx.NewId()
+EVT_BUILD = wx.NewId()
 
 EVT_ADD_EDITOR_TAB = wx.NewId()
 EVT_ADD_INSPECTOR_TAB = wx.NewId()
 EVT_ADD_RESOURCES_TAB = wx.NewId()
 EVT_ADD_SCENE_GRAPH_TAB = wx.NewId()
 EVT_ADD_LOG_TAB = wx.NewId()
-EVT_ADD_AUXILIARY_TAB = wx.NewId()
 
 EVT_UI_SAVE_LAYOUT = wx.NewId()
 
-EVT_CLEAR_EDITOR_DATA = wx.NewId()
 RELOAD_EDITOR_DATA = wx.NewId()
 
 EVT_ADD_EMPTY_NP = wx.NewId()
@@ -41,7 +40,6 @@ UI_TAB_EVENTS = {
     EVT_ADD_RESOURCES_TAB: "ResourceBrowser",
     EVT_ADD_SCENE_GRAPH_TAB: "SceneBrowser",
     EVT_ADD_LOG_TAB: "LogTab",
-    EVT_ADD_AUXILIARY_TAB: "AuxiliaryPanel"
 }
 
 UI_LAYOUT_EVENTS = {
@@ -70,6 +68,7 @@ PROJ_EVENTS = {
     EVT_SAVE: "SaveScene",
     EVT_SAVE_AS: "SaveSceneAs",
     EVT_APPEND_LIBRARY: "AppendLibrary",
+    EVT_BUILD: "Build",
     # EVT_QUIT: "CloseApplication",
 }
 
@@ -79,6 +78,7 @@ class WxMenuBar(wx.MenuBar):
         wx.MenuBar.__init__(self)
         self.wx_main = wx_main
         self.user_layout_menus = {}
+        self.ed_plugins_menus = {}
 
         self.build()
 
@@ -95,7 +95,7 @@ class WxMenuBar(wx.MenuBar):
                 # menu_item.SetBitmap(wx.Bitmap('exit.png'))
                 menu.Append(menu_item)
 
-        # file_menu
+        # main application and current scene related menu items
         file_menu = wx.Menu()
         self.Append(file_menu, "File")
         menu_items = [(EVT_NEW, "&New Scene\tCtrl+N", None),
@@ -107,16 +107,19 @@ class WxMenuBar(wx.MenuBar):
                       (EVT_CLOSE_APP, "&Exit\tCtrl+E", None)]
         build_menu_bar(file_menu, menu_items)
 
-        # project_menu
+        # project related menus
         proj_menu = wx.Menu()
         self.Append(proj_menu, "Project")
         menu_items = [(EVT_SET_PROJECT, "&Start New Project", None),
                       (EVT_OPEN_PROJECT, "&Load Project", None),
+                      "",
                       (EVT_APPEND_LIBRARY, "&Append Library", None),
+                      "",
+                      (EVT_BUILD, "Build", None),
                       ]
         build_menu_bar(proj_menu, menu_items)
 
-        # add objects section
+        # add objects menus
         object_menu = wx.Menu()
         self.Append(object_menu, "Object")
 
@@ -148,41 +151,55 @@ class WxMenuBar(wx.MenuBar):
         build_menu_bar(game_obj_menu, menu_items)
         object_menu.Append(wx.ID_ANY, "GameObject", game_obj_menu)
 
-        # panels        
+        # panels menus
         tabs_menu = wx.Menu()
-        self.Append(tabs_menu, "Tabs")
+        self.Append(tabs_menu, "Panels")
 
-        menu_items = [(EVT_ADD_INSPECTOR_TAB, "InspectorTab", None),
+        menu_items = [(EVT_ADD_INSPECTOR_TAB, "Inspector", None),
                       (EVT_ADD_RESOURCES_TAB, "ResourceBrowser", None),
                       (EVT_ADD_SCENE_GRAPH_TAB, "SceneGraph", None),
-                      (EVT_ADD_LOG_TAB, "LogTab", None),
-                      (EVT_ADD_AUXILIARY_TAB, "AuxiliaryPanel", None)]
+                      (EVT_ADD_LOG_TAB, "ConsolePanel", None)]
         build_menu_bar(tabs_menu, menu_items)
 
-        # editor layout        
+        # editor layout menus
         self.ed_layout_menu = wx.Menu()
         self.Append(self.ed_layout_menu, "Layout")
 
         menu_items = [(EVT_UI_SAVE_LAYOUT, "SaveLayout", None)]
         build_menu_bar(self.ed_layout_menu, menu_items)
 
-        # general editor events        
+        # menu items related to editor operations
         ed_menu = wx.Menu()
         self.Append(ed_menu, "Editor")
 
-        menu_items = [(EVT_CLEAR_EDITOR_DATA, "ClearEdData", None),
-                      (RELOAD_EDITOR_DATA, "Reload", None), ]
+        menu_items = [(RELOAD_EDITOR_DATA, "Reload", None)]
         build_menu_bar(ed_menu, menu_items)
+
+        # editor plugins menus
+        self.ed_plugins_menu = wx.Menu()
+        self.Append(self.ed_plugins_menu, "Plugins")
 
     def add_layout_menu(self, name):
         if name not in self.user_layout_menus.values():
             _id = wx.NewId()
             menu_item = wx.MenuItem(self.ed_layout_menu, _id, name)
             self.ed_layout_menu.Append(menu_item)
-
             self.user_layout_menus[_id] = name
 
+    def add_plugins_menu(self, menu_name: str):
+        if menu_name not in self.ed_plugins_menus.values():
+            _id = wx.NewId()
+            menu_item = wx.MenuItem(self.ed_plugins_menu, _id, menu_name)
+            self.ed_plugins_menu.Append(menu_item)
+            self.ed_plugins_menus[_id] = menu_name
+
+    def add_custom_command_menu(self, menu_name: str):
+        pass
+
     def clear_layout_menus(self):
+        pass
+
+    def clear_plugin_menus(self):
         pass
 
     def on_event(self, evt):
@@ -206,6 +223,9 @@ class WxMenuBar(wx.MenuBar):
 
         elif evt.GetId() in self.user_layout_menus.keys():
             obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
+
+        elif evt.GetId() in self.ed_plugins_menus.keys():
+            obs.trigger("LoadEdPluginPanel", self.ed_plugins_menus[evt.GetId()])
 
         elif evt.GetId() == EVT_CLOSE_APP:
             obs.trigger("EvtCloseApp")

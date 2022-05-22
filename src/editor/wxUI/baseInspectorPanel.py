@@ -101,6 +101,10 @@ class BaseInspectorPanel(ScrolledPanel):
         return False
 
     def layout_object_properties(self, obj, name, properties):
+        if hasattr(obj, "_editor_plugin"):
+            if obj._editor_plugin and obj.has_unique_panel():
+                return
+
         self.reset()
 
         self.selected_object = obj

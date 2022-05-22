@@ -1,10 +1,10 @@
 from panda3d.core import Vec2
-from editor.core.pModBase import PModBase
+from editor.core.runtimeModule import RuntimeModule
 
 
-class InputManager(PModBase):
+class InputManager(RuntimeModule):
     def __init__(self, *args, **kwargs):
-        PModBase.__init__(self, *args, **kwargs)
+        RuntimeModule.__init__(self, *args, **kwargs)
         self._sort = 3
                 
         # keyboard events
@@ -24,7 +24,7 @@ class InputManager(PModBase):
         self.autoCenterMouse = False
 
     def on_start(self):
-        self._le.panda_app.set_mouse_mode("Relative")
+        # self._le.app.set_mouse_mode("Relative")
 
         self.key_map.clear()
 

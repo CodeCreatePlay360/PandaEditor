@@ -18,7 +18,6 @@ class Manager(Object):
         # don't look flat
         dl = DirectionalLight('gizmoManagerDirLight')
         self.dlNp = self.camera.attachNewNode(dl)
-        self.rootNp.setLight(self.dlNp)
 
     def AddGizmo(self, gizmo):
         """Add a gizmo to be managed by the gizmo manager."""

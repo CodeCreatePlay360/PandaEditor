@@ -56,12 +56,17 @@ class WxCustomProperty(wx.Window):
 
         self.h_offset = h_offset
 
-        self.font = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        self.text_colour = wx.Colour(255, 255, 190, 255)
+        self.font_colour = wx.Colour(255, 255, 190, 255)
+        self.font_size = 9
 
-        self.ctrlLabel = wx.StaticText(self, label=self.label)
-        self.ctrlLabel.SetFont(self.font)
-        self.ctrlLabel.SetForegroundColour(self.text_colour)
+        # create various fonts
+        self.ed_property_font = wx.Font(self.font_size, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
+        self.control_label_font = wx.Font(self.font_size, wx.DEFAULT, wx.NORMAL, wx.BOLD)
+        # ------------------------------------------------------------------------------
+
+        self.ed_property_labels = wx.StaticText(self, label=self.label)
+        self.ed_property_labels.SetFont(self.ed_property_font)
+        self.ed_property_labels.SetForegroundColour(self.font_colour)
 
         self.SetSize(0, 22)
 
@@ -81,8 +86,8 @@ class WxCustomProperty(wx.Window):
         pass
 
     def create_control(self):
-        self.ctrlLabel.SetMinSize((self.ctrlLabel.GetSize().x + LABEL_TO_CNTRL_SPACE,
-                                   self.ctrlLabel.GetSize().y))
+        self.ed_property_labels.SetMinSize((self.ed_property_labels.GetSize().x + LABEL_TO_CNTRL_SPACE,
+                                            self.ed_property_labels.GetSize().y))
 
     def on_control_created(self):
         pass
@@ -130,7 +135,7 @@ class LabelProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
 
-        self.ctrlLabel.Destroy()
+        self.ed_property_labels.Destroy()
 
         if self.property.is_bold:
             self.font = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD)
@@ -168,7 +173,7 @@ class IntProperty(WxCustomProperty):
         self.text_ctrl.SetValue(str(property_value))
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0)
+        self.sizer.Add(self.ed_property_labels, 0)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
@@ -225,7 +230,7 @@ class FloatProperty(WxCustomProperty):
         self.text_ctrl.SetValue(str(property_value))
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0)
+        self.sizer.Add(self.ed_property_labels, 0)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
@@ -279,7 +284,7 @@ class StringProperty(WxCustomProperty):
         self.text_ctrl.SetValue(property_value)
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
@@ -320,7 +325,7 @@ class BoolProperty(WxCustomProperty):
         property_value = self.get_value()
         self.toggle.SetValue(property_value)
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND | wx.TOP, border=-1)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=-1)
         self.sizer.Add(self.toggle, 0)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
@@ -430,7 +435,7 @@ class ColorProperty(WxCustomProperty):
         # label = wx.StaticText(self, label=self.label)
         super().create_control()
         self.color_panel = wx.Panel(self)
-        self.color_panel.SetMaxSize((self.GetSize().x - self.ctrlLabel.GetSize().x - 8, 18))
+        self.color_panel.SetMaxSize((self.GetSize().x - self.ed_property_labels.GetSize().x - 8, 18))
         self.color_panel.SetWindowStyleFlag(wx.BORDER_SIMPLE)
 
         property_val = self.get_value()
@@ -438,7 +443,7 @@ class ColorProperty(WxCustomProperty):
         self.color_panel.SetBackgroundColour(colour)
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         self.sizer.Add(self.color_panel, 1, wx.EXPAND)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
@@ -467,7 +472,7 @@ class ColorProperty(WxCustomProperty):
         evt.Skip()
 
     def on_evt_size(self, evt):
-        self.color_panel.SetMaxSize((self.GetSize().x - self.ctrlLabel.GetSize().x - 8, 18))
+        self.color_panel.SetMaxSize((self.GetSize().x - self.ed_property_labels.GetSize().x - 8, 18))
         evt.Skip()
 
     def bind_events(self):
@@ -500,13 +505,13 @@ class Vector2Property(WxCustomProperty):
         super(Vector2Property, self).create_control()
 
         label_x = wx.StaticText(self, label="H")
-        label_x.SetFont(self.bold_font)
-        label_x.SetForegroundColour(self.text_colour)
+        label_x.SetFont(self.control_label_font)
+        label_x.SetForegroundColour(self.font_colour)
         self.text_ctrl_x = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
         label_y = wx.StaticText(self, label="P")
-        label_y.SetFont(self.bold_font)
-        label_y.SetForegroundColour(self.text_colour)
+        label_y.SetFont(self.control_label_font)
+        label_y.SetForegroundColour(self.font_colour)
         self.text_ctrl_y = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
         # set initial value
@@ -516,7 +521,7 @@ class Vector2Property(WxCustomProperty):
         self.text_ctrl_y.SetValue(str(property_value.y))
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         # self.sizer.AddSpacer(LABEL_TO_CONTROL_MARGIN)
         self.sizer.Add(label_x, 0, wx.RIGHT | wx.TOP, 1)
         self.sizer.Add(self.text_ctrl_x, 1, wx.LEFT | wx.RIGHT, 1)
@@ -602,18 +607,18 @@ class Vector3Property(WxCustomProperty):
         super(Vector3Property, self).create_control()
 
         label_x = wx.StaticText(self, label="H")
-        label_x.SetFont(self.bold_font)
-        label_x.SetForegroundColour(self.text_colour)
+        label_x.SetFont(self.control_label_font)
+        label_x.SetForegroundColour(self.font_colour)
         self.text_ctrl_x = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
         label_y = wx.StaticText(self, label="P")
-        label_y.SetFont(self.bold_font)
-        label_y.SetForegroundColour(self.text_colour)
+        label_y.SetFont(self.control_label_font)
+        label_y.SetForegroundColour(self.font_colour)
         self.text_ctrl_y = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
         label_z = wx.StaticText(self, label="R")
-        label_z.SetFont(self.bold_font)
-        label_z.SetForegroundColour(self.text_colour)
+        label_z.SetFont(self.control_label_font)
+        label_z.SetForegroundColour(self.font_colour)
         self.text_ctrl_z = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
         # set initial value
@@ -629,7 +634,7 @@ class Vector3Property(WxCustomProperty):
         self.text_ctrl_z.SetValue(str(z))
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         # self.sizer.AddSpacer(LABEL_TO_CONTROL_MARGIN)
         self.sizer.Add(label_x, 0, wx.RIGHT | wx.TOP, 1)
         self.sizer.Add(self.text_ctrl_x, 1, wx.LEFT | wx.RIGHT, 1)
@@ -748,7 +753,7 @@ class EnumProperty(WxCustomProperty):
         self.choice_control.SetSelection(self.value)
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.TOP, border=3)
+        self.sizer.Add(self.ed_property_labels, 0, wx.TOP, border=3)
         self.sizer.Add(self.choice_control, 0)
 
         self.bind_events()
@@ -802,7 +807,7 @@ class SliderProperty(WxCustomProperty):
                                 style=wx.SL_HORIZONTAL)
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.TOP, border=2)
+        self.sizer.Add(self.ed_property_labels, 0, wx.TOP, border=2)
         self.sizer.Add(self.slider, 1)
 
         self.bind_events()
@@ -831,8 +836,8 @@ class ButtonProperty(WxCustomProperty):
         self.btn = None
 
     def create_control(self):
-        self.ctrlLabel.Destroy()
-        del self.ctrlLabel
+        self.ed_property_labels.Destroy()
+        del self.ed_property_labels
 
         self.btn = gbtn.GradientButton(self, label=self.property.get_name())
         self.sizer.Add(self.btn, 1, wx.LEFT | wx.RIGHT)
@@ -869,7 +874,7 @@ class ContainerProperty(WxCustomProperty):
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 
         # destroy the default property label
-        self.ctrlLabel.Destroy()
+        self.ed_property_labels.Destroy()
 
         # create a panel label
         label = wx.StaticText(self.panel, label=self.label)
@@ -916,10 +921,10 @@ class StaticBox(WxCustomProperty):
 
     def create_control(self):
         # destroy the default property label
-        self.ctrlLabel.Destroy()
+        self.ed_property_labels.Destroy()
 
         self.static_box = wx.StaticBox(self, label=self.label)
-        self.static_box.SetForegroundColour(self.text_colour)
+        self.static_box.SetForegroundColour(self.font_colour)
         self.static_box.SetFont(self.font)
 
         self.text_ctrl_x = wx.TextCtrl(self.static_box, size=(55, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
@@ -945,13 +950,13 @@ class ObjectControl(WxCustomProperty):
         super().create_control()
 
         self.obj_control = wx.Panel(self)
-        self.obj_control.SetMaxSize((self.GetSize().x - self.ctrlLabel.GetSize().x - 8, 18))
+        self.obj_control.SetMaxSize((self.GetSize().x - self.ed_property_labels.GetSize().x - 8, 18))
         self.obj_control.SetWindowStyleFlag(wx.BORDER_SIMPLE)
 
         self.color_panel.SetBackgroundColour(colour)
 
         # add to sizers
-        self.sizer.Add(self.ctrlLabel, 0, wx.EXPAND)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         self.sizer.Add(self.obj_control, 1, wx.EXPAND)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
 

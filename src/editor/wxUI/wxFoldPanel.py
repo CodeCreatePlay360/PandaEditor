@@ -20,7 +20,7 @@ class WxFoldPanel(wx.Panel):
         self.fold_manager = fold_manager
         
         # load text resources
-        self.font = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD)
+        self.font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.BOLD)
         self.text_colour = wx.Colour(255, 255, 255, 255)
         
         # load fold open and close icons resources

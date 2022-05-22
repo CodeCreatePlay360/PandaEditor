@@ -1,10 +1,9 @@
+import os
+
 import wx
 import wx.lib.agw.aui as aui
 
-from wx.lib.scrolledpanel import ScrolledPanel
-from thirdparty.wxCustom.auiManager import AuiManager
 from editor.wxUI.wxMenuBar import WxMenuBar
-
 from editor.wxUI.resourceBrowser import _ResourceBrowser
 from editor.wxUI.sceneBrowser import SceneBrowserPanel
 from editor.wxUI.inspectorPanel import InspectorPanel
@@ -14,6 +13,8 @@ from editor.wxUI.auxiliaryPanel import AuxiliaryPanel
 from editor.wxUI.wxDialogs import DialogManager
 from editor.p3d import wxPanda
 from editor.constants import object_manager, obs, ICONS_PATH
+
+from thirdparty.wxCustom.auiManager import AuiManager
 
 # scene events
 TB_EVT_NEW = wx.NewId()
@@ -118,18 +119,16 @@ class WxFrame(wx.Frame):
         self.build_scene_ctrls_tb()
         self.build_play_ctrls_tb()
 
-        # setup dialogue manager
         self.dialogue_manager = DialogManager()
 
-        # create various wx-panels
         self.ed_viewport_panel = wxPanda.Viewport(self, style=wx.BORDER_SUNKEN)  # editor_viewport
-        self.inspector_panel = InspectorPanel(self)  # inspector panel
-        # self.inspector_panel.set_layout_auto(False)
+        self.inspector_panel = InspectorPanel(self)
         self.log_panel = LogPanel(self)  # log panel
         self.resource_browser = _ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
-        self.auxiliary_panel = AuxiliaryPanel(self)
+        # self.auxiliary_panel = AuxiliaryPanel(self)
 
+        # default panel definitions
         self.panel_defs = {
             "SceneBrowser": (self.scene_graph_panel,
                              True,
@@ -179,14 +178,10 @@ class WxFrame(wx.Frame):
                        CloseButton(True).
                        MaximizeButton(False).
                        Direction(3).Layer(1).Row(0).Position(0)),
-
-            "AuxiliaryPanel": (self.auxiliary_panel,
-                               True,
-                               aui.AuiPaneInfo().Name("AuxiliaryPanel").
-                               Caption("AuxiliaryPanel").
-                               CloseButton(True).
-                               MaximizeButton(False))
         }
+
+        # user defined panel definitions for editor plugins
+        self.user_panel_defs = {}
 
         self.SetMinSize((800, 600))
         self.Maximize(True)
@@ -209,10 +204,6 @@ class WxFrame(wx.Frame):
 
         # create a default layout
         for pane_def in self.panel_defs.values():
-
-            if pane_def[2].name == "AuxiliaryPanel":
-                self.add_panel_def(name="AuxiliaryPanel", panel_def=pane_def[2])
-                continue
 
             self.aui_manager.AddPane(pane_def[0], pane_def[2])
 
@@ -354,31 +345,53 @@ class WxFrame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.on_event, self.sound_toggle_btn)
         self.Bind(wx.EVT_TOOL, self.on_event, self.lights_toggle_btn)
 
-    def add_panel_def(self, name, panel_def):
-        if name not in self.panel_defs.keys():
-            self.panel_defs[name] = panel_def
-
-    def add_tab(self, tab):
-        if tab in self.panel_defs.keys():
-            paneldef = self.panel_defs[tab]
+    def add_panel_def(self, name: str):
+        if name in self.user_panel_defs.keys():
+            # if an entry already exists than return that entry
+            return self.user_panel_defs[name][0]
         else:
-            print("WxMain --> Unable to add tab {0}, panel is not defined in panel_definitions.".format(tab))
+            # add a new entry
+            panel = AuxiliaryPanel(self)
+            panel_def = (panel, True,
+                         aui.AuiPaneInfo().
+                         Name(name).
+                         Caption(name).
+                         CloseButton(True).
+                         MaximizeButton(False))
+
+            self.user_panel_defs[name] = panel_def
+            return panel_def[0]
+
+    def add_panel(self, panel):
+        if panel in self.user_panel_defs.keys():
+            panel_def = self.user_panel_defs[panel]
+        else:
+            print("[WxMain] Unable to add panel {0}, Panel not found in panel_definitions.".format(panel))
             return
 
-        self.aui_manager.AddPane(paneldef[0], paneldef[2])
-        self.aui_manager.ShowPane(paneldef[0], True)
-
+        self.aui_manager.AddPane(panel_def[0], panel_def[2])
+        self.aui_manager.ShowPane(panel_def[0], True)
         self.aui_manager.Update()
+
+    def clear_panel_contents(self, panel):
+        for key in self.user_panel_defs.keys():
+            panel_def = self.user_panel_defs[key]
+            if panel_def[0] is panel:
+                # delete all sizer(s) / children of this panel
+                for child in panel.GetChildren():
+                    child.Destroy()
 
     def on_pane_close(self, pane):
         self.aui_manager.Update()
 
-    def delete_tab(self, tab):
-        """permanently deletes a tab from aui manager's managed tab's list"""
-        if tab in self.panel_defs.keys():
-            panel_def = self.panel_defs[tab]
+    def delete_panel(self, panel):
+        """permanently deletes a panel from aui manager's managed panels list, only user created panel definitions
+        can be deleted"""
 
-            # tell aui manager to remove and detach the paneldef from managed panes
+        if panel in self.user_panel_defs.keys():
+            panel_def = self.user_panel_defs[panel]
+
+            # tell aui manager to remove and detach the panel_def from managed panes
             self.aui_manager.ClosePane(panel_def[2])
             self.aui_manager.DetachPane(panel_def[0])
 
@@ -386,10 +399,10 @@ class WxFrame(wx.Frame):
             panel_def[0].Destroy()
 
             # finally remove from panel_defs repo
-            del self.panel_defs[tab]
-            print("deleted tab {0}".format(panel_def[0]))
-            # sometimes aui manager crashes during Update when window is minimized and
-            # or aui manager is not in focus
+            del self.user_panel_defs[panel]
+            # print("[WxMain] Panel {0} deleted".format(panel_def[0]))
+
+            # sometimes aui manager crashes during Update when window is minimized or if it is not in focus
             try:
                 self.aui_manager.Update()
             except:
@@ -398,9 +411,6 @@ class WxFrame(wx.Frame):
     def set_status_bar_text(self, txt: str):
         self.status_bar.SetStatusText(txt)
 
-    def get_save_data(self):
-        pass
-
     def on_event(self, evt):
         if evt.GetId() in PROJ_EVENTS:
             obs.trigger("ProjectEvent", PROJ_EVENTS[evt.GetId()])
@@ -408,7 +418,6 @@ class WxFrame(wx.Frame):
         evt.Skip()
 
     def on_evt_left_down(self, evt):
-        print("wx event left down")
         evt.Skip()
 
     def on_event_size(self, event=None):

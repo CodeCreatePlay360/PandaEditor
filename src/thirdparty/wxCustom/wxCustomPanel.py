@@ -1,6 +1,5 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
-from constants import *
 
 
 class WxPanel(wx.Panel):
@@ -20,14 +19,14 @@ class WxPanel(wx.Panel):
     def create_layout(self):
         self.buttons_panel = wx.Panel(self)
         self.buttons_panel.SetMinSize((self.GetClientSize().x, 24))
-        self.buttons_panel.SetBackgroundColour(DARK_GREY)
+        # self.buttons_panel.SetBackgroundColour(DARK_GREY)
         self.buttons_panel.SetWindowStyle(wx.BORDER_SIMPLE)
         self.label = wx.StaticText(self.buttons_panel, label=self.label)
         self.label.SetPosition((2, 4))
 
         # create base panel & setup it's sizer
         self.base_panel = wx.Panel(self)
-        self.base_panel.SetBackgroundColour(GREY)
+        # self.base_panel.SetBackgroundColour(GREY)
         self.base_panel.SetWindowStyle(wx.BORDER_SIMPLE)
         self.base_panel_sizer = wx.BoxSizer(wx.VERTICAL)
         self.base_panel.SetSizer(self.base_panel_sizer)
@@ -67,7 +66,7 @@ class WxScrolledPanel(ScrolledPanel):
     def create_layout(self):
         self.buttons_panel = wx.Panel(self)
         self.buttons_panel.SetMinSize((self.GetClientSize().x, 24))
-        self.buttons_panel.SetBackgroundColour(DARK_GREY)
+        # self.buttons_panel.SetBackgroundColour(DARK_GREY)
         self.buttons_panel.SetWindowStyle(wx.BORDER_SIMPLE)
         self.btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.buttons_panel.SetSizer(self.btn_sizer)
@@ -77,7 +76,7 @@ class WxScrolledPanel(ScrolledPanel):
 
         # create base panel & setup it's sizer
         self.base_panel = wx.Panel(self)
-        self.base_panel.SetBackgroundColour(GREY)
+        # self.base_panel.SetBackgroundColour(GREY)
         self.base_panel.SetWindowStyle(wx.BORDER_SIMPLE)
         self.base_panel.SetSizer(self.base_panel_sizer)
 
