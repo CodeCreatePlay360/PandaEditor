@@ -6,7 +6,7 @@ class Scene:
     def __init__(self, game, name, *args, **kwargs):
         self.game = game
         self.name = name
-        self.camera = None  # the current camera rendering the game world
+        self.active_camera = None
         self.lights = []
 
         # create a scene render and re-parent it to game_render

@@ -4,13 +4,13 @@ from panda3d.core import LColor, PerspectiveLens
 
 
 class LightNp(BaseNp):
-    def __init__(self, np, uid=None):
+    def __init__(self, np, uid=None, *args, **kwargs):
         self.intensity = 1.0
 
         # this attribute is the actual pure color(Hue), as seen, unscaled by intensity
         self.ed_light_colour = LColor(255, 255, 255, 255)
 
-        BaseNp.__init__(self, np, uid)
+        BaseNp.__init__(self, np, uid, *args, **kwargs)
 
         self.set_color(self.ed_light_colour)
         self.setScale(4)

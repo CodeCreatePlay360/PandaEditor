@@ -185,7 +185,6 @@ class IntProperty(WxCustomProperty):
         self.text_ctrl.SetValue(str(val))
 
     def on_event_text(self, evt):
-        print("not being called")
         if is_valid_int(self.text_ctrl.GetValue()):
             self.set_value(int(self.text_ctrl.GetValue()))
             self.old_value = self.text_ctrl.GetValue()

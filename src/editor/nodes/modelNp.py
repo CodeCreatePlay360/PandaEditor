@@ -4,8 +4,8 @@ from panda3d.core import LColor
 
 
 class ModelNp(BaseNp):
-    def __init__(self, np, uid=None):
-        BaseNp.__init__(self, np, uid)
+    def __init__(self, np, uid=None, *args, **kwargs):
+        BaseNp.__init__(self, np, uid, *args, **kwargs)
 
     def create_properties(self):
         super().create_properties()

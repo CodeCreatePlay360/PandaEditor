@@ -1,5 +1,6 @@
 import panda3d.core as p3d_core
 from game.scene import Scene
+from panda3d.core import WindowProperties
 
 
 class Game:
@@ -91,9 +92,23 @@ class Game:
             module.class_instance.ignore_all()
             module.class_instance.stop()
             module.reload_data()
+            self.set_cursor_hidden(False)
 
     def get_module(self, module_name):
         if self.game_modules.__contains__(module_name):
             if not self.game_modules[module_name].class_instance._error:
                 return self.game_modules[module_name].class_instance
         return None
+
+    def set_cursor_hidden(self, value: bool):
+        if type(value) is bool:
+            wp = WindowProperties()
+            wp.setCursorHidden(value)
+            self.win.requestProperties(wp)
+
+    def set_mouse_mode(self, mode):
+        pass
+
+    def clear_active_3d_display_region(self):
+        self.display_region.setActive(False)
+        self.display_region.setCamera(p3d_core.NodePath())

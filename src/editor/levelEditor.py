@@ -6,6 +6,7 @@ import editor.core as ed_core
 import editor.nodes as ed_node_paths
 import editor.gizmos as gizmos
 import editor.constants as constants
+import editor.commands as commands
 
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import taskMgr
@@ -16,7 +17,6 @@ from editor.selection import Selection
 class LevelEditor(DirectObject):
     def __init__(self, panda_app, *args, **kwargs):
         DirectObject.__init__(self)
-
         constants.object_manager.add_object("LevelEditor", self)
 
         self.app = panda_app
@@ -30,7 +30,7 @@ class LevelEditor(DirectObject):
         self.gizmo_mgr_root_np = None
         self.gizmo = False
         self.gizmo_mgr = None
-        self.active_gizmo = None
+        self.active_gizmo = None  # position, rotation, or scale
 
         '''grid, selection and gizmos'''
         self.create_grid(200, 40, 5)
@@ -45,8 +45,9 @@ class LevelEditor(DirectObject):
                               "space": (self.toggle_gizmo_local, None),
                               "+": (self.gizmo_mgr.SetSize, 2),
                               "-": (self.gizmo_mgr.SetSize, 0.5),
-                              "control-d": (self.duplicate_object, []),
+                              "control-d": (self.on_duplicate_nps, None),
                               "x": (self.on_remove, None),
+                              "control-z": (constants.command_manager.undo, None),
 
                               "mouse1": (self.on_mouse1_down, [False]),
                               "mouse2": (self.on_mouse2_down, None),
@@ -113,24 +114,31 @@ class LevelEditor(DirectObject):
         self.setup_default_scene()
 
     def setup_default_scene(self):
-        # lights
-        light = self.add_light("DirectionalLight")
-        light.setPos(400, 200, 350)
-        light.setHpr(p3d_core.Vec3(115, -25, 0))
-        light.set_color(p3d_core.Vec4(255, 250, 140, 255))
-        self.toggle_scene_lights()
+        # add a default sunlight
+        constants.command_manager.do(commands.AddLight(constants.p3d_app, "DirectionalLight"))
+        # light_np = self.add_light("DirectionalLight")
+        light_np = self.project.game.active_scene.render.find("**/DirectionalLight")
+        light_np = light_np.getPythonTag(constants.TAG_PICKABLE)
+        light_np.setPos(400, 200, 350)
+        light_np.setHpr(p3d_core.Vec3(115, -25, 0))
+        light_np.set_color(p3d_core.Vec4(255, 250, 140, 255))
 
-        # camera
-        self.add_camera()
-        self.active_scene.camera.setPos(-220, 280, 80)
-        self.active_scene.camera.setHpr(p3d_core.Vec3(218, 0, 0))
+        # add a default player camera
+        constants.command_manager.do(commands.AddCamera(constants.p3d_app))
 
-        # action
-        obj = self.add_object(constants.CUBE_PATH)
+        cam = self.active_scene.render.find("**/camera").getNetPythonTag(constants.TAG_PICKABLE)
+        cam.setPos(-220, 280, 80)
+        cam.setHpr(p3d_core.Vec3(218, 0, 0))
+        self.app.show_base.set_player_camera(cam)
+
+        # add a default cube
+        constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, constants.CUBE_PATH))
+        # obj = self.add_object(constants.CUBE_PATH)
+        obj = self.project.game.active_scene.render.find("**/cube.fbx")
         obj.setScale(0.5)
-        obj.setHpr(90, 90, 0)
 
         self.set_active_gizmo("pos")
+        self.toggle_scene_lights()
         constants.obs.trigger("ToggleSceneLights", True)
 
     def clean_scene(self):
@@ -151,8 +159,6 @@ class LevelEditor(DirectObject):
                 if np.hasPythonTag(constants.TAG_PICKABLE):
                     np.getPythonTag(constants.TAG_PICKABLE).on_remove()
                 np.remove_node()
-
-        self.active_scene.camera = None
 
     def save_ed_state(self):
         def save(np):
@@ -266,7 +272,7 @@ class LevelEditor(DirectObject):
             if hasattr(mod, cls_name):
                 cls = getattr(mod, cls_name)
                 obj_type = None
-                runtime_plugin = True  # set this to true if editor plugin
+                runtime_plugin = True  # set this to false if editor plugin
 
                 try:
                     obj_type = cls.__mro__[1]
@@ -411,17 +417,19 @@ class LevelEditor(DirectObject):
             gizmo.hide(constants.GAME_GEO_MASK)
 
     def start_transform(self):
-        self.gizmo = True
-        self.update_gizmo()
+        self.selection.previous_matrices.clear()
+        for np in self.selection.selected_nps:
+            self.selection.previous_matrices[np] = np.get_transform()
 
     def stop_transform(self):
         self.gizmo = False
+        cmd = commands.TransformNPs(self.app, self.selection.previous_matrices)
+        constants.command_manager.do(cmd)
 
     def set_active_gizmo(self, gizmo):
+        self.gizmo = True
         self.active_gizmo = gizmo
-        if len(self.selection.selected_nps) > 0:
-            self.gizmo_mgr.SetActiveGizmo(gizmo)
-            self.update_gizmo()
+        self.gizmo_mgr.SetActiveGizmo(gizmo)
 
     def set_gizmo_local(self, val):
         self.gizmo_mgr.SetLocal(val)
@@ -465,23 +473,17 @@ class LevelEditor(DirectObject):
         self.mouse_1_down = False
 
         if self.selection.marquee.IsRunning():
+            last_selections = [np for np in self.selection.selected_nps]
             nps = self.selection.stop_drag_select()
-            # start transform
+
+            # select nps and start transform
             if len(nps) > 0:
-                constants.obs.trigger("LevelEditorEvent", constants.le_Evt_NodePath_Selected, nps)
-                self.selection.set_selected(nps)
-                self.gizmo_mgr.SetActiveGizmo(self.active_gizmo)
-                self.start_transform()
+                constants.command_manager.do(commands.SelectObjects(self.app, nps, last_selections))
             else:
-                self.gizmo_mgr.SetActiveGizmo(None)
-                self.gizmo = False
-                # trigger deselect all
-                constants.obs.trigger("LevelEditorEvent", constants.le_Evt_Deselect_All)
+                self.deselect_all()
 
         elif self.gizmo_mgr.IsDragging() or self.gizmo:
             self.stop_transform()
-
-        # self.panda_app.wx_main.ed_viewport_panel.OnMouseOneUp()
 
     def on_mouse2_down(self):
         pass
@@ -491,7 +493,12 @@ class LevelEditor(DirectObject):
 
     def deselect_all(self):
         self.selection.deselect_all()
-        self.gizmo_mgr.RefreshActiveGizmo()
+        self.gizmo_mgr.SetActiveGizmo(None)
+        self.gizmo = False
+        constants.obs.trigger("OnDeselectAllNPs")
+
+    def deselect_nps(self, nps):
+        pass
 
     def switch_state(self, state):
         if state == constants.GAME_STATE:
@@ -547,7 +554,9 @@ class LevelEditor(DirectObject):
                      "AmbientLight": ed_node_paths.EdAmbientLight,
                      "EdCameraNp": ed_node_paths.EdCameraNp}
 
-    def add_nodepath(self, path):
+    def load_model(self, path):
+        """loads a 3d model from input argument 'path' to active render"""
+
         # TODO insert an exception handler here
         # TODO replace show-base loader with a new loader instance
 
@@ -562,7 +571,7 @@ class LevelEditor(DirectObject):
                     add_children(child)
 
         np = self.app.show_base.loader.loadModel(path)
-        np = ed_node_paths.ModelNp(np, uid="ModelNp")
+        np = ed_node_paths.ModelNp(np, uid="ModelNp", path=path)
         np.setColor(p3d_core.LColor(1, 1, 1, 1))
         np.setPythonTag(constants.TAG_PICKABLE, np)
 
@@ -574,7 +583,7 @@ class LevelEditor(DirectObject):
         elif self.ed_state is constants.GAME_STATE:
             pass
 
-        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, np)
+        constants.obs.trigger("OnAddObjects(s)", [np])
         self.set_selected([np])
         return np
 
@@ -582,8 +591,10 @@ class LevelEditor(DirectObject):
         actor = ed_node_paths.ActorNp(path, uid="ActorNp")
         actor.setPythonTag(constants.TAG_PICKABLE, actor)
         actor.reparentTo(self.active_scene.render)
-        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, actor)
+
+        constants.obs.trigger("OnAddObjects(s)", [actor])
         self.set_selected([actor])
+        return actor
 
     def reparent_np(self, src_np, target_np):
         if target_np is None:
@@ -598,9 +609,11 @@ class LevelEditor(DirectObject):
         return True
 
     def add_camera(self, *args):
+        """
         if len(self.active_scene.scene_cameras) > 0:
             print("[LevelEditor] currently support is limited to one camera per scene.")
             return
+        """
 
         # create a panda3d camera
         cam_np = p3d_core.NodePath(p3d_core.Camera("Camera"))
@@ -623,12 +636,12 @@ class LevelEditor(DirectObject):
         cam_handle.setScale(2.25)
 
         self.active_scene.scene_cameras.append(cam_np)
-        self.active_scene.camera = cam_np
 
-        self.app.show_base.set_player_camera(self.active_scene.camera)
-        self.app.show_base.update_aspect_ratio()
+        # self.active_scene.camera = cam_np
+        # self.app.show_base.set_player_camera(self.active_scene.camera)
+        # self.app.show_base.update_aspect_ratio()
 
-        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, cam_np)
+        constants.obs.trigger("OnAddObjects(s)", [cam_np])
         self.set_selected([cam_np])
         return cam_np
 
@@ -640,9 +653,9 @@ class LevelEditor(DirectObject):
         name = np.get_name()
         name = name.split("\\")[-1]
         np.set_name(name)
-        # --------------------------------------------------------
+        # ------------------------------------------------------
 
-        np = ed_node_paths.ModelNp(np, uid="ModelNp")
+        np = ed_node_paths.ModelNp(np, uid="ModelNp", path=path)
         np.setPythonTag(constants.TAG_PICKABLE, np)
         np.reparent_to(self.active_scene.render)
         np.setHpr(p3d_core.Vec3(0, 90, 0))
@@ -651,7 +664,9 @@ class LevelEditor(DirectObject):
         mat.setDiffuse((1, 1, 1, 1))
         np.setMaterial(mat)
 
-        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, np)
+        # constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, np)
+        constants.obs.trigger("OnAddObjects(s)", [np])
+        self.set_selected([np])
         return np
 
     def add_light(self, light):
@@ -685,17 +700,17 @@ class LevelEditor(DirectObject):
             model = self.app.show_base.loader.loadModel(model)
             model.reparentTo(light_np)
 
-            # update selection
-            constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, light_np)
+            constants.obs.trigger("OnAddObjects(s)", [light_np])
             self.set_selected([light_np])
             return light_np
 
-    def rename_object(self, np, name):
-        np.set_name(name)
+    def on_duplicate_nps(self):
+        if len(self.selection.selected_nps) > 0:
+            (constants.command_manager.do(commands.DuplicateNPs(self.app)))
 
-    def duplicate_object(self, selections=None, select=True, *args):
+    def duplicate_nps(self, selections=None, select=True, *args):
         def recreate_object(_np):
-            """for some reason np.copy does not duplicate python tag as well
+            """for some reason np.copy does not duplicate python tag,
             so clear existing python tag and recreate it"""
             if _np.hasPythonTag(constants.TAG_PICKABLE):
                 _uid = _np.getPythonTag(constants.TAG_PICKABLE).uid
@@ -724,7 +739,7 @@ class LevelEditor(DirectObject):
         if selections is None:
             selections = []
 
-        if len(selections) is 0:
+        if len(selections) == 0:
             selections = self.selection.selected_nps
 
         new_selections = []
@@ -732,84 +747,102 @@ class LevelEditor(DirectObject):
         for np in selections:
             uid = np.uid
             if uid in self.NODE_TYPE_MAP.keys():
-
-                # ---------------------------------------------------------------- #
-                # for the time being there is one camera limit per scene
-                if uid is "EdCameraNp" or self.get_uid(np, "EdCameraNp") is not None:
-                    print("[LevelEditor] only one scene camera limit per scene")
-                    continue
-                # ----------------------------------------------------------------- #
-
                 x = np.copyTo(self.active_scene.render)
                 x = recreate_object(x)  # recreate the parent
                 new_selections.append(x)
                 recreate_children(x)    # recreate children
 
-        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, new_selections)
+        # constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, new_selections)
+        constants.obs.trigger("OnAddObjects(s)", new_selections)
 
         if select:
             self.set_selected(new_selections)
-            constants.obs.trigger("LevelEditorEvent", constants.le_Evt_NodePath_Selected, new_selections)
+            # constants.obs.trigger("LevelEditorEvent", constants.le_Evt_NodePath_Selected, new_selections)
 
         return new_selections
 
     def on_remove(self, *args, **kwargs):
-        if len(self.selection.selected_nps) > 0:
-            constants.obs.trigger("LevelEditorEvent", constants.le_Evt_Remove_NodePaths)
+        constants.obs.trigger("RemoveNPs", self.selection.selected_nps)
 
-    cam_found = False  # set this to true, if a camera is found during recursive NodePath remove operation
-                       # as removing a camera requires some proper clean up, remember to set back to false afterwards.
-    found_uid = None
+    def remove_nps(self, nps: list = None, permanent=False):
+        """removes the given nps or current selected nps from active_scene but does not delete them"""
 
-    def remove_selected_nps(self, selections=None):
-        if selections is None:
-            selections = self.selection.selected_nps
-
-        def clean(_np):
+        def clean_np(_np):
             _np = _np.getPythonTag(constants.TAG_PICKABLE)
+
             if _np is None:
                 return
 
+            # clean up for scene lights
+            if _np == self.project.game.display_region.get_camera():
+                self.project.game.clear_active_3d_display_region()
+
+            # clean up for scene lights
             if _np.uid in ["PointLight", "SpotLight", "DirectionalLight", "AmbientLight"]:
                 self.active_scene.scene_lights.remove(_np)
                 self.app.show_base.render.clearLight(_np)
 
-            elif _np.uid is "EdCameraNp":
-                self.cam_found = True
-
-        def clean_up_children(_np):
+        def clean_children(_np):
             if len(_np.getChildren()) > 0:
                 for child in _np.getChildren():
-                    clean(child)
-                    clean_up_children(child)
+                    clean_np(child)
+                    clean_children(child)
 
-        # go through all node paths, and perform a cleanup.
-        for np in selections:
-            if np.hasNetPythonTag(constants.TAG_PICKABLE):
-                clean(np)  # clean up parent
-                clean_up_children(np)  # go through all the children, do cleanup
+        if not nps:
+            nps = []
+            for np in self.selection.selected_nps:
+                nps.append(np)
 
-                if np.uid is "ActorNp":
+        constants.obs.trigger("OnRemoveObject(s)", nps)
+        self.deselect_all()
+
+        for np in nps:
+            clean_np(np)
+            clean_children(np)
+
+            if permanent:
+                if np.uid == "ActorNp":
                     np.cleanup()
-                elif np.uid is "EdCameraNp":
-                    self.cam_found = True
                 else:
                     np.remove_node()
-
             else:
-                np.remove_node()
+                np.reparent_to(self.app.show_base.edRender)
+                np.hide(constants.ED_GEO_MASK)
+                np.hide(constants.GAME_GEO_MASK)
 
-        if self.cam_found:
-            # properly clean up removing a camera
-            self.active_scene.camera.reparent_to(self.active_scene.render)
-            self.active_scene.scene_cameras.remove(self.active_scene.camera)
-            self.active_scene.camera.remove_node()
-            self.active_scene.camera = None
-            self.app.show_base.player_camera = None
+    def restore_nps(self, nps: list):
+        """restores given nps or current selected nps from ed_render to active_scene"""
+        def restore_np(_np):
+            _np = _np.getPythonTag(constants.TAG_PICKABLE)
 
-        self.cam_found = False
-        self.selection.selected_nps.clear()
-        self.update_gizmo()
+            if _np is None:
+                return
+
+            # clean up for scene lights
+            if _np == self.project.game.display_region.get_camera():
+                self.project.game.clear_active_3d_display_region()
+
+            # clean up for scene lights
+            if _np.uid in ["PointLight", "SpotLight", "DirectionalLight", "AmbientLight"]:
+                self.active_scene.scene_lights.append(_np)
+                self.app.show_base.render.set_light(_np)
+
+        def restore_children(_np):
+            if len(_np.getChildren()) > 0:
+                for child in _np.getChildren():
+                    restore_np(child)
+                    restore_children(child)
+
+        for np in nps:
+            restore_np(np)
+            restore_children(np)
+
+            np.reparent_to(self.active_scene.render)
+            np.show(constants.ED_GEO_MASK)
+            np.show(constants.GAME_GEO_MASK)
+
+        constants.obs.trigger("OnAddObjects(s)", nps)
+        self.set_selected(nps)
 
     def toggle_scene_lights(self):
         """inverts scene_light_on status and returns inverted value"""
@@ -827,11 +860,15 @@ class LevelEditor(DirectObject):
         return self.scene_lights_on
 
     def set_selected(self, selections: list):
-        self.selection.deselect_all()
         self.selection.set_selected(selections)
-        self.update_gizmo()
 
-        constants.obs.trigger("LevelEditorEvent", constants.le_Evt_NodePath_Selected, selections)
+        # start transform------------------------------
+        self.gizmo_mgr.SetActiveGizmo(self.active_gizmo)
+        self.gizmo = True
+        self.update_gizmo()
+        # ----------------------------------------------
+
+        constants.obs.trigger("OnSelectObjects", selections)
 
     def get_save_data(self):
         pass

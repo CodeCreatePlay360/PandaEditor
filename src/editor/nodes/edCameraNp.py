@@ -5,8 +5,8 @@ from editor.constants import obs
 
 
 class EdCameraNp(BaseNp):
-    def __init__(self, np, uid=None):
-        BaseNp.__init__(self, np, uid)
+    def __init__(self, np, uid=None, *args, **kwargs):
+        BaseNp.__init__(self, np, uid, *args, **kwargs)
 
         self.lens_type_map = 0  # [Lens type] 0: Perspective, 1: Ortho
         self.current_lens_type = -1

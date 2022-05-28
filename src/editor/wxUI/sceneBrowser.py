@@ -1,5 +1,6 @@
 import wx
 import editor.constants as constants
+import editor.commands as commands
 from panda3d.core import NodePath
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.baseTreeControl import BaseTreeControl
@@ -16,10 +17,10 @@ class SceneBrowserPanel(ScrolledPanel):
 
         self.wx_main = args[0]
 
-        self.resource_browser = SceneBrowser(self, self.wx_main)
+        self.scene_graph = SceneBrowser(self, self.wx_main)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.resource_browser, 1, wx.EXPAND)
+        sizer.Add(self.scene_graph, 1, wx.EXPAND)
 
         self.SetSizer(sizer)
         self.Layout()
@@ -246,12 +247,12 @@ class SceneBrowser(BaseTreeControl):
         self.SetItemText(tree_item, name)
 
     def rename_item(self):
-        constants.obs.trigger("RenameItem",
-                              self.GetItemData(self.GetSelection()),
-                              self.GetItemText(self.GetSelection()))
+        np = self.GetItemData(self.GetSelection())
+        constants.obs.trigger("RenameNPs", np)
 
     def remove_item(self):
-        constants.obs.trigger("RemoveObject(s)")
+        np = self.GetItemData(self.GetSelection())
+        constants.obs.trigger("RemoveNPs", [np])
 
     def get_selected_np(self):
         sel = self.GetSelection()

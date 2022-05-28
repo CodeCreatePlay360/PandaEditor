@@ -9,9 +9,7 @@ def try_execute(func, *args, **kwargs):
         func(*args, **kwargs)
     except Exception as exc:
         tb_str = traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
-        
         print("Exception occurred...!")
-
         for x in tb_str:
             print(x)
             
@@ -28,9 +26,7 @@ def try_execute_1(func, *args, **kwargs):
         val = func(*args, **kwargs)
     except Exception as exc:
         tb_str = traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
-
         print("Exception occurred...!")
-
         for x in tb_str:
             print(x)
 

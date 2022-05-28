@@ -48,7 +48,7 @@ class Basics(RuntimeModule):
         win = self._win                                # the window we are rendering into currently
         mouse_watcher_node = self._mouse_watcher_node  # mouse watcher node
         render = self._render                          # this is the current scene's parent node-path
-        game = self._game                              # instance of current running game
+        self.game = self._game                         # instance of current running game
 
     def on_start(self):
         """on_start method is called only once"""
@@ -57,8 +57,7 @@ class Basics(RuntimeModule):
         if test_module is not None:
             test_module.foo()
 
-        self.accept("q", self.bar, [])  # event handling
-        smiley = self._render.find("**/smiley")
+        self.accept("q", self.bar, [])
 
     def foo(self):
         return self.bar

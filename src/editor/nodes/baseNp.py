@@ -4,12 +4,11 @@ from panda3d.core import Vec3
 
 
 class BaseNp(NodePath):
-    def __init__(self, np, uid=None):
+    def __init__(self, np, uid, *args, **kwargs):
         NodePath.__init__(self, np)
 
         self.uid = uid
-
-        self._task = None
+        self.path = kwargs.pop("path", None)  # path this resource is loaded from
 
         self.properties = []
         self._save_data_info = {}

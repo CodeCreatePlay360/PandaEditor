@@ -1,17 +1,17 @@
 import os
 import wx
+import editor.commands as commands
 
 from thirdparty.event.observable import Observable
 from editor.utils.exceptionHandler import try_execute, try_execute_1
 from panda3d.core import BitMask32
+from editor.commandManager import CommandManager
+
 
 EDITOR_STATE = 0  # editor mode
 GAME_STATE = 1  # play mode
 
-RUN_TIME_GEO = 0
-EDITOR_GEO = 1
-SCENE_GEO = 2
-GEO_NO_PARENT = -1
+MAX_COMMANDS_COUNT = 12
 
 TAG_IGNORE = "SELECT_IGNORE"
 TAG_PICKABLE = "PICKABLE"
@@ -39,6 +39,10 @@ CAPSULE_PATH = MODELS_PATH_2 + "\\" + "capsule.fbx"
 CONE_PATH = MODELS_PATH_2 + "\\" + "cone.fbx"
 PLANE_PATH = MODELS_PATH_2 + "\\" + "plane.fbx"
 
+command_manager = CommandManager()
+obs = Observable()  # the event manager object
+p3d_app = None
+
 
 class ObjectManager:
     def __init__(self):
@@ -62,7 +66,6 @@ class ObjectManager:
 
 
 object_manager = ObjectManager()
-obs = Observable()  # the event manager object
 
 
 class DirectoryEventHandler:
@@ -554,40 +557,6 @@ class WxEventHandler:
         le.add_actor(xx)
 
     @staticmethod
-    @obs.on("SelectTreeItem")
-    def on_tree_item_select(selections):
-        """event called when a resource item is selected in resource browser"""
-
-        def on_module_selected(module):
-            scene_graph_panel.deselect_all()
-            le.deselect_all()
-            inspector_panel.layout_object_properties(module, module._name, module.get_properties())
-
-        def on_txt_file_selected(txt_file):
-            scene_graph_panel.deselect_all()
-            le.deselect_all()
-            inspector_panel.set_text(txt_file)
-
-        le = object_manager.get("LevelEditor")
-        inspector_panel = object_manager.get("PropertiesPanel")
-        scene_graph_panel = object_manager.get("SceneGraphPanel")
-
-        for file_name, data in selections:
-            # try to get module from level editor
-            name = file_name.split(".")[0]
-
-            if le.is_module(name):
-                # if it's a user module
-                on_module_selected(le.get_module(name))
-
-            elif le.is_text_file(name):
-                # if it's a text file
-                on_txt_file_selected(le.get_text_file(name))
-
-            else:
-                inspector_panel.reset()
-
-    @staticmethod
     def reparent_np(src_np, target_np):
         le = object_manager.get("LevelEditor")
         if le.reparent_np(src_np, target_np):
@@ -644,13 +613,79 @@ wx_event_handler = {ui_Evt_On_NodePath_Selected: WxEventHandler.on_np_selected,
 
 
 # ---------------------------------------- LEVEL EDITOR EVENTs ---------------------------------------- #
-# all events thrown from level editor
+# events emitted by level editor
+
 @obs.on("OnSceneStart")
 def on_scene_start():
     """should be called as soon as a new scene is started"""
     scene_graph = object_manager.get("SceneGraphPanel")
     le = object_manager.get("LevelEditor")
     scene_graph.init(le.active_scene.render)
+
+
+@obs.on("OnAddObjects(s)")
+def on_add_objects(objects: list):
+    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
+    scene_graph.add_np(objects)
+
+
+@obs.on("RenameNPs")
+def on_rename_nps(np):
+    def on_ok(new_name: str):
+        if old_name != new_name:
+            command_manager.do(commands.RenameNPs(p3d_app, np, old_name, new_name))
+
+    old_name = np.get_name()
+
+    dm = p3d_app.wx_main.dialogue_manager
+    dm.create_dialog("TextEntryDialog",
+                     "Rename Item",
+                     dm,
+                     descriptor_text="RenameSelection",
+                     ok_call=on_ok,
+                     initial_text=old_name)
+
+
+@obs.on("OnRenameNPs")
+def on_rename_nps(np, new_name):
+    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
+    scene_graph.on_item_rename(np, new_name)
+    LevelEditorEventHandler.update_properties_panel()
+
+
+@obs.on("RemoveNPs")
+def on_remove_nps(objects: list):
+    def on_ok():
+        scene_graph_panel.on_remove_nps(objects)
+        inspector_panel.reset()
+        command_manager.do(commands.RemoveObjects(p3d_app, objects))
+
+    wx_main = p3d_app.wx_main
+    scene_graph_panel = p3d_app.wx_main.scene_graph_panel.scene_graph
+    inspector_panel = p3d_app.wx_main.inspector_panel
+
+    dm = wx_main.dialogue_manager
+    dm.create_dialog("YesNoDialog", "Remove selections",
+                     dm,
+                     descriptor_text="Confirm remove selection(s) ?",
+                     ok_call=on_ok)
+
+
+@obs.on("OnSelectObjects")
+def on_select_objects(objects: list):
+    if len(objects) > 0:
+        np = objects[0]
+
+        object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
+        object_manager.get("ProjectBrowser").UnselectAll()
+        object_manager.get("SceneGraphPanel").select_np(objects)
+
+
+@obs.on("OnDeselectAllNPs")
+def on_deselect_all():
+    object_manager.get("PropertiesPanel").reset()
+    # object_manager.get("ProjectBrowser").UnselectAll()
+    object_manager.get("SceneGraphPanel").deselect_all()
 
 
 @obs.on("ToggleSceneLights")
@@ -673,47 +708,6 @@ def toggle_lights(value):
     wx_main.aui_manager.Update()
 
 
-@obs.on("RenameItem")
-def rename_item(np, np_name):
-    def on_ok(*args):
-        le.rename_object(np, args[0])
-        scene_browser.on_item_rename(np, args[0])
-        LevelEditorEventHandler.update_properties_panel()  # to reflect changes in wx-UI
-
-    le = object_manager.get("LevelEditor")
-    scene_browser = object_manager.get("SceneGraphPanel")
-    dm = object_manager.get("WxMain").dialogue_manager
-
-    dm.create_dialog("TextEntryDialog",
-                     "Rename Item", dm, descriptor_text="Rename Selection", ok_call=on_ok,
-                     initial_text=np_name)
-
-
-@obs.on("RemoveObject(s)")
-def on_remove_selected():
-    def on_ok(*args):
-        le = object_manager.get("LevelEditor")
-        scene_graph_panel = object_manager.get("SceneGraphPanel")
-        properties_panel = object_manager.get("PropertiesPanel")
-
-        selections = []
-        for np in le.selection.selected_nps:
-            selections.append(np)
-        le.selection.deselect_all()
-
-        scene_graph_panel.on_remove_nps(selections)
-        le.remove_selected_nps(selections)
-        properties_panel.reset()
-
-    wx_main = object_manager.get("WxMain")
-    dm = wx_main.dialogue_manager
-    dm.create_dialog("YesNoDialog", "Delete Item",
-                     dm,
-                     descriptor_text="Are you sure you want to delete this selection ?",
-                     ok_call=on_ok)
-
-
-# ---------------------------------------- Wx EVENTs ---------------------------------------- #
 @obs.on("PluginFailed")
 def plugin_execution_failed(plugin):
     print("Plugin {0} execution failed".format(plugin._name))
@@ -721,11 +715,37 @@ def plugin_execution_failed(plugin):
     le.unregister_editor_plugins(plugin)
 
 
-# all events thrown from wx widgets
-@obs.on("LoadEdPluginPanel")
-def load_ed_plugin(panel):
-    wx_main = object_manager.get("WxMain")
-    wx_main.add_panel(panel)
+# ---------------------------------------- Wx EVENTs ---------------------------------------- #
+# events emitted by wx-widgets
+
+@obs.on("SelectTreeItem")
+def on_tree_item_select(selections):
+    """event called when a resource item is selected in resource browser"""
+
+    def on_module_selected(module):
+        inspector_panel.layout_object_properties(module, module._name, module.get_properties())
+
+    def on_txt_file_selected(txt_file):
+        inspector_panel.set_text(txt_file)
+
+    le = object_manager.get("LevelEditor")
+    le.deselect_all()
+    inspector_panel = object_manager.get("PropertiesPanel")
+
+    for file_name, data in selections:
+        # try to get module from level editor
+        name = file_name.split(".")[0]
+
+        if le.is_module(name):
+            # if it's a user module
+            on_module_selected(le.get_module(name))
+
+        elif le.is_text_file(name):
+            # if it's a text file
+            on_txt_file_selected(le.get_text_file(name))
+
+        else:
+            inspector_panel.reset()
 
 
 @obs.on("PropertyModified")

@@ -1,10 +1,10 @@
+import editor.constants as constants
 from panda3d.core import WindowProperties
 from editor.showBase import ShowBase
 from editor.wxUI.wxMain import WxFrame
 from editor.levelEditor import LevelEditor
 from editor.p3d import wxPanda
-from editor.constants import object_manager, wx
-from editor.actionManager import ActionManager
+from editor.commandManager import CommandManager, Command
 
 
 class MyApp(wxPanda.App):
@@ -13,9 +13,10 @@ class MyApp(wxPanda.App):
     _mouse_mode = None
     level_editor = None
     obs = None
+    command_manager = None
 
     def init(self):
-        object_manager.add_object("P3dApp", self)
+        constants.object_manager.add_object("P3dApp", self)
 
         # self.obs = Observable()
         self.wx_main = WxFrame(parent=None, title="PandaEditor (Default Project)", size=(800, 600))
@@ -24,13 +25,17 @@ class MyApp(wxPanda.App):
         self.wx_main.Show()
         self.ReplaceEventLoop()
 
-        wx.CallAfter(self.finish_init)
+        constants.wx.CallAfter(self.finish_init)
 
     def finish_init(self):
+        constants.p3d_app = self
         self.show_base.finish_init()
         self.level_editor = LevelEditor(self)
         self.wx_main.finish_init()
         self.level_editor.start()
+        self.command_manager = CommandManager()
+
+        self.set_mouse_mode("Confined")
 
     MOUSE_MODE_MAP = {"Absolute": WindowProperties.M_absolute,
                       "Relative": WindowProperties.M_relative,
@@ -45,13 +50,8 @@ class MyApp(wxPanda.App):
         mode = self.MOUSE_MODE_MAP[mode]
         self._mouse_mode = mode
         wp = WindowProperties()
-        wp.setMouseMode(mode)
-        self.wx_main.ed_viewport_panel.GetWindow().requestProperties(wp)
-
-    def set_cursor_hidden(self, hidden=False):
-        wp = WindowProperties()
-        wp.setCursorHidden(hidden)
-        self.wx_main.game_viewport_panel.GetWindow().requestProperties(wp)
+        wp.setMouseMode(WindowProperties.M_confined)
+        self.show_base.main_win.requestProperties(wp)
 
     def get_mouse_mode(self):
         return self._mouse_mode

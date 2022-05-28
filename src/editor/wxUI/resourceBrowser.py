@@ -2,6 +2,7 @@ import os
 import shutil
 import wx
 import editor.constants as constants
+import editor.commands as commands
 
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.baseTreeControl import BaseTreeControl
@@ -547,58 +548,7 @@ class ResourceBrowser(BaseTreeControl):
                          initial_text=self.GetItemText(self.GetSelection()))
 
     def duplicate(self, *args):
-        print("[ResourceBrowser] Not implemented")
-        return
-
-        def get_unique_file_name(_file_name, _ext, _original):
-            """Provided a file_name, it's extension and original file this function returns
-            a unique file_name with same name, extension and path as of original"""
-
-            is_name_unique = False
-            counter = 0
-            max_count = 5
-
-            _unique_name = ""
-
-            head, tail = os.path.split(_original)
-
-            while not is_name_unique:
-
-                # to break free from while loop
-                counter += 1
-                if counter > max_count:
-                    break
-
-                # create a unique file name by adding a number to original file name
-                _unique_name = _file_name + str(counter) + _ext
-                if not os.path.exists(head + "//" + _unique_name):
-                    is_name_unique = True
-
-            if is_name_unique:
-                return _unique_name
-            return False
-
-        def _duplicate(original_file, new_file_name):
-            head, tail = os.path.split(original_file)  # name and path of original file
-            _new_file = head + "//" + new_file_name  # path of original + new file's name
-            shutil.copy(original_file, _new_file)
-            print("duplicated {0}".format(_new_file))
-
-        selections = self.GetSelections()
-
-        for sel in selections:
-            path = self.GetItemData(sel)
-
-            # only allow files
-            if not os.path.isfile(path):
-                continue
-
-            item = self.GetItemText(sel)
-            file_name, extension = os.path.splitext(item)  # separate file_name and extension
-
-            unique_name = get_unique_file_name(file_name, extension, path)  # get a unique file name
-            if unique_name:
-                try_execute(_duplicate, path, unique_name)
+        pass
 
     def remove_item(self, *args):
         def on_ok():
@@ -642,10 +592,13 @@ class ResourceBrowser(BaseTreeControl):
         dm.create_dialog("TextEntryDialog", "CreateNewAsset", dm, descriptor_text="New Asset Name", ok_call=on_ok)
 
     def load_model(self, *args):
-        constants.obs.trigger("WxEvent", constants.ui_Evt_Load_Model, self.GetItemPyData(self.GetSelection()))
+        path = self.GetItemPyData(self.GetSelection())
+        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=False))
 
     def load_actor(self, *args):
-        constants.obs.trigger("WxEvent", constants.ui_Evt_Load_Actor, self.GetItemPyData(self.GetSelection()))
+        path = self.GetItemPyData(self.GetSelection())
+        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=True))
+        # constants.obs.trigger("WxEvent", constants.ui_Evt_Load_Actor, self.GetItemPyData(self.GetSelection()))
 
     def import_assets(self, *args):
         def create_wild_card(wild_card=""):

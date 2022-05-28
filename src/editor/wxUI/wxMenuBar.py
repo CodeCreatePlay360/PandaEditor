@@ -1,5 +1,9 @@
 import wx
-from editor.constants import obs, CUBE_PATH, CAPSULE_PATH, PLANE_PATH, CONE_PATH
+import editor.commands as commands
+import editor.constants as constants
+
+# from editor.constants import CUBE_PATH, CAPSULE_PATH, PLANE_PATH, CONE_PATH, obs, command_manager, p3d_app
+
 
 EVT_SET_PROJECT = wx.NewId()
 EVT_OPEN_PROJECT = wx.NewId()
@@ -47,10 +51,10 @@ UI_LAYOUT_EVENTS = {
 }
 
 OBJECT_EVENTS = {
-    EVT_ADD_CAPSULE: CAPSULE_PATH,
-    EVT_ADD_CONE: CONE_PATH,
-    EVT_ADD_PLANE: PLANE_PATH,
-    EVT_ADD_CUBE: CUBE_PATH
+    EVT_ADD_CAPSULE: constants.CAPSULE_PATH,
+    EVT_ADD_CONE: constants.CONE_PATH,
+    EVT_ADD_PLANE: constants.PLANE_PATH,
+    EVT_ADD_CUBE: constants.CUBE_PATH
 }
 
 LIGHT_EVENTS = {
@@ -204,30 +208,33 @@ class WxMenuBar(wx.MenuBar):
 
     def on_event(self, evt):
         if evt.GetId() in PROJ_EVENTS:
-            obs.trigger("ProjectEvent", PROJ_EVENTS[evt.GetId()])
+            constants.obs.trigger("ProjectEvent", PROJ_EVENTS[evt.GetId()])
 
         elif evt.GetId() in UI_TAB_EVENTS:
-            obs.trigger("EventAddTab", UI_TAB_EVENTS[evt.GetId()])
+            constants.obs.trigger("EventAddTab", UI_TAB_EVENTS[evt.GetId()])
 
         elif evt.GetId() in UI_LAYOUT_EVENTS:
-            obs.trigger("UILayoutEvent", UI_LAYOUT_EVENTS[evt.GetId()])
+            constants.obs.trigger("UILayoutEvent", UI_LAYOUT_EVENTS[evt.GetId()])
 
         elif evt.GetId() in LIGHT_EVENTS:
-            obs.trigger("AddLight", LIGHT_EVENTS[evt.GetId()])
+            constants.command_manager.do(commands.AddLight(constants.p3d_app, LIGHT_EVENTS[evt.GetId()]))
+            # constants.obs.trigger("AddLight", LIGHT_EVENTS[evt.GetId()])
 
         elif evt.GetId() is EVT_ADD_CAMERA:
-            obs.trigger("AddCamera")
+            constants.command_manager.do(commands.AddCamera(constants.p3d_app))
+            # constants.obs.trigger("AddCamera")
 
         elif evt.GetId() in OBJECT_EVENTS:
-            obs.trigger("AddObject", OBJECT_EVENTS[evt.GetId()])
+            constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, OBJECT_EVENTS[evt.GetId()]))
+            # obs.trigger("AddObject", OBJECT_EVENTS[evt.GetId()])
 
         elif evt.GetId() in self.user_layout_menus.keys():
-            obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
+            constants.obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
 
         elif evt.GetId() in self.ed_plugins_menus.keys():
-            obs.trigger("LoadEdPluginPanel", self.ed_plugins_menus[evt.GetId()])
+            constants.obs.trigger("LoadEdPluginPanel", self.ed_plugins_menus[evt.GetId()])
 
         elif evt.GetId() == EVT_CLOSE_APP:
-            obs.trigger("EvtCloseApp")
+            constants.obs.trigger("EvtCloseApp")
 
         evt.Skip()

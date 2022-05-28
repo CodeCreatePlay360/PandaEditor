@@ -14,6 +14,7 @@ class Selection(Object):
 
         self.append = False
         self.selected_nps = []
+        self.previous_matrices = {}  # [np] = matrix
 
         # Create a marquee
         self.marquee = Marquee('marquee', *args, **kwargs)
@@ -33,13 +34,15 @@ class Selection(Object):
 
     def set_selected(self, nps, append=False):
         if type(nps) is not list:
-            print("Selection --> set_selected argument must be of type list")
+            print("[Selection] Input argument 'nps' must be a list")
             return
 
         if not append:
             self.deselect_all()
 
-        self.selected_nps = nps
+        for np in nps:
+            self.selected_nps.append(np)
+
         for np in self.selected_nps:
             np.showTightBounds()
 
@@ -65,13 +68,14 @@ class Selection(Object):
         tag. Also append any node which was under the mouse at the end of the
         operation.
         """
+
         self.marquee.Stop()
 
-        new_selection = []
+        new_selections = []
 
         if self.append:
             for np in self.selected_nps:
-                new_selection.append(np)
+                new_selections.append(np)
         else:
             self.deselect_all()
 
@@ -79,20 +83,20 @@ class Selection(Object):
             if pick_np is not None:
                 if self.marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_PICKABLE):
                     np = pick_np.getNetPythonTag("PICKABLE")
-                    if np not in new_selection:
-                        new_selection.append(np)
+                    if np not in new_selections:
+                        new_selections.append(np)
 
         # Add any node path which was under the mouse to the selection.
         np = self.get_nodepath_under_mouse()
         if np is not None and np.hasNetPythonTag(TAG_PICKABLE):
             np = np.getNetPythonTag("PICKABLE")
-            if np not in new_selection:
-                new_selection.append(np)
+            if np not in new_selections:
+                new_selections.append(np)
 
-        for np in new_selection:
+        for np in new_selections:
             self.selected_nps.append(np)
 
-        return new_selection
+        return new_selections
 
     def update(self):
         pass

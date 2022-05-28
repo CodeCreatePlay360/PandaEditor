@@ -18,8 +18,6 @@ class EdPlugin(EditorPlugin):
                                                     setter=self.set_game_viewport_style,
                                                     getter=self.get_game_viewport_style))
 
-        self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
-
         self.grid_size = 200
         self.gridStep = 40
         self.sub_divisions = 5
@@ -28,13 +26,18 @@ class EdPlugin(EditorPlugin):
         self.add_hidden_variable("gridStep")
         self.add_hidden_variable("sub_divisions")
 
+        self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
         self.add_property(EdProperty.Label(name="GridSettings", is_bold=True))
         self.add_property(EdProperty.ObjProperty(name="grid_size", value=self.grid_size, _type=float, obj=self))
         self.add_property(EdProperty.ObjProperty(name="gridStep", value=self.gridStep, _type=float, obj=self))
         self.add_property(EdProperty.ObjProperty(name="sub_divisions", value=self.sub_divisions, _type=float, obj=self))
         self.add_property(EdProperty.ButtonProperty("SetGrid", self.set_grid))  # button property
 
-        self.request_unique_panel("MyFirstPanel")
+        self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
+        self.add_property(EdProperty.Label(name="ViewPortSettings", is_bold=True))
+        self.add_property(EdProperty.ButtonProperty("SetSelectedCameraAsActive", self.set_grid))  # button property
+
+        # self.request_unique_panel("MyFirstPanel")
 
     # on_start method is called once
     def on_start(self):
@@ -56,5 +59,4 @@ class EdPlugin(EditorPlugin):
         return self.curr_game_viewport_style
 
     def set_grid(self):
-        self._le.create_grid(self.grid_size, self.gridStep, self.sub_divisions)
         self._le.create_grid(self.grid_size, self.gridStep, self.sub_divisions)

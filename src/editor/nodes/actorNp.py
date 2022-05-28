@@ -4,7 +4,7 @@ from editor.nodes.modelNp import ModelNp
 
 class ActorNp(ModelNp, Actor):
     def __init__(self, np, uid=None, *args, **kwargs):
-        ModelNp.__init__(self, np, uid)
+        ModelNp.__init__(self, np, uid, *args, **kwargs)
         Actor.__init__(self, np, *args, **kwargs)
 
     def restore_data(self):
