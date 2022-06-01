@@ -124,11 +124,6 @@ class ShowBase(SB.ShowBase):
         self.edDr.setCamera(cam)
         cam.node().setCameraMask(ED_GEO_MASK)
 
-    def set_player_camera(self, cam):
-        self.player_camera = cam
-        self.game_dr.setCamera(cam)
-        cam.node().setCameraMask(GAME_GEO_MASK)
-
     def maximize_game_dr(self):
         self.edDr.setActive(False)
         self.game_dr.set_dimensions((0, 1, 0, 1))

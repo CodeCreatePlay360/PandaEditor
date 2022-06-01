@@ -21,7 +21,7 @@ class Basics(RuntimeModule):
         # --------------------------------------------------------------------
 
         # --------------------------------------------------------------------
-        # Custom properties, have to be created manually
+        # Custom properties
         self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
         self.add_property(EdProperty.Label(name="Custom Properties", is_bold=True))  # label property
         self.add_property(EdProperty.ButtonProperty("Button", self.on_button))  # button property
@@ -49,10 +49,11 @@ class Basics(RuntimeModule):
         mouse_watcher_node = self._mouse_watcher_node  # mouse watcher node
         render = self._render                          # this is the current scene's parent node-path
         self.game = self._game                         # instance of current running game
+        self.np = self._render.find("**/cube.fbx")
+        self.camera_np = self._render.find("**/Camera")
 
     def on_start(self):
         """on_start method is called only once"""
-
         test_module = self._game.get_module("TestModule")  # get a reference to other modules or editor plugins
         if test_module is not None:
             test_module.foo()

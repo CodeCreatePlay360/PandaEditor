@@ -78,7 +78,7 @@ class LevelEditor(DirectObject):
         self.__ed_plugins = {}
         self.__user_modules = {}
         self.__text_files = {}
-        self.unique_panel_requests = {}
+        self.detached_nps = []
         # ---------------------------------------
 
         self.bind_key_events()
@@ -106,7 +106,8 @@ class LevelEditor(DirectObject):
 
     def create_new_scene(self):
         if self.active_scene:
-            self.clean_scene()
+            # TODO prompt the user to save current scene
+            self.clean_active_scene()
 
         self.active_scene = self.project.game.create_new_scene("default")
         constants.obs.trigger("OnSceneStart")
@@ -125,15 +126,13 @@ class LevelEditor(DirectObject):
 
         # add a default player camera
         constants.command_manager.do(commands.AddCamera(constants.p3d_app))
-
         cam = self.active_scene.render.find("**/camera").getNetPythonTag(constants.TAG_PICKABLE)
         cam.setPos(-220, 280, 80)
         cam.setHpr(p3d_core.Vec3(218, 0, 0))
-        self.app.show_base.set_player_camera(cam)
+        self.set_player_camera(cam)
 
         # add a default cube
         constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, constants.CUBE_PATH))
-        # obj = self.add_object(constants.CUBE_PATH)
         obj = self.project.game.active_scene.render.find("**/cube.fbx")
         obj.setScale(0.5)
 
@@ -141,7 +140,7 @@ class LevelEditor(DirectObject):
         self.toggle_scene_lights()
         constants.obs.trigger("ToggleSceneLights", True)
 
-    def clean_scene(self):
+    def clean_active_scene(self):
         # clear scene lights
         self.app.show_base.render.clearLight()
         self.active_scene.scene_lights.clear()
@@ -154,11 +153,15 @@ class LevelEditor(DirectObject):
         self.selection.deselect_all()
         self.update_gizmo()
 
+        for np in self.app.show_base.ed_render.get_children():
+            if np.hasPythonTag(constants.TAG_PICKABLE):
+                np.getPythonTag(constants.TAG_PICKABLE).on_remove()
+            np.remove_node()
+
         for np in self.app.show_base.render.get_children():
-            if type(np) == p3d_core.NodePath:
-                if np.hasPythonTag(constants.TAG_PICKABLE):
-                    np.getPythonTag(constants.TAG_PICKABLE).on_remove()
-                np.remove_node()
+            if np.hasPythonTag(constants.TAG_PICKABLE):
+                np.getPythonTag(constants.TAG_PICKABLE).on_remove()
+            np.remove_node()
 
     def save_ed_state(self):
         def save(np):
@@ -537,6 +540,7 @@ class LevelEditor(DirectObject):
         self.save_ed_state()  # save editor state data
 
         if self.maximized_play_mode:
+            # TODO re-implement maximize_game_dr here
             self.app.show_base.maximize_game_dr()
 
         self.project.game.start()
@@ -637,9 +641,8 @@ class LevelEditor(DirectObject):
 
         self.active_scene.scene_cameras.append(cam_np)
 
-        # self.active_scene.camera = cam_np
-        # self.app.show_base.set_player_camera(self.active_scene.camera)
-        # self.app.show_base.update_aspect_ratio()
+        if self.project.game.display_region.get_camera() == p3d_core.NodePath():
+            self.set_player_camera(cam_np)
 
         constants.obs.trigger("OnAddObjects(s)", [cam_np])
         self.set_selected([cam_np])
@@ -687,8 +690,10 @@ class LevelEditor(DirectObject):
             light_np.show(constants.ED_GEO_MASK)
             light_np.hide(constants.GAME_GEO_MASK)
 
+            # TODO fix this
             if self.ed_state == constants.GAME_STATE:
-                light_np.reparent_to(self.runtime_np_parent)
+                pass
+                # light_np.reparent_to(self.runtime_np_parent)
             else:
                 light_np.reparent_to(self.active_scene.render)
 
@@ -776,6 +781,7 @@ class LevelEditor(DirectObject):
             # clean up for scene lights
             if _np == self.project.game.display_region.get_camera():
                 self.project.game.clear_active_3d_display_region()
+                self.app.show_base.player_camera = None
 
             # clean up for scene lights
             if _np.uid in ["PointLight", "SpotLight", "DirectionalLight", "AmbientLight"]:
@@ -795,6 +801,7 @@ class LevelEditor(DirectObject):
 
         constants.obs.trigger("OnRemoveObject(s)", nps)
         self.deselect_all()
+        detached_nodes = []
 
         for np in nps:
             clean_np(np)
@@ -806,9 +813,20 @@ class LevelEditor(DirectObject):
                 else:
                     np.remove_node()
             else:
-                np.reparent_to(self.app.show_base.edRender)
-                np.hide(constants.ED_GEO_MASK)
-                np.hide(constants.GAME_GEO_MASK)
+                detached_nodes.append(np)
+                np.detachNode()
+
+        if len(detached_nodes) > 0:
+            for np in detached_nodes:
+                # TODO check if python's copy.copy works here
+                self.detached_nps.append(np)
+
+            # break all references to detached nodes in all user modules
+            for key in self.__user_modules.keys():
+                cls = self.__user_modules[key].class_instance
+                for name, val in cls.__dict__.items():
+                    if (type(val) == p3d_core.NodePath) and (val in self.detached_nps):
+                        setattr(cls, name, None)
 
     def restore_nps(self, nps: list):
         """restores given nps or current selected nps from ed_render to active_scene"""
@@ -868,26 +886,26 @@ class LevelEditor(DirectObject):
         self.update_gizmo()
         # ----------------------------------------------
 
-        constants.obs.trigger("OnSelectObjects", selections)
+        constants.obs.trigger("OnSelectNPs", selections)
+
+    def set_game_viewport_style(self, val: bool):
+        if type(val) is bool:
+            self.maximized_play_mode = val
+        else:
+            print("[LevelEditor] game viewport style value must be type bool")
+
+    def set_player_camera(self, cam):
+        cam = cam.getNetPythonTag(constants.TAG_PICKABLE)
+        if cam and cam.uid == "EdCameraNp":
+            cam.node().setCameraMask(constants.GAME_GEO_MASK)
+            self.project.game.set_3d_display_region_active(cam)
+
+            # TODO FIX THIS
+            self.app.show_base.player_camera = cam
+            self.app.show_base.update_aspect_ratio()
 
     def get_save_data(self):
         pass
-
-    def get_uid(self, np, uid):
-        """this function recursively searches a node-path and finds np with uid equal to argument uid,
-        if more than one np of same uid is found the last is returned, None is returned is no np is found"""
-        def search(_np):
-            if len(_np.getChildren()) > 0:
-                for child in _np.getChildren():
-                    if child.hasPythonTag(constants.TAG_PICKABLE):
-                        if child.getPythonTag(constants.TAG_PICKABLE).uid == uid:
-                            self.found_uid = child.getPythonTag(constants.TAG_PICKABLE)
-
-                    search(child)
-
-        self.found_uid = None
-        search(np)
-        return self.found_uid
 
     def get_module(self, module_name):
         """returns a user module by class_name, modules with an error will not be found"""
@@ -913,12 +931,3 @@ class LevelEditor(DirectObject):
         if self.__text_files.__contains__(name):
             return True
         return False
-
-    def toggle_play_minimized(self):
-        self.maximized_play_mode = not self.maximized_play_mode
-
-    def set_game_viewport_style(self, val: bool):
-        if type(val) is bool:
-            self.maximized_play_mode = val
-        else:
-            print("[LevelEditor] game viewport style value must be type bool")

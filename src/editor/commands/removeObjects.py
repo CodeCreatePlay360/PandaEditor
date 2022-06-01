@@ -2,9 +2,12 @@ from editor.commandManager import Command
 
 
 class RemoveObjects(Command):
+
+    RemoveObjects = ""
+
     def __init__(self, app, nps, *args, **kwargs):
         super(RemoveObjects, self).__init__(app)
-
+        self.clean_up = ""
         self.objects = []
 
     def __call__(self, *args, **kwargs):

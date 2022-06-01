@@ -14,7 +14,7 @@ class UserModule:
         # get all attributes of module and add them to object data
         for name, val in self.class_instance.get_savable_atts():
             prop = ed_utils.EdProperty.Property(name, val)
-            # print("[UserModule] data saved for obj {0} NAME {1} VALUE {2}".format(self.class_instance._name,
+            # print("[UserModule] data saved for obj {0} NAME: {1} VALUE: {2}".format(self.class_instance._name,
             # name, val))
             obj_data.add_property(prop)
 

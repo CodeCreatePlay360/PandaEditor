@@ -1,6 +1,5 @@
 import wx
 import editor.constants as constants
-import editor.commands as commands
 from panda3d.core import NodePath
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.baseTreeControl import BaseTreeControl
@@ -210,13 +209,15 @@ class SceneBrowser(BaseTreeControl):
 
         self.PopupMenu(popup_menu, evt.GetPoint())
         popup_menu.Destroy()
+
+        # self.on_evt_select()
+
         evt.Skip()
 
     def on_evt_popup_menu(self, evt):
         if evt.GetId() in self.evt_map.keys():
             func = self.evt_map[evt.GetId()]
             func()
-
         evt.Skip()
 
     def on_evt_select(self, evt):
@@ -226,7 +227,7 @@ class SceneBrowser(BaseTreeControl):
                 continue
             selections.append(self.GetItemPyData(item))
 
-        constants.obs.trigger("WxEvent", constants.ui_Evt_On_NodePath_Selected, selections)
+        constants.obs.trigger("OnSelectSceneGraphItem", selections)
         evt.Skip()
 
     def do_drag_drop(self, src_item: str, target_item: str):

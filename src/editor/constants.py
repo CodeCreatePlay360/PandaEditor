@@ -538,7 +538,7 @@ class WxEventHandler:
         le = object_manager.get("LevelEditor")
         le.selection.set_selected(args, append=len(args) > 1)
         le.update_gizmo()
-
+        print("nodepath selected")
         obs.trigger("UpdateInspector", *args)
 
     @staticmethod
@@ -561,12 +561,6 @@ class WxEventHandler:
         le = object_manager.get("LevelEditor")
         if le.reparent_np(src_np, target_np):
             object_manager.get("SceneGraphPanel").reparent(src_np, target_np)
-
-    @staticmethod
-    @obs.on("EventAddTab")
-    def evt_add_tab(panel):
-        """event called when a request to a new tab is made from main menu bar"""
-        object_manager.get("WxMain").add_panel(panel)
 
     @staticmethod
     @obs.on("UILayoutEvent")
@@ -613,7 +607,7 @@ wx_event_handler = {ui_Evt_On_NodePath_Selected: WxEventHandler.on_np_selected,
 
 
 # ---------------------------------------- LEVEL EDITOR EVENTs ---------------------------------------- #
-# events emitted by level editor
+# events emitted by level editor or related to level editor
 
 @obs.on("OnSceneStart")
 def on_scene_start():
@@ -671,11 +665,10 @@ def on_remove_nps(objects: list):
                      ok_call=on_ok)
 
 
-@obs.on("OnSelectObjects")
+@obs.on("OnSelectNPs")
 def on_select_objects(objects: list):
     if len(objects) > 0:
         np = objects[0]
-
         object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
         object_manager.get("ProjectBrowser").UnselectAll()
         object_manager.get("SceneGraphPanel").select_np(objects)
@@ -748,9 +741,14 @@ def on_tree_item_select(selections):
             inspector_panel.reset()
 
 
+@obs.on("OnSelectSceneGraphItem")
+def on_select_scene_graph_item(nps):
+    p3d_app.level_editor.set_selected(nps)
+
+
 @obs.on("PropertyModified")
 def property_modified(*args):
-    """should be called when property from object inspector is modified"""
+    """should be called when a wx-property from object inspector is modified"""
     object_manager.get("PropertiesPanel").update_properties_panel(*args)
     le = object_manager.get("LevelEditor")
     le.update_gizmo()
@@ -773,6 +771,12 @@ def update_inspector(*args):
     pp.layout_object_properties(np, np.get_name(), np.get_properties())
 
 
+@obs.on("LoadEdPluginPanel")
+def add_panel(panel):
+    """event called when a request to a new tab is made from main menu bar"""
+    p3d_app.wx_main.add_panel(panel)
+
+
 @obs.on("ResizeEvent")
 def resize_event(*args):
     """emitted from wx-main when wx-window is resized"""
@@ -785,3 +789,10 @@ def exit_app(close_wx=True):
     if close_wx:
         object_manager.get("WxMain").Close()
     object_manager.get("P3dApp").Quit()
+
+
+# ---------------------------------------- All other events ---------------------------------------- #
+@obs.on("CleanUnusedLoadedNPs")
+def clean_unused_loaded_nps():
+    # TODO explanation
+    p3d_app.level_editor.remove_nps(p3d_app.level_editor.detached_nps, permanent=True)

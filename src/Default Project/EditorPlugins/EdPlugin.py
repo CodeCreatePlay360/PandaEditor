@@ -33,9 +33,11 @@ class EdPlugin(EditorPlugin):
         self.add_property(EdProperty.ObjProperty(name="sub_divisions", value=self.sub_divisions, _type=float, obj=self))
         self.add_property(EdProperty.ButtonProperty("SetGrid", self.set_grid))  # button property
 
+        self.gameCamNp = ""
         self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
         self.add_property(EdProperty.Label(name="ViewPortSettings", is_bold=True))
-        self.add_property(EdProperty.ButtonProperty("SetSelectedCameraAsActive", self.set_grid))  # button property
+        self.add_property(EdProperty.ObjProperty(name="gameCamNp", value="None", _type=str, obj=self))
+        self.add_property(EdProperty.ButtonProperty("SetAsActiveCam", self.set_set_active_cam_as_game_cam))
 
         # self.request_unique_panel("MyFirstPanel")
 
@@ -60,3 +62,8 @@ class EdPlugin(EditorPlugin):
 
     def set_grid(self):
         self._le.create_grid(self.grid_size, self.gridStep, self.sub_divisions)
+
+    def set_set_active_cam_as_game_cam(self):
+        camera = self._render.find("**/"+self.gameCamNp)
+        if camera:
+            self._le.set_player_camera(camera)

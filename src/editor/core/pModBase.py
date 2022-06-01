@@ -1,6 +1,7 @@
 import editor.constants as constant
 import editor.utils as ed_utils
 from direct.showbase.DirectObject import DirectObject
+from panda3d.core import NodePath
 
 
 def execute(*args, **kwargs):
@@ -154,7 +155,7 @@ class PModBase(DirectObject):
     def get_savable_atts(self):
         attrs = []
         for name, val in self.__dict__.items():
-            if self._discarded_attrs.__contains__(name) or hasattr(PModBase("", None), name):
+            if self._discarded_attrs.__contains__(name) or hasattr(PModBase("", None), name) or type(val) == NodePath:
                 continue
             attrs.append((name, val))
 

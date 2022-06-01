@@ -230,10 +230,6 @@ class ResourceBrowser(BaseTreeControl):
         evt.Skip()
 
     def on_item_activated(self, evt):
-        item_path = self.GetItemData(self.GetSelection())
-        if os.path.isfile(item_path) and item_path.split(".")[-1] == "py":
-            pass
-            # self.open_file(item_path)
         evt.Skip()
 
     def create_popup_menu(self, evt):

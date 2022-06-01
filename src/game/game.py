@@ -23,12 +23,22 @@ class Game:
         self.scenes = []        # all scenes in this game
         self.active_scene = None
 
+    def clear_active_3d_display_region(self):
+        self.display_region.setActive(False)
+        self.display_region.setCamera(p3d_core.NodePath())
+
     def create_new_scene(self, name: str):
         """creates a new scene, the active should be first cleared by the level editor"""
         scene = Scene(self, name)
         self.active_scene = scene
         self.scenes.append(scene)
         return scene
+
+    def get_module(self, module_name):
+        if self.game_modules.__contains__(module_name):
+            if not self.game_modules[module_name].class_instance._error:
+                return self.game_modules[module_name].class_instance
+        return None
 
     def start(self):
         # classify all modules according to task sort values
@@ -94,12 +104,6 @@ class Game:
             module.reload_data()
             self.set_cursor_hidden(False)
 
-    def get_module(self, module_name):
-        if self.game_modules.__contains__(module_name):
-            if not self.game_modules[module_name].class_instance._error:
-                return self.game_modules[module_name].class_instance
-        return None
-
     def set_cursor_hidden(self, value: bool):
         if type(value) is bool:
             wp = WindowProperties()
@@ -109,6 +113,6 @@ class Game:
     def set_mouse_mode(self, mode):
         pass
 
-    def clear_active_3d_display_region(self):
-        self.display_region.setActive(False)
-        self.display_region.setCamera(p3d_core.NodePath())
+    def set_3d_display_region_active(self, cam):
+        self.display_region.set_active(True)
+        self.display_region.set_camera(cam)
