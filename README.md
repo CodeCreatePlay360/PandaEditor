@@ -35,7 +35,7 @@ PandaEditor is using the Gizmos package and InfoPanel from another open source p
 * [Other](https://github.com/barbarian77/PandaEditor#other)
 * [Known issues](https://github.com/barbarian77/PandaEditor#known-issues)
 * [Getting started](https://github.com/barbarian77/PandaEditor#getting-started)
-* [Tutorials]
+* [Tutorials](https://github.com/barbarian77/PandaEditor#tutorials)
 
 ### Starting a new project
 PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is setup for you.
@@ -51,7 +51,7 @@ Its located in current working directory and should not be deleted. You can use 
 * **alt + middle mouse** to dolly
 * **alt + left mouse button drag** to zoom
 * **control + D** to duplicate selected objects
-* **X key** to remove / delete selected objects
+* **X** to remove / delete selected objects
 * **control + z** to undo
 
 ### Runtime modules
@@ -184,7 +184,7 @@ To get started, there are samples included with the default project, for a more 
 
 *****
 ## Tutorials
-### @ Part 01 HelloWorld
+### Part-01 HelloWorld
 1. In this very first intoduction, we will create a basic rotating cube.
 2. Open PandaEditor & create a new runtime module **ResourceBrowser > Add > Runtime module** name it **_RotatingCube_**, open this file in explorer **ResourceBrowser > ShowInExplorer** and open it up in any python editor.
 3. We need two things **A reference to the cube and a rotation speed** so add them first
