@@ -1,8 +1,9 @@
 import math
-import panda3d.core as p3dCore
+import panda3d.core as p3d_core
+import wx
+
 from editor.core.editorPlugin import EditorPlugin
 from editor.utils import EdProperty
-import wx
 
 
 class EdPlugin(EditorPlugin):
@@ -11,7 +12,7 @@ class EdPlugin(EditorPlugin):
 
         # __init__ should not contain anything except for variable declaration...!
         self.curr_game_viewport_style = 0
-        self.add_hidden_variable("curr_game_viewport_style")
+        self.hidden_attrs = "curr_game_viewport_style"
         self.add_property(EdProperty.ChoiceProperty("GameViewPortStyle",
                                                     choices=["Minimized", "Maximized"],
                                                     value=self.curr_game_viewport_style,  # initial value
@@ -22,9 +23,9 @@ class EdPlugin(EditorPlugin):
         self.gridStep = 40
         self.sub_divisions = 5
 
-        self.add_hidden_variable("grid_size")
-        self.add_hidden_variable("gridStep")
-        self.add_hidden_variable("sub_divisions")
+        self.hidden_attrs = "grid_size"
+        self.hidden_attrs = "gridStep"
+        self.hidden_attrs = "sub_divisions"
 
         self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
         self.add_property(EdProperty.Label(name="GridSettings", is_bold=True))
@@ -34,24 +35,29 @@ class EdPlugin(EditorPlugin):
         self.add_property(EdProperty.ButtonProperty("SetGrid", self.set_grid))  # button property
 
         self.gameCamNp = ""
+        self.hidden_attrs = "gameCamNp"
+
         self.add_property(EdProperty.EmptySpace(0, 10))  # add some empty space
         self.add_property(EdProperty.Label(name="ViewPortSettings", is_bold=True))
         self.add_property(EdProperty.ObjProperty(name="gameCamNp", value="None", _type=str, obj=self))
-        self.add_property(EdProperty.ButtonProperty("SetAsActiveCam", self.set_set_active_cam_as_game_cam))
-
-        # self.request_unique_panel("MyFirstPanel")
+        self.add_property(EdProperty.ButtonProperty("SetAsActiveCam", self.set_active_cam_as_game_cam))
 
     # on_start method is called once
     def on_start(self):
 
         le = self._le              # level editor
-        wx_panel = self._wx_panel  # the top most parent "Panel" of wxPython, if request to unique panel is
-                                   # successful, otherwise return value of self._wx_panel is None.
+        wx_panel = self._panel     # the top most parent "Panel" of wxPython, if request to unique panel is
+                                   # successful, otherwise return value of self._panel is None.
                                    # All wx UI elements should be child of this.
 
     # update method is called every frame
     def on_update(self):
-        pass
+        """
+        if self._globals.selected_resource_item:
+            print(self._globals.selected_resource_item)
+        if len(self._globals.selected_nps) > 0:
+            print(self._globals.selected_nps)
+        """
 
     def set_game_viewport_style(self, val: int):
         self.curr_game_viewport_style = val
@@ -63,7 +69,7 @@ class EdPlugin(EditorPlugin):
     def set_grid(self):
         self._le.create_grid(self.grid_size, self.gridStep, self.sub_divisions)
 
-    def set_set_active_cam_as_game_cam(self):
+    def set_active_cam_as_game_cam(self):
         camera = self._render.find("**/"+self.gameCamNp)
         if camera:
             self._le.set_player_camera(camera)

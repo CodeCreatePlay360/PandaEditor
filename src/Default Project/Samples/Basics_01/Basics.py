@@ -38,6 +38,7 @@ class Basics(RuntimeModule):
 
         # a choice property
         self.curr_choice = 0
+        self.hidden_attrs = "curr_choice"
         self.add_property(EdProperty.ChoiceProperty("Apple",
                                                     choices=["Apple", "PineApple", "BigApple", "Blueberry"],
                                                     value=self.curr_choice,  # initial value

@@ -98,7 +98,7 @@ class WxCustomProperty(wx.Window):
     def set_value(self, val):
         self.value = val
         property_value = self.property.set_value(val)
-
+        obs.trigger("PropertyModified")
         return property_value
 
     def get_value(self):

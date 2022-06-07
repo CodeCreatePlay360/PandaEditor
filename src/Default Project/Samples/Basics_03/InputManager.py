@@ -14,7 +14,7 @@ class InputManager(RuntimeModule):
         # extend this list to fit your project
         # do not create key-up events they are automatically created
         self.keys = ["w", "a", "s", "d", "q", "e", "r", "arrow_up", "arrow_left", "arrow_right", "escape", "mouse1"]
-        self.add_discarded_attr("keys")
+        self.discarded_attrs = "keys"
 
         self.__dx = 0
         self.__dy = 0

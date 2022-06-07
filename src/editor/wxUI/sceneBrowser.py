@@ -241,7 +241,7 @@ class SceneBrowser(BaseTreeControl):
             return
         # ------------------------------------------------------------------------------ #
 
-        constants.obs.trigger("WxEvent", constants.ui_Evt_Reparent_NodePath, src_np, target_np)
+        constants.obs.trigger(constants.obs.trigger("ReparentNPs", src_np, target_np))
 
     def on_item_rename(self, np, name):
         tree_item = self.np_to_tree_item_map[np]

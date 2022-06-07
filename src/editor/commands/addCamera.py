@@ -7,7 +7,7 @@ class AddCamera(Command):
 
         self.camera_np = None
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         self.camera_np = self.app.level_editor.add_camera()
 
     def undo(self):

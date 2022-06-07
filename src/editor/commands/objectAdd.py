@@ -10,7 +10,7 @@ class ObjectAdd(Command):
         self.path = obj_path
         self.object = None
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         self.object = self.app.level_editor.add_object(self.path)
 
     def undo(self):

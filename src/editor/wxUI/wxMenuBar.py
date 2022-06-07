@@ -2,8 +2,6 @@ import wx
 import editor.commands as commands
 import editor.constants as constants
 
-# from editor.constants import CUBE_PATH, CAPSULE_PATH, PLANE_PATH, CONE_PATH, obs, command_manager, p3d_app
-
 
 EVT_SET_PROJECT = wx.NewId()
 EVT_OPEN_PROJECT = wx.NewId()
@@ -35,6 +33,10 @@ EVT_ADD_CUBE = wx.NewId()
 EVT_ADD_CAPSULE = wx.NewId()
 EVT_ADD_CONE = wx.NewId()
 EVT_ADD_PLANE = wx.NewId()
+
+EVT_OPEN_DISCORD = wx.NewId()
+EVT_OPEN_PATREON = wx.NewId()
+EVT_OPEN_DISCOURSE = wx.NewId()
 
 EVT_CLOSE_APP = wx.NewId()
 
@@ -74,6 +76,12 @@ PROJ_EVENTS = {
     EVT_APPEND_LIBRARY: "AppendLibrary",
     EVT_BUILD: "Build",
     # EVT_QUIT: "CloseApplication",
+}
+
+SOCIAL_MEDIA_LINKS = {
+    EVT_OPEN_DISCORD: "Discord",
+    EVT_OPEN_PATREON: "Patreon",
+    EVT_OPEN_DISCOURSE: "Panda3dDiscourse",
 }
 
 
@@ -156,14 +164,14 @@ class WxMenuBar(wx.MenuBar):
         object_menu.Append(wx.ID_ANY, "GameObject", game_obj_menu)
 
         # panels menus
-        tabs_menu = wx.Menu()
-        self.Append(tabs_menu, "Panels")
+        panels = wx.Menu()
+        self.Append(panels, "Panels")
 
         menu_items = [(EVT_ADD_INSPECTOR_TAB, "Inspector", None),
                       (EVT_ADD_RESOURCES_TAB, "ResourceBrowser", None),
                       (EVT_ADD_SCENE_GRAPH_TAB, "SceneGraph", None),
                       (EVT_ADD_LOG_TAB, "ConsolePanel", None)]
-        build_menu_bar(tabs_menu, menu_items)
+        build_menu_bar(panels, menu_items)
 
         # editor layout menus
         self.ed_layout_menu = wx.Menu()
@@ -182,6 +190,15 @@ class WxMenuBar(wx.MenuBar):
         # editor plugins menus
         self.ed_plugins_menu = wx.Menu()
         self.Append(self.ed_plugins_menu, "Plugins")
+
+        # social media links menu
+        social_links = wx.Menu()
+        self.Append(social_links, "Social")
+
+        menu_items = [(EVT_OPEN_DISCORD, "Discord", None),
+                      (EVT_OPEN_DISCOURSE, "Panda3d discourse", None),
+                      (EVT_OPEN_PATREON, "Patreon", None)]
+        build_menu_bar(social_links, menu_items)
 
     def add_layout_menu(self, name):
         if name not in self.user_layout_menus.values():
@@ -233,6 +250,9 @@ class WxMenuBar(wx.MenuBar):
 
         elif evt.GetId() in self.ed_plugins_menus.keys():
             constants.obs.trigger("LoadEdPluginPanel", self.ed_plugins_menus[evt.GetId()])
+
+        elif evt.GetId() in SOCIAL_MEDIA_LINKS:
+            constants.obs.trigger("OpenSocialMediaLink", SOCIAL_MEDIA_LINKS[evt.GetId()])
 
         elif evt.GetId() == EVT_CLOSE_APP:
             constants.obs.trigger("EvtCloseApp")

@@ -13,7 +13,7 @@ class Command(ABC):
         self.app = app
 
     @abstractmethod
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         return
 
     @abstractmethod
@@ -38,8 +38,8 @@ class CommandManager(object):
             # --------------------------------------------------
             # see constants.CleanUnusedLoadedNPs for explanation
             try:
-                cmd.RemoveObjects
-                constants.obs.trigger("CleanUnusedLoadedNPs")
+                cmd.RemoveNPsCmd
+                constants.obs.trigger("CleanUnusedLoadedNPs", cmd.nps)
             except AttributeError:
                 pass
             # ---------------------------------------------------
@@ -74,7 +74,7 @@ class CommandManager(object):
         """Execute the given command. Exceptions raised from the command are
         not caught."""
 
-        if safe_execute(command, *args, **kwargs):
+        if safe_execute(command.do, *args, **kwargs):
             self.push_undo_command(command)
 
             # clear the redo stack when a new command was executed

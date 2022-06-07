@@ -8,7 +8,7 @@ class SelectObjects(Command):
         self.selected_nps = nps
         self.last_selections = last_selections
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         self.app.level_editor.set_selected(self.selected_nps)
 
     def undo(self):

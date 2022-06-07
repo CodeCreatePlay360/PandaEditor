@@ -38,11 +38,11 @@ class PModBase(DirectObject):
 
         self._enabled = True  # is this module enabled
         self._initialized = True
-        self._error = False  # set this to true if there is an error
+        self._error = False  # set this to true if there is an error on initialization
 
-        self._user_properties = []
-        self._hidden_properties = []
-        self._properties = []
+        self._properties = []         # auto generated properties for various attributes
+        self._user_properties = []    # properties manually added by user
+        self._hidden_attributes = []  #
 
         # to be discarded variables
         # these variables will not be saved
@@ -65,11 +65,23 @@ class PModBase(DirectObject):
             "_initialized",
             "_error",
 
-            "_user_properties",
-            "_hidden_properties",
             "_properties",
+            "_user_properties",
+            "_hidden_attributes",
 
             "_discarded_attrs"]
+
+    def accept(self, event, method, extra_args: list = None):
+        if extra_args is None:
+            extra_args = []
+        if type(extra_args) is not list:
+            print("unable to accept event {0} from {1} argument extra_args must be of type list".format(
+                event, self._name))
+            return
+
+        xx = extra_args.copy()
+        xx.append(method)
+        super(PModBase, self).accept(event, execute, extraArgs=xx)
 
     def start(self, sort=None, late_update_sort=None, priority=None):
         if sort:
@@ -152,6 +164,11 @@ class PModBase(DirectObject):
 
         return False
 
+    def add_property(self, prop: ed_utils.EdProperty.Property):
+        """manually adds a property"""
+        if not self._user_properties.__contains__(prop) and isinstance(prop, ed_utils.EdProperty.Property):
+            self._user_properties.append(prop)
+
     def get_savable_atts(self):
         attrs = []
         for name, val in self.__dict__.items():
@@ -172,7 +189,7 @@ class PModBase(DirectObject):
         for name, value in self.get_savable_atts():
 
             # hidden variables should be ignored
-            if name in self._hidden_properties:
+            if name in self._hidden_attributes:
                 continue
 
             # private variables should be ignored
@@ -191,39 +208,30 @@ class PModBase(DirectObject):
             return True
         return False
 
-    def add_property(self, prop):
-        if not self._user_properties.__contains__(prop):
-            self._user_properties.append(prop)
+    @property
+    def hidden_attrs(self):
+        return self._hidden_attributes
 
-    def add_hidden_variable(self, prop):
-        if not self._hidden_properties.__contains__(prop):
-            self._hidden_properties.append(prop)
+    @hidden_attrs.setter
+    def hidden_attrs(self, attr: str):
+        if hasattr(self, attr) and not self._hidden_attributes.__contains__(attr):
+            self._hidden_attributes.append(attr)
 
-    def add_discarded_attr(self, attr: str):
-        if not self._discarded_attrs.__contains__(attr):
+    @property
+    def discarded_attrs(self):
+        return self._discarded_attrs
+
+    @discarded_attrs.setter
+    def discarded_attrs(self, attr: str):
+        if hasattr(self, attr) and not self._discarded_attrs.__contains__(attr):
             self._discarded_attrs.append(attr)
-
-    def update_properties(self):
-        for prop in self._properties:
-            name = prop.get_name()
-            if hasattr(self, name):
-                value = getattr(self, name)
-                prop.set_value(value)
-
-    def accept(self, event, method, extra_args: list = None):
-        if extra_args is None:
-            extra_args = []
-        if type(extra_args) is not list:
-            print("unable to accept event {0} from {1} argument extra_args must be of type list".format(
-                event, self._name))
-            return
-
-        xx = extra_args.copy()
-        xx.append(method)
-        super(PModBase, self).accept(event, execute, extraArgs=xx)
 
     def has_ed_property(self, name: str):
         for prop in self._properties:
             if prop.name == name:
                 return True
         return False
+
+    def on_resize_event(self):
+        """this method is called when window is resized"""
+        pass

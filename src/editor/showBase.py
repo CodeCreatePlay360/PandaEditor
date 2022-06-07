@@ -1,6 +1,7 @@
+import editor.constants as constants
+
 from direct.showbase import ShowBase as SB
 from panda3d.core import NodePath, Camera, OrthographicLens, PGTop
-from editor.constants import ED_GEO_MASK, GAME_GEO_MASK
 from editor.core import EditorCamera
 
 
@@ -122,7 +123,7 @@ class ShowBase(SB.ShowBase):
     def set_ed_dr_camera(self, cam):
         """set scene display region's camera"""
         self.edDr.setCamera(cam)
-        cam.node().setCameraMask(ED_GEO_MASK)
+        cam.node().setCameraMask(constants.ED_GEO_MASK)
 
     def maximize_game_dr(self):
         self.edDr.setActive(False)
@@ -152,3 +153,4 @@ class ShowBase(SB.ShowBase):
         editor pixel2d."""
         super(ShowBase, self).windowEvent(*args, **kwargs)
         self.update_aspect_ratio()
+        constants.obs.trigger("ResizeEvent")

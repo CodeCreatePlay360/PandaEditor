@@ -10,7 +10,7 @@ class RenameNPs(Command):
         self.old_name = old_name
         self.new_name = new_name
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         self.np.set_name(self.new_name)
         constants.obs.trigger("OnRenameNPs", self.np, self.new_name)
 

@@ -1,4 +1,4 @@
-## A level editor for Panda3d game engine with bare minimum features to provide an editor centric workflow.
+## A level editor for Panda3d game engine
 
 ![Image](images//00.gif)
 ![Image](images//01.png)

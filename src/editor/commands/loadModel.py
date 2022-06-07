@@ -9,7 +9,7 @@ class LoadModel(Command):
         self.model = None
         self.is_actor = is_actor
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         if self.is_actor:
             self.model = self.app.level_editor.add_actor(self.path)
         else:

@@ -6,6 +6,7 @@ import editor.core as ed_core
 import editor.nodes as ed_node_paths
 import editor.gizmos as gizmos
 import editor.constants as constants
+import editor.globals as globals
 import editor.commands as commands
 
 from direct.showbase.DirectObject import DirectObject
@@ -70,7 +71,7 @@ class LevelEditor(DirectObject):
         # editor update task
         self.update_task = None
         self.current_time = 0
-        self.x_form_delay = 0.1
+        self.x_form_delay = 0.1  # delay time before updating inspector panel
         self.update_task = taskMgr.add(self.update, 'EditorUpdateTask', sort=1)
 
         # available loaded resources
@@ -78,7 +79,6 @@ class LevelEditor(DirectObject):
         self.__ed_plugins = {}
         self.__user_modules = {}
         self.__text_files = {}
-        self.detached_nps = []
         # ---------------------------------------
 
         self.bind_key_events()
@@ -87,10 +87,13 @@ class LevelEditor(DirectObject):
         self.create_new_project("DefaultProject", constants.DEFAULT_PROJECT_PATH)
 
     def update(self, task):
-        """this method should be called ever frame in editor_state and play_state"""
+        """this method should be called ever frame in editor_state and game_state"""
         if task.time > self.current_time:
             constants.obs.trigger("XFormTask")
             self.current_time += self.x_form_delay
+
+            if self.app.wx_main.resource_browser.resource_browser.GetSelection() is None:
+                pass
 
         return task.cont
 
@@ -115,6 +118,8 @@ class LevelEditor(DirectObject):
         self.setup_default_scene()
 
     def setup_default_scene(self):
+        self.active_gizmo = "pos"
+
         # add a default sunlight
         constants.command_manager.do(commands.AddLight(constants.p3d_app, "DirectionalLight"))
         # light_np = self.add_light("DirectionalLight")
@@ -136,7 +141,7 @@ class LevelEditor(DirectObject):
         obj = self.project.game.active_scene.render.find("**/cube.fbx")
         obj.setScale(0.5)
 
-        self.set_active_gizmo("pos")
+        self.set_active_gizmo(self.active_gizmo)
         self.toggle_scene_lights()
         constants.obs.trigger("ToggleSceneLights", True)
 
@@ -243,6 +248,7 @@ class LevelEditor(DirectObject):
                 dr2d=None,
                 mouse_watcher_node=self.app.show_base.ed_mouse_watcher_node,
                 level_editor=self,
+                globals=self.app.globals
             )
             return instance
 
@@ -351,7 +357,7 @@ class LevelEditor(DirectObject):
             if plugin.has_unique_panel():
                 panel = self.app.wx_main.add_panel_def(plugin.get_unique_panel())
                 if panel:
-                    plugin._wx_panel = panel
+                    plugin._panel = panel
                     new_panels.append(plugin.get_unique_panel())
                     # add a menubar entry for this plugin as well
                     self.app.wx_main.menu_bar.add_plugins_menu(plugin.get_unique_panel())
@@ -370,14 +376,23 @@ class LevelEditor(DirectObject):
     def unregister_editor_plugins(self, plugin=None):
         if plugin:
             plugin.stop()
-            self.app.wx_main.clear_panel_contents(plugin._wx_panel)
+            self.app.wx_main.clear_panel_contents(plugin._panel)
         else:
             for key in self.__ed_plugins.keys():
                 self.__ed_plugins[key].stop()
-                self.app.wx_main.clear_panel_contents(self.__ed_plugins[key]._wx_panel)
+                self.app.wx_main.clear_panel_contents(self.__ed_plugins[key]._panel)
 
             self.__ed_plugins.clear()
             self.app.wx_main.menu_bar.clear_plugin_menus()
+
+    @property
+    def user_modules(self):
+        user_modules = []
+
+        for key in self.__user_modules.keys():
+            user_modules.append(self.__user_modules[key].class_instance)
+
+        return user_modules
 
     # ------------------------------Level editor section ----------------------------- #
 
@@ -387,7 +402,7 @@ class LevelEditor(DirectObject):
             rootNp=self.app.show_base.edRender,
             root2d=self.app.show_base.edRender2d,
             win=self.app.show_base.win,
-            mouseWatcherNode=self.app.show_base.ed_mouse_watcher_node
+            mouseWatcherNode=self.app.show_base.ed_mouse_watcher_node,
         )
 
     def create_grid(self, size, grid_step, sub_divisions):
@@ -600,18 +615,6 @@ class LevelEditor(DirectObject):
         self.set_selected([actor])
         return actor
 
-    def reparent_np(self, src_np, target_np):
-        if target_np is None:
-            src_np.wrtReparentTo(self.active_scene.render)
-        else:
-            try:
-                src_np.wrtReparentTo(target_np)
-            except AssertionError as assertion:
-                print("[Exception] {0}".format(assertion))
-                return False
-
-        return True
-
     def add_camera(self, *args):
         """
         if len(self.active_scene.scene_cameras) > 0:
@@ -766,6 +769,17 @@ class LevelEditor(DirectObject):
 
         return new_selections
 
+    def reparent_np(self, src_np, target_np):
+        if src_np.getPythonTag(constants.TAG_PICKABLE).uid in globals.LIGHT_UIDs:
+            self.active_scene.scene_lights.remove(src_np)
+
+        src_np.wrtReparentTo(target_np)
+
+        if src_np.getPythonTag(constants.TAG_PICKABLE).uid in globals.LIGHT_UIDs:
+            self.active_scene.scene_lights.append(src_np)
+
+        return True
+
     def on_remove(self, *args, **kwargs):
         constants.obs.trigger("RemoveNPs", self.selection.selected_nps)
 
@@ -799,33 +813,31 @@ class LevelEditor(DirectObject):
             for np in self.selection.selected_nps:
                 nps.append(np)
 
-        constants.obs.trigger("OnRemoveObject(s)", nps)
-        self.deselect_all()
+        if not permanent:
+            constants.obs.trigger("OnRemoveNPs", nps)
+            self.deselect_all()
+
         detached_nodes = []
 
         for np in nps:
-            clean_np(np)
-            clean_children(np)
-
             if permanent:
+                np.clearPythonTag(constants.TAG_PICKABLE)
                 if np.uid == "ActorNp":
                     np.cleanup()
                 else:
+                    # print("permanent removed np {0}".format(np))
                     np.remove_node()
             else:
+                clean_np(np)
+                clean_children(np)
                 detached_nodes.append(np)
                 np.detachNode()
-
-        if len(detached_nodes) > 0:
-            for np in detached_nodes:
-                # TODO check if python's copy.copy works here
-                self.detached_nps.append(np)
 
             # break all references to detached nodes in all user modules
             for key in self.__user_modules.keys():
                 cls = self.__user_modules[key].class_instance
                 for name, val in cls.__dict__.items():
-                    if (type(val) == p3d_core.NodePath) and (val in self.detached_nps):
+                    if (type(val) == p3d_core.NodePath) and (val in detached_nodes):
                         setattr(cls, name, None)
 
     def restore_nps(self, nps: list):
@@ -852,10 +864,11 @@ class LevelEditor(DirectObject):
                     restore_children(child)
 
         for np in nps:
+            np.reparent_to(self.active_scene.render)
+
             restore_np(np)
             restore_children(np)
 
-            np.reparent_to(self.active_scene.render)
             np.show(constants.ED_GEO_MASK)
             np.show(constants.GAME_GEO_MASK)
 
@@ -903,6 +916,8 @@ class LevelEditor(DirectObject):
             # TODO FIX THIS
             self.app.show_base.player_camera = cam
             self.app.show_base.update_aspect_ratio()
+        else:
+            print("[LevelEditor] failed to set player camera")
 
     def get_save_data(self):
         pass
@@ -931,3 +946,6 @@ class LevelEditor(DirectObject):
         if self.__text_files.__contains__(name):
             return True
         return False
+
+    def is_light(self, np):
+        pass

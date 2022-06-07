@@ -1,4 +1,5 @@
 import panda3d.core as pm
+
 from editor.p3d.object import Object
 from editor.p3d.marquee import Marquee
 from editor.p3d.mousePicker import MousePicker
@@ -6,11 +7,8 @@ from editor.constants import TAG_IGNORE, TAG_PICKABLE
 
 
 class Selection(Object):
-    BBOX_TAG = 'bbox'
-
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
-        self.rootNp.set_python_tag(self.rootNp, TAG_IGNORE)
 
         self.append = False
         self.selected_nps = []
@@ -45,9 +43,6 @@ class Selection(Object):
 
         for np in self.selected_nps:
             np.showTightBounds()
-
-    def deselect(self, nps):
-        pass
 
     def deselect_all(self):
         for np in self.selected_nps:
@@ -96,7 +91,14 @@ class Selection(Object):
         for np in new_selections:
             self.selected_nps.append(np)
 
+        new_selections = self.get_top_parent_nps(from_nps=new_selections)
+
         return new_selections
 
-    def update(self):
-        pass
+    def get_top_parent_nps(self, from_nps):
+        top_nps = []
+        for np in from_nps:
+            if not np.get_parent() in from_nps:
+                top_nps.append(np)
+
+        return top_nps

@@ -9,7 +9,7 @@ class TransformNPs(Command):
         for np in old_nps_data.keys():
             self.old_nps_data[np] = old_nps_data[np]
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         pass
 
     def undo(self):

@@ -7,7 +7,7 @@ class DuplicateNPs(Command):
 
         self.duplicated_nps = []
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         new_nps = self.app.level_editor.duplicate_nps()
         for np in new_nps:
             self.duplicated_nps.append(np)

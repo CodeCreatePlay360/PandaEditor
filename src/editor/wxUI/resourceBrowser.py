@@ -226,7 +226,7 @@ class ResourceBrowser(BaseTreeControl):
             data = self.GetItemData(item)
             selections.append((name, data))
 
-        constants.obs.trigger("SelectTreeItem", selections)
+        constants.obs.trigger("ResourceItemSelected", selections)
         evt.Skip()
 
     def on_item_activated(self, evt):

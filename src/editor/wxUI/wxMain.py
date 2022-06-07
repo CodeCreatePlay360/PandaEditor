@@ -191,7 +191,7 @@ class WxFrame(wx.Frame):
         self.create_default_layout()
         self.aui_manager.Update()
 
-        self.Bind(wx.EVT_SIZE, self.on_event_size)
+        self.Bind(wx.EVT_SIZE, self.resize_event)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
 
@@ -252,9 +252,6 @@ class WxFrame(wx.Frame):
         self.no_sound_icon = wx.Bitmap(NO_SOUND_ICON)
 
         self.disabled_icon = wx.Bitmap(DISABLED_ICON)
-
-    def finish_init(self):
-        self.on_event_size()
 
     def build_filemenu_tb(self):
         self.filemenu_tb = aui.AuiToolBar(self)
@@ -420,11 +417,8 @@ class WxFrame(wx.Frame):
     def on_evt_left_down(self, evt):
         evt.Skip()
 
-    def on_event_size(self, event=None):
-        size = self.ed_viewport_panel.GetSize()
-        obs.trigger("EventWxSize", size)
-        if event is not None:
-            event.Skip()
+    def resize_event(self, event):
+        event.Skip()
 
     def on_event_close(self, event):
         obs.trigger("EvtCloseApp", close_wx=False)

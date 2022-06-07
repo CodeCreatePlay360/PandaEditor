@@ -8,7 +8,7 @@ class AddLight(Command):
         self.light_type = light_type
         self.light_np = None
 
-    def __call__(self, *args, **kwargs):
+    def do(self, *args, **kwargs):
         self.light_np = self.app.level_editor.add_light(self.light_type)
 
     def undo(self):
