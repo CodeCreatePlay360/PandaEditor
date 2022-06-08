@@ -778,6 +778,7 @@ class LevelEditor(DirectObject):
         if src_np.getPythonTag(constants.TAG_PICKABLE).uid in globals.LIGHT_UIDs:
             self.active_scene.scene_lights.append(src_np)
 
+        constants.obs.trigger("OnReparentNPs", src_np, target_np)
         return True
 
     def on_remove(self, *args, **kwargs):

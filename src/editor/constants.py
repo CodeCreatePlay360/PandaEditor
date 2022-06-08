@@ -553,10 +553,18 @@ def rename_nps(np, new_name):
 
 @obs.on("ReparentNPs")
 def reparent_np(src_np, target_np):
-    le = p3d_app.level_editor
-    if le.reparent_np(src_np, target_np):
-        scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
-        scene_graph.reparent(src_np, target_np)
+    """reparents target_np to src_np via LeveleEditor.reparent_np"""
+
+    command_manager.do(commands.ReparentNPs(p3d_app, src_np, target_np))
+    # p3d_app.level_editor.reparent_np(src_np, target_np)
+
+
+@obs.on("OnReparentNPs")
+def on_reparent_nps(src_np, target_np):
+    """executed after a reparent operation in scene graph"""
+
+    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
+    scene_graph.reparent(src_np, target_np)
 
 
 @obs.on("RemoveNPs")

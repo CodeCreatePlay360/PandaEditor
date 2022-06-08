@@ -1,15 +1,20 @@
-## A level editor for Panda3d game engine
+## An open source level / scene editor for Panda3d
 
 ![Image](images//00.gif)
 ![Image](images//01.png)
 
-#### Current features include
-1. Object manipulation
-2. Support for runtime user modules 
-3. Editor plugin support
-4. Properties panel 
-5. File browser
-6. Console panel
+Panda3d is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3d more intuitive to use for artists and game developers by providing an editor centric workflow.  
+It has all the basic level editor functionalities such as
+
+* Object manipulation
+* Properties panel
+* Console panel
+* Project based approach
+* Scene graph
+* Resources browser
+* It also has a complete support for editor plugins so developers can create ( or maybe even sell ) their tools to extend the editor with third party tools, for a complete list of features visit the project homepage.
+
+If you think PandaEditor can prove useful for your projects or for Panda3d in general, than consider giving it a star on GitHub, and if you can please support it on Patreon too.
 
 #### Attributions
 PandaEditor is using the Gizmos package and InfoPanel from another open source panda3d project [link](https://github.com/Derfies/panda3d-editor).
@@ -118,7 +123,7 @@ To create a new user module **Resource Browser > Add > RuntimeModule**.
 To see some example usages of user modules, see samples programs also included with the default project.  
 
 ### Editor plugins
-To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **runtime modules** editor plugins are only executed in in **EditorState**, their execution is paused in **GameState**, the execution is resumed as soon as **EditorState** is enabled again.  
+To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **runtime modules** editor plugins are executed in both **EditorState** and **GameState**.
 Same as **runtime modules**, **the editor plugins** are python scripts, for the editor to consider any python script as an **editor plugin**,
 
 * The class name should be exactly same as that of python file.
@@ -149,7 +154,7 @@ class EdPlugin(EditorPlugin):
         pass
 ```
  
-And just like **runtime modules** the **EditorPlugin** base class also extends any user defined **editor plugins** with some base methods and attributes, the base attributes act as a link between **PandaEditor**, **wxPython** and the **Panda3D engine**. 
+And just like **runtime modules** the **EditorPlugin** base class also defines some base attributes and methods and act as a link between **PandaEditor**, **wxPython** and the **Panda3D engine**. 
 
 ```
 from editor.core.editorPlugin import EditorPlugin
