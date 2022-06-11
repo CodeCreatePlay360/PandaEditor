@@ -31,7 +31,7 @@ class EditorCamera(p3d_core.NodePath):
 
         # create a new lens
         lens = p3d_core.PerspectiveLens()
-        lens.set_fov(60, 60)
+        lens.set_fov(60)
         lens.setAspectRatio(800 / 600)
         self.cam.node().setLens(lens)
 

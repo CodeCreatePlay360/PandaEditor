@@ -3,8 +3,8 @@
 ![Image](images//00.gif)
 ![Image](images//01.png)
 
-Panda3d is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3d more intuitive to use for artists and game developers by providing an editor centric workflow.  
-It has all the basic level editor functionalities such as
+**Panda3d is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3d more intuitive to use for artists and game developers by providing an editor centric workflow**.  
+It has all the basic features of a level editor
 
 * Object manipulation
 * Properties panel
@@ -12,9 +12,9 @@ It has all the basic level editor functionalities such as
 * Project based approach
 * Scene graph
 * Resources browser
-* It also has a complete support for editor plugins so developers can create ( or maybe even sell ) their tools to extend the editor with third party tools, for a complete list of features visit the project homepage.
+* It also has a complete support for **editor plugins** so developers can create ( or maybe even sell ) their tools to extend the editor with third party tools, for a complete list of features visit the project homepage.
 
-If you think PandaEditor can prove useful for your projects or for Panda3d in general, than consider giving it a star on GitHub, and if you can please support it on Patreon too.
+If you think PandaEditor is useful for your projects or for Panda3d in general, than consider giving it a star on GitHub.
 
 #### Attributions
 PandaEditor is using the Gizmos package and InfoPanel from another open source panda3d project [link](https://github.com/Derfies/panda3d-editor).

@@ -44,12 +44,13 @@ class LightNp(BaseNp):
         r = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.x)
         g = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.y)
         b = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.z)
-        color = LColor(r, g, b, 1)
-        self.node().setColor(color)
 
-        r = self.node().getColor().x * self.intensity
-        g = self.node().getColor().y * self.intensity
-        b = self.node().getColor().z * self.intensity
+        color = LColor(r, g, b, 1)
+
+        r = color.x * self.intensity
+        g = color.y * self.intensity
+        b = color.z * self.intensity
+
         color = LColor(r, g, b, 1)
         self.node().setColor(color)
 
@@ -60,16 +61,12 @@ class LightNp(BaseNp):
         r = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.x)
         g = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.y)
         b = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.z)
-
-        color = LColor(r, g, b, 1)
-        self.setColor(color)
+        self.setColor(LColor(r, g, b, 1))
 
         r = r * self.intensity
         g = g * self.intensity
         b = b * self.intensity
-
-        color = LColor(r, g, b, 1)
-        self.node().setColor(color)
+        self.node().setColor(LColor(r, g, b, 1))
 
     def get_light(self):
         return self.node()
@@ -120,7 +117,7 @@ class EdPointLight(LightNp):
         return self.attenuation
 
     def set_attenuation(self, val):
-        self.node().attenuation = self.attenuation_map[val]
+        self.node().setAttenuation(self.attenuation_map[val])
         self.attenuation = val
 
 

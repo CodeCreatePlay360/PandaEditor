@@ -1,12 +1,14 @@
-from panda3d.core import PerspectiveLens, OrthographicLens, Vec2
+from panda3d.core import PerspectiveLens, OrthographicLens, Vec2, Camera, NodePath
 from editor.nodes.baseNp import BaseNp
 from editor.utils import EdProperty
 from editor.constants import obs
 
 
 class EdCameraNp(BaseNp):
-    def __init__(self, np, uid=None, *args, **kwargs):
-        BaseNp.__init__(self, np, uid, *args, **kwargs)
+    def __init__(self, uid=None, *args, **kwargs):
+
+        cam = NodePath(Camera("PlayerCamera"))
+        BaseNp.__init__(self, cam, uid, *args, **kwargs)
 
         self.lens_type_map = 0  # [Lens type] 0: Perspective, 1: Ortho
         self.current_lens_type = -1

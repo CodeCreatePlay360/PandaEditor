@@ -12,12 +12,13 @@ class Game:
 
         self.show_base = kwargs.pop("show_base", None)
         self.win = kwargs.pop("win", None)
-        self.render = kwargs.pop("render", None)  # top level game render, individual
-                                                  # scene renders should be re-parented to this
-        self.aspect2d = kwargs.pop("aspect2d", None)
-        self.display_region = kwargs.pop("dr", None)
-        self.display_region_2d = kwargs.pop("dr_2d", None)
         self.mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
+        self.display_region = kwargs.pop("dr", None)  # TODO create display region here
+
+        self.render = kwargs.pop("render", None)  # top level game render, individual
+                                                  # scene renders should be re-parented to this.
+
+        self.display_region_2d = self.setup_2d_display_region()
 
         self.game_modules = {}  # current loaded user modules
         self.scenes = []        # all scenes in this game
@@ -102,15 +103,24 @@ class Game:
             module.class_instance.ignore_all()
             module.class_instance.stop()
             module.reload_data()
-            self.set_cursor_hidden(False)
+            self.hide_cursor(False)
 
-    def set_cursor_hidden(self, value: bool):
+    def hide_cursor(self, value: bool):
         if type(value) is bool:
             wp = WindowProperties()
             wp.setCursorHidden(value)
             self.win.requestProperties(wp)
 
     def set_mouse_mode(self, mode):
+        pass
+
+    def setup_2d_display_region(self):
+        dr_2d = self.win.makeDisplayRegion()
+        dr_2d.setSort(20)
+        dr_2d.setActive(True)
+        return dr_2d
+
+    def setup_3d_display_region(self):
         pass
 
     def set_3d_display_region_active(self, cam):

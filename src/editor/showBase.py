@@ -52,7 +52,7 @@ class ShowBase(SB.ShowBase):
 
         # clear existing / default 3d display regions
         self.dr = self.cam.node().getDisplayRegion(0)
-        self.dr.setClearColorActive(True)
+        self.dr.setClearColorActive(False)
         self.dr.setClearColor(self.getBackgroundColor())
         self.dr.setActive(False)
         self.dr.setSort(20)
@@ -62,14 +62,14 @@ class ShowBase(SB.ShowBase):
         self.dr2d.setActive(False)
         self.dr2d.setSort(21)
 
-        # Setup mouse watcher for the editor window
+        # setup mouse watcher for the editor window
         self.main_win = self.ed_wx_win.GetWindow()
         button_throwers, pointer_watcher_nodes = self.setupMouseCB(self.main_win)
         self.ed_mouse_watcher = button_throwers[0].getParent()
         self.ed_mouse_watcher_node = self.ed_mouse_watcher.node()
         ed_mouse_watcher_parent = self.ed_mouse_watcher.getParent()
 
-        # ------------------ 2d rendering setup ------------------ #
+        # ------------------ 2d rendering setup ------------------
         # create new 2d display region
         self.edDr2d = self.win.makeDisplayRegion()
         self.edDr2d.setSort(20)

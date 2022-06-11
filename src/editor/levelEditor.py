@@ -22,7 +22,6 @@ class LevelEditor(DirectObject):
 
         self.app = panda_app
         self.project = Project(panda_app)
-        # self.scene_manager = SceneManager(self)   # list of all scenes in this game
         self.active_scene = None
 
         # gizmos, grid, selection
@@ -122,8 +121,7 @@ class LevelEditor(DirectObject):
 
         # add a default sunlight
         constants.command_manager.do(commands.AddLight(constants.p3d_app, "DirectionalLight"))
-        # light_np = self.add_light("DirectionalLight")
-        light_np = self.project.game.active_scene.render.find("**/DirectionalLight")
+        light_np = self.active_scene.render.find("**/DirectionalLight")
         light_np = light_np.getPythonTag(constants.TAG_PICKABLE)
         light_np.setPos(400, 200, 350)
         light_np.setHpr(p3d_core.Vec3(115, -25, 0))
@@ -131,14 +129,14 @@ class LevelEditor(DirectObject):
 
         # add a default player camera
         constants.command_manager.do(commands.AddCamera(constants.p3d_app))
-        cam = self.active_scene.render.find("**/camera").getNetPythonTag(constants.TAG_PICKABLE)
+        cam = self.active_scene.render.find("**/PlayerCam").getNetPythonTag(constants.TAG_PICKABLE)
         cam.setPos(-220, 280, 80)
         cam.setHpr(p3d_core.Vec3(218, 0, 0))
         self.set_player_camera(cam)
 
         # add a default cube
         constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, constants.CUBE_PATH))
-        obj = self.project.game.active_scene.render.find("**/cube.fbx")
+        obj = self.active_scene.render.find("**/cube.fbx")
         obj.setScale(0.5)
 
         self.set_active_gizmo(self.active_gizmo)
@@ -230,9 +228,9 @@ class LevelEditor(DirectObject):
                 name=name,
                 win=self.app.show_base.main_win,
                 render=self.active_scene.render,
-                aspect_2d=self.active_scene.aspect2d,
+                aspect_2d=self.active_scene.render_2d,
                 dr=None,
-                dr2d=None,
+                dr2d=self.project.game.display_region_2d,
                 mouse_watcher_node=self.project.game.mouse_watcher_node,
                 game=self.project.game,
             )
@@ -616,21 +614,12 @@ class LevelEditor(DirectObject):
         return actor
 
     def add_camera(self, *args):
-        """
-        if len(self.active_scene.scene_cameras) > 0:
-            print("[LevelEditor] currently support is limited to one camera per scene.")
-            return
-        """
-
-        # create a panda3d camera
-        cam_np = p3d_core.NodePath(p3d_core.Camera("Camera"))
-        cam_np.node().setCameraMask(constants.GAME_GEO_MASK)
-
         # and wrap it into editor camera
-        cam_np = ed_node_paths.EdCameraNp(cam_np, uid="EdCameraNp")
+        cam_np = ed_node_paths.EdCameraNp(uid="CameraNP")
+        cam_np.set_name("PlayerCam")
+        cam_np.node().setCameraMask(constants.GAME_GEO_MASK)
         cam_np.setPythonTag(constants.TAG_PICKABLE, cam_np)
         cam_np.reparent_to(self.active_scene.render)
-        cam_np.set_scale(8)
 
         # create a handle
         cam_handle = self.app.show_base.loader.loadModel(constants.CAMERA_MODEL)
@@ -640,7 +629,7 @@ class LevelEditor(DirectObject):
 
         # re-parent handle to cam_np
         cam_handle.reparent_to(cam_np)
-        cam_handle.setScale(2.25)
+        cam_handle.setScale(12)
 
         self.active_scene.scene_cameras.append(cam_np)
 
@@ -910,7 +899,7 @@ class LevelEditor(DirectObject):
 
     def set_player_camera(self, cam):
         cam = cam.getNetPythonTag(constants.TAG_PICKABLE)
-        if cam and cam.uid == "EdCameraNp":
+        if cam and cam.uid == "CameraNP":
             cam.node().setCameraMask(constants.GAME_GEO_MASK)
             self.project.game.set_3d_display_region_active(cam)
 
