@@ -34,9 +34,6 @@ class Project(object):
         self.game = Game(
             show_base=self.app.show_base,
             win=self.app.show_base.main_win,
-            render=self.app.show_base.render,
-            aspect2d=self.app.show_base.aspect2d,
             dr=self.app.show_base.game_dr,
-            dr_2d=None,
-            mouse_watcher_node=self.app.show_base.ed_mouse_watcher_node,
+            render=self.app.show_base.render,
         )

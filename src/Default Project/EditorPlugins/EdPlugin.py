@@ -1,5 +1,6 @@
 import math
 import panda3d.core as p3d_core
+import direct.gui.DirectGui as gui
 import wx
 
 from editor.core.editorPlugin import EditorPlugin
@@ -44,7 +45,7 @@ class EdPlugin(EditorPlugin):
 
     # on_start method is called once
     def on_start(self):
-
+        # self.create_ui()         # direct gui
         le = self._le              # level editor
         wx_panel = self._panel     # the top most parent "Panel" of wxPython, if request to unique panel is
                                    # successful, otherwise return value of self._panel is None.
@@ -52,12 +53,14 @@ class EdPlugin(EditorPlugin):
 
     # update method is called every frame
     def on_update(self):
-        """
-        if self._globals.selected_resource_item:
-            print(self._globals.selected_resource_item)
-        if len(self._globals.selected_nps) > 0:
-            print(self._globals.selected_nps)
-        """
+        pass
+
+    def create_ui(self):
+        b = gui.DirectButton(text=("OK", "click!", "rolling over", "disabled"), scale=.5, command=self.set_text)
+        b.reparent_to(self._aspect2d)
+
+    def set_text(self):
+        print("Set text called")
 
     def set_game_viewport_style(self, val: int):
         self.curr_game_viewport_style = val

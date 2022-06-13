@@ -24,12 +24,14 @@ class PModBase(DirectObject):
         # these fields are defined here for convenience only,
         # all these fields are defined in project.game as well.
         self._name = kwargs.pop("name", None)
+        self.show_base = kwargs.pop("show_base", None)
         self._win = kwargs.pop("win", None)
-        self._render = kwargs.pop("render", None)
-        self._aspect2d = kwargs.pop("aspect2d", None)
         self.dr = kwargs.pop("dr", None)
         self.dr2d = kwargs.pop("dr2d", None)
         self._mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
+        self._render = kwargs.pop("render", None)
+        self._render2d = kwargs.pop("render2d", None)
+        self._aspect2d = kwargs.pop("aspect2d", None)
 
         self._task = None
         self._late_task = None
@@ -40,8 +42,8 @@ class PModBase(DirectObject):
         self._initialized = True
         self._error = False  # set this to true if there is an error on initialization
 
-        self._properties = []         # auto generated properties for various attributes
-        self._user_properties = []    # properties manually added by user
+        self._properties = []  # auto generated properties for various attributes
+        self._user_properties = []  # properties manually added by user
         self._hidden_attributes = []  #
 
         # to be discarded variables
@@ -234,4 +236,11 @@ class PModBase(DirectObject):
 
     def on_resize_event(self):
         """this method is called when window is resized"""
-        pass
+        if self._aspect2d is not None and self.show_base is not None:
+            self._aspect2d.set_scale(1.0 / self.show_base.getAspectRatio(self._win), 1.0, 1.0)
+
+    def clear_ui(self):
+        """clears all direct gui elements, by default this is executed before unloading editor plugin,
+         this method can be called manually as well"""
+        for np in self._aspect2d.getChildren():
+            np.remove_node()

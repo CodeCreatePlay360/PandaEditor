@@ -1,4 +1,5 @@
 import panda3d.core as p3dCore
+import direct.gui.DirectGui as gui
 from editor.core.runtimeModule import RuntimeModule
 from editor.utils import EdProperty
 
@@ -60,6 +61,15 @@ class Basics(RuntimeModule):
             test_module.foo()
 
         self.accept("q", self.bar, [])
+        self.create_ui()
+
+    def create_ui(self):
+        b = gui.DirectButton(text=("OK", "click!", "rolling over", "disabled"), scale=.2, command=self.set_text)
+        b.setPos((0, 0, 0))
+        b.reparent_to(self._aspect2d)
+
+    def set_text(self):
+        print("text set")
 
     def foo(self):
         return self.bar
@@ -89,3 +99,6 @@ class Basics(RuntimeModule):
 
     def get_choice(self):
         return self.curr_choice
+
+    def on_resize_event(self):
+        pass

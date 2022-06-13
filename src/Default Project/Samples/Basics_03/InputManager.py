@@ -25,7 +25,6 @@ class InputManager(RuntimeModule):
 
     def on_start(self):
         # self._le.app.set_mouse_mode("Relative")
-
         self.key_map.clear()
 
         for key in self.keys:
@@ -67,7 +66,7 @@ class InputManager(RuntimeModule):
             
         if self.key_map["escape"] > 0:
             self.autoCenterMouse = False
-        elif self.key_map["mouse1"] > 0:
+        elif self.key_map["mouse1"] > 0 and self.autoCenterMouse:
             self.autoCenterMouse = True
  
     def on_late_update(self):
@@ -77,7 +76,7 @@ class InputManager(RuntimeModule):
                 self.key_map[key] = 0
         
     def on_stop(self):
-        # TODO remove this, automatically called
+        # TODO should be done automatically on game.stop
         for key in self.key_map.keys():
             self.ignore(key)
         

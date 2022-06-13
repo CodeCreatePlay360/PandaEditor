@@ -1,3 +1,4 @@
+import panda3d.core as p3d_core
 import editor.constants as constants
 
 from direct.showbase import ShowBase as SB
@@ -19,15 +20,18 @@ class ShowBase(SB.ShowBase):
 
         self.player_camera = None
 
-        self.dr = None  # default 3d display region
-        self.dr2d = None  # default 2d display region
-        self.edDr = None  # editor 3d display region that will replace default 3d display region
-        self.edDr2d = None  # editor 2d display region that will replace default 2d display region
-        self.ed_pixel_2d = None
+        self.dr = None
+        self.dr2d = None
+        self.edDr = None
+        self.edDr2d = None
+        self.ed_aspect2d = None
         self.game_dr = None
 
-        self.ed_mouse_watcher = None  # editor mouse watcher for editor display region
+        self.ed_mouse_watcher = None
         self.ed_mouse_watcher_node = None
+
+        self.ed_mouse_watcher_2d = None
+        self.ed_mouse_watcher_node_2d = None
 
         self.forcedAspectWins = []
         self.update_task = None
@@ -38,7 +42,7 @@ class ShowBase(SB.ShowBase):
 
         # Add the editor window, camera and pixel 2d to the list of forced
         # aspect windows so aspect is fixed when the window is resized.
-        self.forcedAspectWins.append((self.main_win, self.ed_camera, self.ed_pixel_2d))
+        self.forcedAspectWins.append((self.main_win, self.ed_camera, self.ed_aspect2d))
 
         # turn on per pixel lightning
         self.edRender.setShaderAuto()
@@ -50,6 +54,7 @@ class ShowBase(SB.ShowBase):
         """set up an editor rendering, it included setting up 2d and 3d display regions,
         an editor scene graph and editor mouse watchers"""
 
+        # ------------------------------------------- #
         # clear existing / default 3d display regions
         self.dr = self.cam.node().getDisplayRegion(0)
         self.dr.setClearColorActive(False)
@@ -61,38 +66,39 @@ class ShowBase(SB.ShowBase):
         self.dr2d = self.cam2d.node().getDisplayRegion(0)
         self.dr2d.setActive(False)
         self.dr2d.setSort(21)
+        # ------------------------------------------- #
 
-        # setup mouse watcher for the editor window
         self.main_win = self.ed_wx_win.GetWindow()
-        button_throwers, pointer_watcher_nodes = self.setupMouseCB(self.main_win)
-        self.ed_mouse_watcher = button_throwers[0].getParent()
-        self.ed_mouse_watcher_node = self.ed_mouse_watcher.node()
-        ed_mouse_watcher_parent = self.ed_mouse_watcher.getParent()
 
         # ------------------ 2d rendering setup ------------------
         # create new 2d display region
-        self.edDr2d = self.win.makeDisplayRegion()
-        self.edDr2d.setSort(20)
+        self.edDr2d = self.win.makeDisplayRegion(0, 1, 0, 1)
+        self.edDr2d.setSort(0)
         self.edDr2d.setActive(True)
+
+        # create a 2d mouse watcher
+        self.ed_mouse_watcher_node_2d = p3d_core.MouseWatcher()
+        self.mouseWatcher.get_parent().attachNewNode(self.ed_mouse_watcher_node_2d)
+        self.ed_mouse_watcher_node_2d.set_display_region(self.edDr2d)
 
         # create a new 2d scene graph
         self.edRender2d = NodePath('EdRender2d')
         self.edRender2d.setDepthTest(False)
         self.edRender2d.setDepthWrite(False)
 
-        # create a 2d camera for 2d display region
+        # create a 2d camera
         self.ed_camera_2d = NodePath(Camera('EdCamera2d'))
         lens = OrthographicLens()
         lens.setFilmSize(2, 2)
         lens.setNearFar(-1000, 1000)
         self.ed_camera_2d.node().setLens(lens)
+
+        self.ed_camera_2d.reparentTo(self.edRender2d)
         self.edDr2d.setCamera(self.ed_camera_2d)
 
         # create an aspect corrected 2d scene graph
-        self.ed_pixel_2d = self.edRender2d.attachNewNode(PGTop('EdPixel2d'))
-        self.ed_pixel_2d.node().setMouseWatcher(self.mouseWatcherNode)
-        self.ed_pixel_2d.set_pos(0, 0, 0)
-        self.ed_camera_2d.reparentTo(self.edRender2d)
+        self.ed_aspect2d = self.edRender2d.attachNewNode(PGTop('EdAspect2d'))
+        self.ed_aspect2d.node().setMouseWatcher(self.ed_mouse_watcher_node_2d)
 
         # ------------------ 3d rendering setup ------------------ #
         # create editor root node behind render node, so we can keep editor only
@@ -100,38 +106,33 @@ class ShowBase(SB.ShowBase):
         self.edRender = NodePath('EdRender')
         self.render.reparentTo(self.edRender)
 
+        # setup editor mouse watcher 3d
+        button_throwers, pointer_watcher_nodes = self.setupMouseCB(self.main_win)
+        self.ed_mouse_watcher = button_throwers[0].getParent()
+        self.ed_mouse_watcher_node = self.ed_mouse_watcher.node()
+
         # create new 3d display region
         self.edDr = self.main_win.makeDisplayRegion(0, 1, 0, 1)
+        self.edDr.setSort(-1)
         self.edDr.setClearColorActive(True)
         self.edDr.setClearColor((0.6, 0.6, 0.6, 1.0))
 
         self.ed_camera = EditorCamera(
-            mouse_watcher_node=self.ed_mouse_watcher_node,
-            render2d=self.ed_pixel_2d,
             win=self.main_win,
+            mouse_watcher_node=self.ed_mouse_watcher_node,
+            render2d=self.ed_aspect2d,
             default_pos=(300, 150 + 300, 100 + 300),
         )
         self.ed_camera.reparentTo(self.edRender)
+        self.ed_camera.node().setCameraMask(constants.ED_GEO_MASK)
         self.ed_camera.start()
-        self.set_ed_dr_camera(self.ed_camera)
+
+        self.edDr.setCamera(self.ed_camera)
 
         # create a game display region
         self.game_dr = self.main_win.makeDisplayRegion(0, 0.4, 0, 0.4)
         self.game_dr.setClearColorActive(True)
         self.game_dr.setClearColor((0.8, 0.8, 0.8, 1.0))
-
-    def set_ed_dr_camera(self, cam):
-        """set scene display region's camera"""
-        self.edDr.setCamera(cam)
-        cam.node().setCameraMask(constants.ED_GEO_MASK)
-
-    def maximize_game_dr(self):
-        self.edDr.setActive(False)
-        self.game_dr.set_dimensions((0, 1, 0, 1))
-
-    def minimize_game_dr(self):
-        self.edDr.setActive(True)
-        self.game_dr.set_dimensions((0, 0.4, 0, 0.4))
 
     def update_aspect_ratio(self):
         aspect_ratio = self.getAspectRatio(self.main_win)
@@ -144,9 +145,8 @@ class ShowBase(SB.ShowBase):
             self.player_camera.node().getLens().setAspectRatio(aspect_ratio)
 
         # maintain aspect ratio pixel2d
-        if self.ed_pixel_2d is not None:
-            self.ed_pixel_2d.set_pos(0, 0, 0)
-            self.ed_pixel_2d.setScale(1 / aspect_ratio, 1.0, 1.0)
+        if self.ed_aspect2d is not None:
+            self.ed_aspect2d.setScale(1.0 / aspect_ratio, 1.0, 1.0)
 
     def windowEvent(self, *args, **kwargs):
         """ Overridden to fix the aspect ratio of the editor camera and

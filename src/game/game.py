@@ -12,13 +12,21 @@ class Game:
 
         self.show_base = kwargs.pop("show_base", None)
         self.win = kwargs.pop("win", None)
-        self.mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
-        self.display_region = kwargs.pop("dr", None)  # TODO create display region here
+        self.display_region = kwargs.pop("dr", None)  # TODO should be created here
+        self.display_region_2d = None
+        self.mouse_watcher_node = None
+        self.mouse_watcher_node_2d = None
 
         self.render = kwargs.pop("render", None)  # top level game render, individual
                                                   # scene renders should be re-parented to this.
 
-        self.display_region_2d = self.setup_2d_display_region()
+        self.setup_2d_display_region()
+        self.set_2d_mouse_watcher()
+        self.mouse_watcher_node_2d.set_display_region(self.display_region_2d)
+
+        self.setup_3d_display_region()
+        self.setup_3d_mouse_watcher()
+        self.mouse_watcher_node.set_display_region(self.display_region)
 
         self.game_modules = {}  # current loaded user modules
         self.scenes = []        # all scenes in this game
@@ -84,7 +92,7 @@ class Game:
 
         # late updates are to be executed after all updates have been executed
         # the sort order of all updates should be set in a way, that messenger executes them after updates
-        # TODO more explanation
+        # TODO proper explanation
         start = lst[0]
         stop = lst[len(lst) - 1]
 
@@ -102,6 +110,7 @@ class Game:
 
             module.class_instance.ignore_all()
             module.class_instance.stop()
+            module.class_instance.clear_ui()
             module.reload_data()
             self.hide_cursor(False)
 
@@ -115,13 +124,21 @@ class Game:
         pass
 
     def setup_2d_display_region(self):
-        dr_2d = self.win.makeDisplayRegion()
-        dr_2d.setSort(20)
-        dr_2d.setActive(True)
-        return dr_2d
+        self.display_region_2d = self.win.makeDisplayRegion()
+        self.display_region_2d.setSort(20)
+        self.display_region_2d.setActive(True)
+        self.display_region_2d.set_dimensions((0, 0.4, 0, 0.4))
+
+    def set_2d_mouse_watcher(self):
+        self.mouse_watcher_node_2d = p3d_core.MouseWatcher()
+        self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node_2d)
 
     def setup_3d_display_region(self):
         pass
+
+    def setup_3d_mouse_watcher(self):
+        self.mouse_watcher_node = p3d_core.MouseWatcher()
+        self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node)
 
     def set_3d_display_region_active(self, cam):
         self.display_region.set_active(True)

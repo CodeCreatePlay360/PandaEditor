@@ -18,10 +18,10 @@ class EditorPlugin(PModBase):
         if type(unique_panel_name) is str:
             self._unique_panel = unique_panel_name
 
-    # TODO replace this with properties
+    # TODO replace this with property
     def get_unique_panel(self):
         return self._unique_panel
 
-    # TODO replace this with properties
+    # TODO replace this with property
     def has_unique_panel(self):
         return self._unique_panel is not None

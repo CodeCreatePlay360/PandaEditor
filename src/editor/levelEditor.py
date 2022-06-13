@@ -17,6 +17,8 @@ from editor.selection import Selection
 
 class LevelEditor(DirectObject):
     def __init__(self, panda_app, *args, **kwargs):
+        """Actual Level / scene editor all editor systems should be initialized from here"""
+
         DirectObject.__init__(self)
         constants.object_manager.add_object("LevelEditor", self)
 
@@ -226,12 +228,14 @@ class LevelEditor(DirectObject):
         def init_runtime_module(name, runtime_module):
             instance = runtime_module(
                 name=name,
+                show_base=self.project.game.show_base,
                 win=self.app.show_base.main_win,
-                render=self.active_scene.render,
-                aspect_2d=self.active_scene.render_2d,
-                dr=None,
+                dr=self.app.show_base.game_dr,  # TODO reimplement this in game
                 dr2d=self.project.game.display_region_2d,
                 mouse_watcher_node=self.project.game.mouse_watcher_node,
+                render=self.active_scene.render,
+                render2d=self.active_scene.render_2d,
+                aspect2d=self.active_scene.aspect_2d,
                 game=self.project.game,
             )
             return instance
@@ -240,11 +244,12 @@ class LevelEditor(DirectObject):
             instance = plugin(
                 name=name,
                 win=self.app.show_base.main_win,
-                render=self.app.show_base.render,
-                aspect_2d=self.app.show_base.aspect2d,
-                dr=None,
-                dr2d=None,
+                dr=self.app.show_base.edDr,
+                dr2d=self.app.show_base.edDr2d,
                 mouse_watcher_node=self.app.show_base.ed_mouse_watcher_node,
+                render=None,
+                render2d=None,
+                aspect2d=self.app.show_base.ed_aspect2d,
                 level_editor=self,
                 globals=self.app.globals
             )
@@ -262,6 +267,7 @@ class LevelEditor(DirectObject):
         save_data = {}  # save module data here, [cls_name] = save_data, and do any necessary cleanup
         for cls_name in self.__user_modules.keys():
             self.__user_modules[cls_name].class_instance.ignore_all()
+            self.__user_modules[cls_name].class_instance.clear_ui()
             self.__user_modules[cls_name].save_data()
             save_data[cls_name] = self.__user_modules[cls_name].saved_data
 
@@ -271,7 +277,7 @@ class LevelEditor(DirectObject):
                     old_panels.append(panel)
 
         self.__user_modules.clear()
-        self.unregister_editor_plugins()
+        self.unregister_editor_plugins()  # TODO replace this with unload
         ed_plugins = []    # save editor tools here
         game_modules = {}  # save runtime modules here
 
@@ -532,7 +538,9 @@ class LevelEditor(DirectObject):
         self.ed_state = constants.EDITOR_STATE
 
         if self.maximized_play_mode:
-            self.app.show_base.minimize_game_dr()
+            self.app.show_base.edDr.setActive(True)
+            self.app.show_base.game_dr.set_dimensions((0, 0.4, 0, 0.4))
+            self.project.game.display_region_2d.set_dimensions((0, 0.4, 0, 0.4))
 
         self.project.game.stop()
         self.clean_runtime_scene_modifications()
@@ -553,8 +561,9 @@ class LevelEditor(DirectObject):
         self.save_ed_state()  # save editor state data
 
         if self.maximized_play_mode:
-            # TODO re-implement maximize_game_dr here
-            self.app.show_base.maximize_game_dr()
+            self.app.show_base.edDr.setActive(False)
+            self.app.show_base.game_dr.set_dimensions((0, 1, 0, 1))
+            self.project.game.display_region_2d.set_dimensions((0, 1, 0, 1))
 
         self.project.game.start()
 
