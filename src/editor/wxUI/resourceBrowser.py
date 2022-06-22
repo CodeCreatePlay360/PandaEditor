@@ -3,54 +3,15 @@ import shutil
 import wx
 import editor.constants as constants
 import editor.commands as commands
+import editor.uiGlobals as uiGlobals
+import editor.wxUI.globals as wxGlobals
+import editor.resources.globals as resourceGlobals
 
-from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.baseTreeControl import BaseTreeControl
-from editor.colourPalette import ColourPalette as Colours
 from editor.utils.exceptionHandler import try_execute
 from editor.utils import DirWatcher
-
-# icons / thumbnails names
-FOLDER_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "folder16.png"
-
-PY_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "pyFile32.png"
-USER_MOD_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "pyFile32.png"
-ED_TOOL_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "pyFile32.png"
-
-TXT_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "textFileIcon.png"
-
-EGG_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "pandaIcon.png"
-
-SOUND_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "file_extension_sound.png"
-TEXT_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "file_extension_txt.png"
-IMAGE_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "file_extension_bmp.png"
-VIDEO_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "file_extension_video.png"
-
-COLLAPSE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "page_white.png"
-EXPAND_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "page_white.png"
-
-GENERIC_FILE_ICON = constants.FILE_EXTENSIONS_ICONS_PATH + "\\" + "page_white.png"
-
-# icons for some common file extensions all other will have a generic file icon
-EXTENSIONS = {"folder": FOLDER_ICON,
-
-              "egg": EGG_FILE_ICON,
-              "bam": EGG_FILE_ICON,
-              "pz": EGG_FILE_ICON,
-
-              "tiff": IMAGE_FILE_ICON,
-              "tga": IMAGE_FILE_ICON,
-              "jpg": IMAGE_FILE_ICON,
-              "png": IMAGE_FILE_ICON,
-
-              "py": PY_FILE_ICON,
-              "txt": TXT_FILE_ICON,
-
-              "mp4": VIDEO_FILE_ICON,
-              "mp3": IMAGE_FILE_ICON,
-
-              "generic": GENERIC_FILE_ICON,
-              }
+from thirdparty.wxCustom.imageTilesPanel import ImageTilesPanel
+from editor.utils import PathUtils
 
 # event ids for different event types
 EVT_NEW_DIR = wx.NewId()
@@ -71,42 +32,71 @@ EVT_APPEND_LIBRARY = wx.NewId()
 EVT_IMPORT_ASSETS = wx.NewId()
 
 
-def build_menu(menu, items):
-    for i in range(len(items)):
-        _items = items[i]
-
-        if _items == "":
-            menu.AppendSeparator()
-            continue
-
-        menu_item = wx.MenuItem(menu, _items[0], _items[1])
-        # menu_item.SetBitmap(wx.Bitmap('exit.png'))
-        menu.Append(menu_item)
+# ----------------- Methods for building context menus ----------------- #
+def create_generic_menu_items(parent_menu):
+    menu_items = [(EVT_RENAME_ITEM, "&Rename", None),
+                  (EVT_REMOVE_ITEM, "&Remove", None),
+                  (EVT_DUPLICATE_ITEM, "&Duplicate", None)]
+    wxGlobals.build_menu(parent_menu, menu_items)
 
 
-class _ResourceBrowser(ScrolledPanel):
+def create_3d_model_menu_items(parent_menu):
+    menu_items = [(EVT_LOAD_MODEL, "&Load Model", None),
+                  (EVT_LOAD_ACTOR, "&Load As Actor", None)]
+    wxGlobals.build_menu(parent_menu, menu_items)
 
+
+def create_add_menu_items(parent_menu):
+    # add objects menu
+    objects_items = [
+        (EVT_CREATE_PY_MOD, "&Python Module", None),
+        (EVT_CREATE_P3D_USER_MOD, "&User Module", None),
+        (EVT_CREATE_ED_TOOL, "&Editor Plugin", None),
+        (EVT_CREATE_TXT_FILE, "&Text File", None),
+        (EVT_NEW_DIR, "&New Folder", None)
+    ]
+    objects_menu = wx.Menu()
+    wxGlobals.build_menu(objects_menu, objects_items)
+    parent_menu.Append(wx.ID_ANY, "Add", objects_menu)
+
+    # import assets menu
+    import_assets_item = wx.MenuItem(parent_menu, EVT_IMPORT_ASSETS, "Import Assets")
+    parent_menu.Append(import_assets_item)
+    parent_menu.AppendSeparator()
+
+    # show in explorer menu
+    library_items = [(EVT_SHOW_IN_EXPLORER, "&Show In Explorer", None)]
+    wxGlobals.build_menu(parent_menu, library_items)
+
+
+class ResourceBrowser(wx.Panel):
     class State:
         """class representing a saved state of ResourceBrowser"""
+
         def __init__(self):
             self.selected_items = []
 
     def __init__(self, *args, **kwargs):
-        ScrolledPanel.__init__(self, *args, **kwargs)
+        wx.Panel.__init__(self, *args, **kwargs)
 
         self.wx_main = args[0]
 
-        self.resource_browser = ResourceBrowser(self, self.wx_main)
+        self.splitter_win = wx.SplitterWindow(self)
 
+        self.resource_tree = ResourceTree(self.splitter_win, self.wx_main)
+        self.tiles_panel = ImageTilesPanel(self.splitter_win, self.resource_tree)
+
+        self.splitter_win.SplitVertically(self.resource_tree, self.tiles_panel)
+        self.splitter_win.SetMinimumPaneSize(180)
+        # self.splitter_win.SetSashPosition(, True)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.resource_browser, 1, wx.EXPAND)
+        sizer.Add(self.splitter_win, 1, wx.EXPAND)
 
         self.SetSizer(sizer)
         self.Layout()
-        self.SetupScrolling()
 
 
-class ResourceBrowser(BaseTreeControl):
+class ResourceTree(BaseTreeControl):
     def __init__(self, parent, wx_main, *args, **kwargs):
         BaseTreeControl.__init__(self, parent, *args, **kwargs)
 
@@ -116,7 +106,7 @@ class ResourceBrowser(BaseTreeControl):
         constants.object_manager.add_object("ProjectBrowser", self)
 
         # ---------------------------------------------------------------------------- #
-        self.SetBackgroundColour(Colours.NORMAL_GREY)
+        self.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
@@ -133,20 +123,10 @@ class ResourceBrowser(BaseTreeControl):
         self.SetSecondGradientColour(wx.Colour(123, 123, 123))
 
         # ---------------------------------------------------------------------------- #
-        self.image_index = {}  # associates an extension which indexes into tree image_list
         self.image_list = wx.ImageList(16, 16)  # create an image list for tree control to use
 
-        i = 0
-        for ext in EXTENSIONS.keys():
-            self.image_index[ext] = i
-            icon_bitmap = wx.Bitmap(EXTENSIONS[ext])  # create a bitmap
-            self.image_list.Add(icon_bitmap)  # and append it to image list
-            i = i + 1
-
-        # and one finally for generic file icon
-        icon_bitmap = wx.Bitmap(GENERIC_FILE_ICON)
-        self.image_list.Add(icon_bitmap)
-
+        self.folder_icon_bitmap = wx.Bitmap(resourceGlobals.EXTENSIONS["folder"])
+        self.image_list.Add(self.folder_icon_bitmap)
         self.SetImageList(self.image_list)
         # ---------------------------------------------------------------------------- #
 
@@ -160,24 +140,10 @@ class ResourceBrowser(BaseTreeControl):
         self.saved_state = None
 
         # ---------------------------------------------------------------------------- #
-        self.libraries = {}     # all current loaded libraries
-        self.resources = {}     # maps and saves all loaded resources e.g [py] = {all .py resources}...
+        self.libraries = {}  # all current loaded libraries
+        self.resources = {}  # save all resources with same file extension e.g [py] = {all .py resources}...
         self.name_to_item = {}  # maps a file's or directory's name to it's corresponding tree item
-                                # e.g. name_to_item[file_name] = item
-
-        # ---------------------------------------------------------------------------- #
-        # file menus associates a file extension with, or an extension with a function,
-        # which creates its menus, to be used in popup menus
-        self.file_menus = {
-            "directory": [self.create_add_menu_items, self.create_generic_menu_items],
-            "py": [self.create_generic_menu_items],
-            "txt": [self.create_generic_menu_items],
-            "generic": [self.create_generic_menu_items],
-            "pz": [self.create_3d_model_menu_items, self.create_generic_menu_items],
-            "egg": [self.create_3d_model_menu_items, self.create_generic_menu_items],
-            "fbx": [self.create_3d_model_menu_items, self.create_generic_menu_items],
-            "obj": [self.create_3d_model_menu_items, self.create_generic_menu_items]
-        }
+        # e.g. name_to_item[file_name] = item
 
         self.event_map = {
             EVT_NEW_DIR: (self.on_file_op, "add_folder"),
@@ -209,9 +175,6 @@ class ResourceBrowser(BaseTreeControl):
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.create_popup_menu)
         self.Bind(wx.EVT_MENU, self.on_select_context)
 
-    files_and_extensions = {}  # temporarily saves all files with same extensions when organizing tree
-    tmp_selections = []
-
     # ----------------- All methods bounded to different tree events ----------------- #
     def on_item_expanded(self, event):
         event.Skip()
@@ -233,6 +196,7 @@ class ResourceBrowser(BaseTreeControl):
         evt.Skip()
 
     def create_popup_menu(self, evt):
+        '''
         selections = self.GetSelections()
 
         if len(selections) > 1:
@@ -248,11 +212,12 @@ class ResourceBrowser(BaseTreeControl):
                 item_ext = "directory"
             elif item_ext not in self.file_menus.keys():
                 item_ext = "generic"
+        '''
 
         popup_menu = wx.Menu()
 
-        for func in self.file_menus[item_ext]:
-            func(popup_menu)
+        create_add_menu_items(popup_menu)
+        create_generic_menu_items(popup_menu)
 
         self.PopupMenu(popup_menu, evt.GetPoint())
         popup_menu.Destroy()
@@ -283,11 +248,11 @@ class ResourceBrowser(BaseTreeControl):
             self.root_path = path
 
             # create a key for each know file type
-            for ext in EXTENSIONS.keys():
+            for ext in resourceGlobals.EXTENSIONS.keys():
                 self.resources[ext] = []
 
             # setup a default project library
-            parent_item = self.AppendItem(self.root_node, "Project", data=path, image=self.image_index["folder"])
+            parent_item = self.AppendItem(self.root_node, "Project", data=path, image=0)
             self.libraries["Project"] = path
 
             self.create_tree_from_dir(dir_path=path, parent=parent_item)
@@ -304,14 +269,14 @@ class ResourceBrowser(BaseTreeControl):
             self.UnselectAll()
 
             # create a key for each know file type
-            for ext in EXTENSIONS.keys():
+            for ext in resourceGlobals.EXTENSIONS.keys():
                 self.resources[ext] = []
 
             root_node = None
             # recreate all the libraries
             for key in self.libraries.keys():
                 path = self.libraries[key]
-                parent_item = self.AppendItem(self.root_node, key, data=path, image=self.image_index["folder"])
+                parent_item = self.AppendItem(self.root_node, key, data=path, image=0)
                 if key == "Project":
                     root_node = parent_item
                 self.create_tree_from_dir(path, parent_item)
@@ -323,47 +288,24 @@ class ResourceBrowser(BaseTreeControl):
         def append_item(_file_path, _file_name):
             extension = _file_path.split(".")[-1]
 
-            if extension in EXTENSIONS:
-                icon = self.image_index[extension]
-            else:
-                icon = self.image_index["generic"]
-
             # make sure extension exists otherwise add a new key
             if extension in self.resources.keys():
                 pass
             else:
                 self.resources[extension] = []
 
-            __item = self.AppendItem(parent, file, data=file_path)  # image=icon
-            self.name_to_item[file] = __item
+            # __item = self.AppendItem(parent, file, data=file_path)  # image=icon
+            # self.name_to_item[file] = __item
             self.resources[extension].append(_file_path)
             # self.SetItemTextColour(item, wx.Colour(255, 255, 190, 255))
 
         dir_files = os.listdir(dir_path)
 
-        tmp_files = []
-        folders = []
-        for _item in dir_files:
-            is_file = os.path.isfile(dir_path + "/" + _item)
-            if is_file:
-                tmp_files.append(_item)
-            else:
-                folders.append(_item)
-
-        self.files_and_extensions.clear()
-        self.organize(tmp_files)
-
-        tmp = []
-        for key in self.files_and_extensions.keys():
-            tmp += self.files_and_extensions[key]
-        tmp += folders
-        dir_files = tmp
-
         for file in dir_files:
             file_path = dir_path + "/" + file
 
             if os.path.isdir(file_path) and file != "__pycache__":
-                item = self.AppendItem(parent, file, data=file_path, image=self.image_index["folder"])
+                item = self.AppendItem(parent, file, data=file_path, image=0)
                 # self.SetItemTextColour(item, wx.Colour(255, 255, 190, 255))
                 self.Expand(item)
                 self.name_to_item[file] = item
@@ -389,40 +331,6 @@ class ResourceBrowser(BaseTreeControl):
     def remove_library(self, name):
         self.dir_watcher.unschedule(self.libraries[name])
         del self.libraries[name]
-
-    # ----------------- All methods for building context menus ----------------- #
-    def create_add_menu_items(self, parent_menu):
-        # add objects menu
-        objects_items = [
-            (EVT_CREATE_PY_MOD, "&Python Module", None),
-            (EVT_CREATE_P3D_USER_MOD, "&User Module", None),
-            (EVT_CREATE_ED_TOOL, "&Editor Plugin", None),
-            (EVT_CREATE_TXT_FILE, "&Text File", None),
-            (EVT_NEW_DIR, "&New Folder", None)
-        ]
-        objects_menu = wx.Menu()
-        build_menu(objects_menu, objects_items)
-        parent_menu.Append(wx.ID_ANY, "Add", objects_menu)
-
-        # import assets menu
-        import_assets_item = wx.MenuItem(parent_menu, EVT_IMPORT_ASSETS, "Import Assets")
-        parent_menu.Append(import_assets_item)
-        parent_menu.AppendSeparator()
-
-        # show in explorer menu
-        library_items = [(EVT_SHOW_IN_EXPLORER, "&Show In Explorer", None)]
-        build_menu(parent_menu, library_items)
-
-    def create_3d_model_menu_items(self, parent_menu):
-        menu_items = [(EVT_LOAD_MODEL, "&Load Model", None),
-                      (EVT_LOAD_ACTOR, "&Load Actor", None)]
-        build_menu(parent_menu, menu_items)
-
-    def create_generic_menu_items(self, parent_menu):
-        menu_items = [(EVT_RENAME_ITEM, "&Rename", None),
-                      (EVT_REMOVE_ITEM, "&Remove", None),
-                      (EVT_DUPLICATE_ITEM, "&Duplicate", None)]
-        build_menu(parent_menu, menu_items)
 
     # ----------------- file explorer operations ----------------- #
     def on_file_op(self, op, *args, **kwargs):
@@ -505,42 +413,34 @@ class ResourceBrowser(BaseTreeControl):
         dm.create_dialog("TextEntryDialog", "New Directory", dm, descriptor_text="Enter name", ok_call=on_ok)
 
     def rename_item(self):
-        def on_ok(text):
-            if text == "":
+        def on_ok(new_label):
+            if new_label == "":
                 print("[ResourceBrowser] Invalid item name}")
                 return
 
             selection = self.GetSelection()
-
-            old_dir_path = self.GetItemData(selection)
-            old_dir_name = old_dir_path.split("/")[-1]
-
-            new_dir = old_dir_path[:len(old_dir_path) - len(old_dir_name) - 1]
-            new_dir = new_dir + "/" + text
-
+            current_path = self.GetItemData(selection)
             item_text = self.GetItemText(selection)
 
             # if the selected item is a library item, then remove existing library entry,
             # and create a new one with existing data as of original entry
             # also make sure libraries does not have an existing entry matching new text
             if item_text in self.libraries.keys():
-                if text not in self.libraries.keys():
+                if new_label not in self.libraries.keys():
                     del self.libraries[item_text]
-                    self.libraries[text] = old_dir_path
+                    self.libraries[new_label] = current_path
                 else:
                     print("[ResourceBrowser]: Failed to rename item")
-            elif not os.path.exists(new_dir):
-                os.rename(old_dir_path, new_dir)
-                self.SetItemData(self.GetSelection(), new_dir)
+            elif PathUtils.rename(self.GetItemData(self.GetSelection()), new_label):
+                self.SetItemText(self.GetSelection(), new_label)
             else:
                 print("[ResourceBrowser]: Failed to rename item")
 
-            # update tree controls
-            self.SetItemText(self.GetSelection(), text)
-
         dm = self.wx_main.dialogue_manager
         dm.create_dialog("TextEntryDialog",
-                         "Rename Item", dm, descriptor_text="Rename Selection", ok_call=on_ok,
+                         "Rename Item",
+                         dm, descriptor_text="Rename Selection",
+                         ok_call=on_ok,
                          initial_text=self.GetItemText(self.GetSelection()))
 
     def duplicate(self, *args):
@@ -560,13 +460,15 @@ class ResourceBrowser(BaseTreeControl):
                 if item_text in self.libraries.keys():
                     self.remove_library(item_text)
                 else:
-                    result = try_execute(os.remove, item_path)
-                    if result:
+                    if PathUtils.delete(item_path):
                         del self.name_to_item[item_text]  # remove from name_to_items
                         self.Delete(item)
 
         dm = self.wx_main.dialogue_manager
-        dm.create_dialog("YesNoDialog", "Delete Item", dm, descriptor_text="Confirm remove selection(s) ?",
+        dm.create_dialog("YesNoDialog",
+                         "Delete Item",
+                         dm,
+                         descriptor_text="Confirm remove selection(s) ?",
                          ok_call=on_ok)
 
     def create_asset(self, _type):
@@ -648,7 +550,7 @@ class ResourceBrowser(BaseTreeControl):
 
     def save_state(self):
         """saves the current state of tree e.g. currently selected tree items"""
-        self.saved_state = _ResourceBrowser.State()
+        self.saved_state = ResourceBrowser.State()
         for item in self.GetSelections():
             item_text = self.GetItemText(item)
             self.saved_state.selected_items.append(item_text)

@@ -29,16 +29,11 @@ class MediaPanel(EditorPlugin):
 
     def create_ui(self):
         self.create_image_panel()
+        self._panel.Bind(wx.EVT_SIZE, self.on_size_event)
 
     def create_image_panel(self):
-        img = wx.Image(240, 240)
-        self.imageCtrl = wx.StaticBitmap(self._panel, wx.ID_ANY, wx.Image.ConvertToBitmap(img))
-
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.imageCtrl, 0, wx.ALL | wx.EXPAND, 5)
-
-        self._panel.SetSizer(self.sizer)
-        self._panel.Layout()
+        self.img = wx.Image(100, 100)
+        self.imageCtrl = wx.StaticBitmap(self._panel, wx.ID_ANY, wx.Image.ConvertToBitmap(self.img))
 
     def set_image(self, filepath):
         # make sure to only call this function once
@@ -60,22 +55,30 @@ class MediaPanel(EditorPlugin):
             return
 
         self.imageCtrl.SetSize((self._panel.GetSize().x, self._panel.GetSize().y))
+        self.imageCtrl.SetPosition((0, 0))
 
+        # self.img = wx.Image(self.img_path, wx.BITMAP_TYPE_ANY)
         # scale the image, preserving the aspect ratio
-        image_width = self.img.GetWidth()
-        image_height = self.img.GetHeight()
+        img_width = self.img.GetSize().x
+        img_height = self.img.GetSize().y
 
-        if image_width > image_height:
-            new_width = self.imageCtrl.GetSize().x
-            new_height = self.imageCtrl.GetSize().y * image_height / image_width
-        else:
-            new_height = self.imageCtrl.GetSize().y
-            new_width = self.imageCtrl.GetSize().x * image_width / image_height
+        max_width = self.imageCtrl.GetSize().x
+        max_height = self.imageCtrl.GetSize().y
+
+        ratio = min(max_width/img_width, max_height/img_height)
+        new_width = img_width * ratio
+        new_height = img_height * ratio
+
+        if new_height < 1:
+            new_height = 1
+
+        if new_width < 1:
+            new_width = 1
 
         img = self.img.Scale(new_width, new_height)
         self.imageCtrl.SetBitmap(wx.Bitmap(img))
-        self._panel.Refresh()
 
-    def on_resize_event(self):
-        if self.imageCtrl and self.img:
+    def on_size_event(self, evt):
+        if self.imageCtrl and self.img and self.img_path:
             self.scale_image()
+        evt.Skip()

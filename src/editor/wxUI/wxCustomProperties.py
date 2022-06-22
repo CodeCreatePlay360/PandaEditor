@@ -1,17 +1,17 @@
 import wx
 import wx.lib.agw.gradientbutton as gbtn
 import wx.lib.colourchooser.pycolourchooser as colorSelector
+import editor.uiGlobals as uiGlobals
 
 from panda3d.core import Vec3, Vec2, LColor
 from editor.constants import obs, object_manager, LevelEditorEventHandler
-from editor.colourPalette import ColourPalette as Colours
 
 # IDs
 ID_TEXT_CHANGE = wx.NewId()
 
 # constants
 CONTROL_MARGIN_RIGHT = 1
-LABEL_TO_CNTRL_SPACE = 10
+LABEL_TO_CONTROL_SPACE = 10
 
 SYSTEM_KEY_CODES = [8, 32, 45, 43, 46]
 
@@ -44,7 +44,7 @@ def is_valid_float(curr_value):
 class WxCustomProperty(wx.Window):
     def __init__(self, parent, prop=None, h_offset=1, *args, **kwargs):
         wx.Window.__init__(self, parent, *args)
-        self.SetBackgroundColour(wx.Colour(Colours.NORMAL_GREY))
+        self.SetBackgroundColour(wx.Colour(uiGlobals.ColorPalette.NORMAL_GREY))
 
         self.parent = parent
 
@@ -86,13 +86,13 @@ class WxCustomProperty(wx.Window):
         pass
 
     def create_control(self):
-        self.ed_property_labels.SetMinSize((self.ed_property_labels.GetSize().x + LABEL_TO_CNTRL_SPACE,
+        self.ed_property_labels.SetMinSize((self.ed_property_labels.GetSize().x + LABEL_TO_CONTROL_SPACE,
                                             self.ed_property_labels.GetSize().y))
 
     def on_control_created(self):
         pass
 
-    def set_control_value(self, val, **kwargs):
+    def set_control_value(self, val):
         pass
 
     def set_value(self, val):
@@ -172,7 +172,7 @@ class IntProperty(WxCustomProperty):
         self.old_value = property_value
         self.text_ctrl.SetValue(str(property_value))
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
@@ -228,7 +228,7 @@ class FloatProperty(WxCustomProperty):
         property_value = self.get_value()
         self.text_ctrl.SetValue(str(property_value))
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
@@ -282,7 +282,7 @@ class StringProperty(WxCustomProperty):
         property_value = self.get_value()
         self.text_ctrl.SetValue(property_value)
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         self.sizer.Add(self.text_ctrl, 1)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
@@ -323,7 +323,7 @@ class BoolProperty(WxCustomProperty):
         # initial value
         property_value = self.get_value()
         self.toggle.SetValue(property_value)
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=-1)
         self.sizer.Add(self.toggle, 0)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
@@ -353,7 +353,7 @@ class ColorProperty(WxCustomProperty):
             # the actual wx color property 
             self.color_property = color_property
 
-            # set the inital colour value
+            # set the initial color value
             self.SetValue(initial_val)
 
         def onSliderMotion(self, evt):
@@ -399,15 +399,13 @@ class ColorProperty(WxCustomProperty):
         def __init__(self, parent, initial_val, title, color_property):
             super(ColorProperty.CustomColorDialog, self).__init__(parent,
                                                                   title=title,
-                                                                  style=wx.DEFAULT_DIALOG_STYLE |
-                                                                        wx.DIALOG_NO_PARENT |
-                                                                        wx.STAY_ON_TOP)
+                                                                  style=wx.DEFAULT_DIALOG_STYLE | wx.DIALOG_NO_PARENT
+                                                                  | wx.STAY_ON_TOP)
 
-            self.SetBackgroundColour(wx.Colour(Colours.NORMAL_GREY))
+            self.SetBackgroundColour(wx.Colour(uiGlobals.ColorPalette.NORMAL_GREY))
             self.SetSize((490, 350))
 
-            # create a backgound panel
-            self.panel = wx.Panel(self)
+            self.panel = wx.Panel(self)  # create a background panel
 
             # create a py color selector
             # self.color_selector = colorSelector.PyColourChooser(self.panel, -1)
@@ -430,6 +428,8 @@ class ColorProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
 
+        self.color_panel = None
+
     def create_control(self):
         # label = wx.StaticText(self, label=self.label)
         super().create_control()
@@ -441,11 +441,10 @@ class ColorProperty(WxCustomProperty):
         colour = wx.Colour(property_val.x, property_val.y, property_val.z, property_val.w)
         self.color_panel.SetBackgroundColour(colour)
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         self.sizer.Add(self.color_panel, 1, wx.EXPAND)
         self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
-
 
         self.bind_events()
 
@@ -519,7 +518,7 @@ class Vector2Property(WxCustomProperty):
         self.text_ctrl_x.SetValue(str(property_value.x))
         self.text_ctrl_y.SetValue(str(property_value.y))
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         # self.sizer.AddSpacer(LABEL_TO_CONTROL_MARGIN)
         self.sizer.Add(label_x, 0, wx.RIGHT | wx.TOP, 1)
@@ -632,7 +631,7 @@ class Vector3Property(WxCustomProperty):
         self.text_ctrl_y.SetValue(str(y))
         self.text_ctrl_z.SetValue(str(z))
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
         # self.sizer.AddSpacer(LABEL_TO_CONTROL_MARGIN)
         self.sizer.Add(label_x, 0, wx.RIGHT | wx.TOP, 1)
@@ -732,6 +731,11 @@ class Vector3Property(WxCustomProperty):
         self.text_ctrl_z.Unbind(wx.EVT_TEXT)
 
 
+def on_mouse_enter(evt):
+    LevelEditorEventHandler.UPDATE_XFORM_TASK = False
+    evt.Skip()
+
+
 class EnumProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
@@ -751,7 +755,7 @@ class EnumProperty(WxCustomProperty):
         self.choice_control = wx.Choice(self, choices=val)
         self.choice_control.SetSelection(self.value)
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.TOP, border=3)
         self.sizer.Add(self.choice_control, 0)
 
@@ -770,20 +774,9 @@ class EnumProperty(WxCustomProperty):
         self.choice_control.SetMinSize((self.parent.GetSize().x - 8, 22))
         evt.Skip()
 
-    def on_mouse_enter(self, evt):
-        LevelEditorEventHandler.UPDATE_XFORM_TASK = False
-        evt.Skip()
-
-    def on_mouse_leave(self, evt):
-        LevelEditorEventHandler.UPDATE_XFORM_TASK = True
-        evt.Skip()
-
     def bind_events(self):
         self.Bind(wx.EVT_SIZE, self.on_evt_size)
         self.Bind(wx.EVT_CHOICE, self.on_event_choice)
-
-        self.choice_control.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_enter)
-        self.choice_control.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
 
     def unbind_events(self):
         self.Unbind(wx.EVT_SIZE)
@@ -805,7 +798,7 @@ class SliderProperty(WxCustomProperty):
                                 maxValue=self.property.max_value,
                                 style=wx.SL_HORIZONTAL)
 
-        # add to sizers
+        # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.TOP, border=2)
         self.sizer.Add(self.slider, 1)
 
@@ -816,9 +809,6 @@ class SliderProperty(WxCustomProperty):
 
     def on_event_slider(self, evt):
         self.set_value(self.slider.GetValue())
-        evt.Skip()
-
-    def on_evt_size(self, evt):
         evt.Skip()
 
     def bind_events(self):
@@ -854,67 +844,11 @@ class ButtonProperty(WxCustomProperty):
         self.Unbind(wx.EVT_BUTTON)
 
 
-class ContainerProperty(WxCustomProperty):
-    def __init__(self, parent, prop, *args, **kwargs):
-        super().__init__(parent, prop, *args, **kwargs)
-        self.SetBackgroundColour(wx.Colour(Colours.DARK_GREY))
-
-        self.properties = []
-        self.expanded = False
-
-    def create_control(self):
-        self.panel = wx.Panel(self)
-        self.panel.SetMaxSize((0, 18))
-        self.panel.SetWindowStyleFlag(wx.BORDER_SIMPLE)
-        self.panel.Bind(wx.EVT_LEFT_DOWN, self.on_evt_clicked)
-
-        # add self.panel to sizers
-        self.sizer.Add(self.panel, 1, wx.EXPAND)
-        self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
-
-        # destroy the default property label
-        self.ed_property_labels.Destroy()
-
-        # create a panel label
-        label = wx.StaticText(self.panel, label=self.label)
-        label.SetPosition(wx.Point(0, 1))
-        label.SetFont(self.font)
-        label.SetForegroundColour(wx.Colour(255, 255, 255, 255))
-
-        self.Bind(wx.EVT_SIZE, self.on_evt_size)
-
-    def set_control_value(self, val):
-        self.property.set_value(val)
-        for prop in self.properties:
-            info = prop.property.get_list_item_info()
-            prop.set_control_value(val[info.index])
-
-    def on_evt_clicked(self, evt):
-        if self.expanded is True:
-            self.parent.excluded_controls = []
-            self.expanded = False
-
-        elif self.expanded is False:
-            self.parent.excluded_controls = self.properties
-            self.expanded = True
-
-        self.parent.update_controls()
-        object_manager.get("PropertiesPanel").fold_manager.refresh()
-        evt.Skip()
-
-    def on_evt_size(self, evt):
-        self.panel.SetMaxSize((self.parent.GetSize().x - 10, 18))
-        evt.Skip()
-
-
-class ListProperty(ContainerProperty):
-    def __init__(self, *args, **kwargs):
-        ContainerProperty.__init__(self, *args, **kwargs)
-
-
 class StaticBox(WxCustomProperty):
-    def __init__(self, parent, property, *args, **kwargs):
-        super().__init__(parent, property, *args, **kwargs)
+    def __init__(self, parent, property_, *args, **kwargs):
+        super().__init__(parent, property_, *args, **kwargs)
+
+        self.text_ctrl = None
         self.static_box = None
         self.static_box_sizer = None
 
@@ -924,10 +858,10 @@ class StaticBox(WxCustomProperty):
 
         self.static_box = wx.StaticBox(self, label=self.label)
         self.static_box.SetForegroundColour(self.font_colour)
-        self.static_box.SetFont(self.font)
+        # self.static_box.SetFont(self.font)
 
-        self.text_ctrl_x = wx.TextCtrl(self.static_box, size=(55, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
-        self.text_ctrl_x.SetPosition(wx.Point(2, 22))
+        self.text_ctrl = wx.TextCtrl(self.static_box, size=(55, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
+        self.text_ctrl.SetPosition(wx.Point(2, 22))
 
         self.Bind(wx.EVT_SIZE, self.on_evt_size)
 
@@ -938,30 +872,3 @@ class StaticBox(WxCustomProperty):
         self.static_box.SetPosition(wx.Point(3, 0))
 
         evt.Skip()
-
-
-class ObjectControl(WxCustomProperty):
-    def __init__(self, parent, property, *args, **kwargs):
-        super().__init__(parent, property, *args, **kwargs)
-        self.obj_control = None
-
-    def create_control(self):
-        super().create_control()
-
-        self.obj_control = wx.Panel(self)
-        self.obj_control.SetMaxSize((self.GetSize().x - self.ed_property_labels.GetSize().x - 8, 18))
-        self.obj_control.SetWindowStyleFlag(wx.BORDER_SIMPLE)
-
-        self.color_panel.SetBackgroundColour(colour)
-
-        # add to sizers
-        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND)
-        self.sizer.Add(self.obj_control, 1, wx.EXPAND)
-        self.sizer.AddSpacer(CONTROL_MARGIN_RIGHT)
-
-        self.obj_control.Bind(wx.EVT_LEFT_DOWN, self.on_evt_clicked)
-        # self.Bind(wx.EVT_SIZE, self.on_evt_size)
-
-    def on_event_clicked(self, evt):
-        evt.Skip()
-        pass

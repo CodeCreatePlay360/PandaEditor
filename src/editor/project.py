@@ -1,5 +1,6 @@
 import os.path
 from panda3d.core import get_model_path, Filename
+from editor.resourceManager import ResourceManager
 from game.game import Game
 
 
@@ -11,6 +12,8 @@ class Project(object):
 
         self.project_name = ""
         self.project_path = ""
+
+        self.resource_manager = ResourceManager()
 
         self.user_modules = []
 

@@ -1,5 +1,5 @@
 import wx
-from editor.colourPalette import ColourPalette as Colours
+import editor.uiGlobals as uiGlobals
 from editor.constants import ICONS_PATH
 
 
@@ -15,7 +15,7 @@ class WxFoldPanel(wx.Panel):
         wx.Panel.__init__(self, fold_manager)
         
         self.SetWindowStyleFlag(wx.BORDER_SIMPLE)
-        self.SetBackgroundColour(wx.Colour(Colours.DARK_GREY))
+        self.SetBackgroundColour(wx.Colour(uiGlobals.ColorPalette.DARK_GREY))
         
         self.fold_manager = fold_manager
         

@@ -1,6 +1,6 @@
 import sys
 import wx
-from editor.colourPalette import ColourPalette as Colours
+import editor.uiGlobals as uiGlobals
 
 
 class LogPanel(wx.Panel):
@@ -44,13 +44,10 @@ class LogPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwargs)
 
         # Build log text control
-        self.tc = wx.TextCtrl(self, style=
-        wx.TE_MULTILINE |
-        wx.TE_RICH2 |
-        wx.NO_BORDER)
+        self.tc = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.NO_BORDER)
 
-        self.tc.SetBackgroundColour(Colours.NORMAL_GREY)
-        self.tc.SetForegroundColour(Colours.EDITOR_TEXT_COLOR)
+        self.tc.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
+        self.tc.SetForegroundColour(uiGlobals.ColorPalette.EDITOR_TEXT_COLOR)
 
         # Redirect text here
         sys.stdout = self.RedirectText(sys.stdout, self.tc)

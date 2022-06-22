@@ -12,7 +12,7 @@ from editor.commandManager import CommandManager
 EDITOR_STATE = 0
 GAME_STATE = 1
 
-MAX_COMMANDS_COUNT = 12
+MAX_COMMANDS_COUNT = 20
 
 TAG_IGNORE = "SELECT_IGNORE"
 TAG_PICKABLE = "PICKABLE"
@@ -39,6 +39,10 @@ CUBE_PATH = MODELS_PATH_2 + "\\" + "cube.fbx"
 CAPSULE_PATH = MODELS_PATH_2 + "\\" + "capsule.fbx"
 CONE_PATH = MODELS_PATH_2 + "\\" + "cone.fbx"
 PLANE_PATH = MODELS_PATH_2 + "\\" + "plane.fbx"
+
+# supported extensions
+MODEL_EXTENSIONS = ["fbx", "obj", "egg", "bam", "pz", ]
+TEXTURE_EXTENSIONS = []
 
 command_manager = CommandManager()
 obs = Observable()  # the event manager object
@@ -340,7 +344,7 @@ class ProjectEventHandler:
             # validate project path and set project
             #  and os.listdir(proj_path) == 0
             if os.path.exists(proj_path) and os.path.isdir(proj_path):
-                le.create_new_project(proj_path)
+                le.create_new_project(proj_name, proj_path)
 
                 file_browser.create_or_rebuild_tree(proj_path, rebuild_event=False)
                 file_browser.Refresh()
@@ -561,7 +565,7 @@ def reparent_np(src_np, target_np):
 
 @obs.on("OnReparentNPs")
 def on_reparent_nps(src_np, target_np):
-    """executed after a reparent operation in scene graph"""
+    """executed after a re-parent operation in scene graph"""
 
     scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
     scene_graph.reparent(src_np, target_np)
@@ -636,10 +640,55 @@ def plugin_execution_failed(plugin):
 
 # ---------------------------------------- Wx EVENTs ---------------------------------------- #
 # events emitted by wx-widgets
+import editor.resources.globals as ResourceGlobals
+
 
 @obs.on("ResourceItemSelected")
-def on_tree_item_select(selections):
-    """event called when a resource item is selected in resource browser"""
+def resource_item_selected(selections):
+    """event called when an item is selected in resource browser"""
+
+    image_tiles_panel = p3d_app.wx_main.resource_browser.tiles_panel
+    image_tiles_panel.remove_all_tiles()
+
+    for _dir, path in selections:
+        dir_items = os.listdir(path)
+        for item in dir_items:
+
+            if os.path.isdir(path + "/" + item):
+                continue
+
+            split = item.split(".")
+            extension = split[-1]
+            file_name = split[0]
+            file_path = path + "/" + file_name + "." + extension
+
+            if extension in ResourceGlobals.EXTENSIONS:
+
+                # change icon for py file if its editor plugin
+                if extension == "py" and p3d_app.level_editor.is_module(file_name):
+                    module = p3d_app.level_editor.get_module(file_name)
+                    if module._editor_plugin:
+                        image = ResourceGlobals.EXTENSIONS["ed_plugin"]
+                    else:
+                        image = ResourceGlobals.EXTENSIONS[extension]
+                # -------------------------------------------------
+
+                else:
+                    image = ResourceGlobals.EXTENSIONS[extension]
+
+            else:
+                image = ResourceGlobals.EXTENSIONS["generic"]
+
+            image_tiles_panel.add_tile(image=image, label=file_name, extension=extension, data=file_path)
+
+    image_tiles_panel.update_tiles()
+
+
+@obs.on("ResourceTileSelected")
+def resource_tile_selected(tile_data):
+    le = p3d_app.level_editor
+    le.deselect_all()
+    inspector_panel = p3d_app.wx_main.inspector_panel
 
     def on_module_selected(module):
         inspector_panel.layout_object_properties(module, module._name, module.get_properties())
@@ -647,24 +696,20 @@ def on_tree_item_select(selections):
     def on_txt_file_selected(txt_file):
         inspector_panel.set_text(txt_file)
 
-    le = object_manager.get("LevelEditor")
-    le.deselect_all()
-    inspector_panel = object_manager.get("PropertiesPanel")
+    # try to get module from level editor
+    file_name = tile_data
+    file_name = file_name.split(".")[0]
 
-    for file_name, data in selections:
-        # try to get module from level editor
-        name = file_name.split(".")[0]
+    if le.is_module(file_name):
+        # if it's a user module
+        on_module_selected(le.get_module(file_name))
 
-        if le.is_module(name):
-            # if it's a user module
-            on_module_selected(le.get_module(name))
+    elif le.is_text_file(file_name):
+        # if it's a text file
+        on_txt_file_selected(le.get_text_file(file_name))
 
-        elif le.is_text_file(name):
-            # if it's a text file
-            on_txt_file_selected(le.get_text_file(name))
-
-        else:
-            inspector_panel.reset()
+    else:
+        inspector_panel.reset()
 
 
 @obs.on("OnSelectSceneGraphItem")
@@ -697,7 +742,7 @@ def update_inspector(*args):
     pp.layout_object_properties(np, np.get_name(), np.get_properties())
 
 
-@obs.on("LoadEdPluginPanel")
+@obs.on("LoadPanel")
 def add_panel(panel):
     """event called when a request to a new tab is made from main menu bar"""
     p3d_app.wx_main.add_panel(panel)

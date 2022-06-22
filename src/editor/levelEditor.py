@@ -6,7 +6,7 @@ import editor.core as ed_core
 import editor.nodes as ed_node_paths
 import editor.gizmos as gizmos
 import editor.constants as constants
-import editor.globals as globals
+import editor.globals as ed_globals
 import editor.commands as commands
 
 from direct.showbase.DirectObject import DirectObject
@@ -93,7 +93,7 @@ class LevelEditor(DirectObject):
             constants.obs.trigger("XFormTask")
             self.current_time += self.x_form_delay
 
-            if self.app.wx_main.resource_browser.resource_browser.GetSelection() is None:
+            if self.app.wx_main.resource_browser.resource_tree.GetSelection() is None:
                 pass
 
         return task.cont
@@ -132,8 +132,8 @@ class LevelEditor(DirectObject):
         # add a default player camera
         constants.command_manager.do(commands.AddCamera(constants.p3d_app))
         cam = self.active_scene.render.find("**/PlayerCam").getNetPythonTag(constants.TAG_PICKABLE)
-        cam.setPos(-220, 280, 80)
-        cam.setHpr(p3d_core.Vec3(218, 0, 0))
+        cam.setPos(-239.722, 336.966, 216.269)
+        cam.setHpr(p3d_core.Vec3(-145.0, -20, 0))
         self.set_player_camera(cam)
 
         # add a default cube
@@ -158,10 +158,10 @@ class LevelEditor(DirectObject):
         self.selection.deselect_all()
         self.update_gizmo()
 
-        for np in self.app.show_base.ed_render.get_children():
+        for np in self.app.show_base.edRender.get_children():
             if np.hasPythonTag(constants.TAG_PICKABLE):
                 np.getPythonTag(constants.TAG_PICKABLE).on_remove()
-            np.remove_node()
+                np.remove_node()
 
         for np in self.app.show_base.render.get_children():
             if np.hasPythonTag(constants.TAG_PICKABLE):
@@ -199,7 +199,7 @@ class LevelEditor(DirectObject):
     def reload_resources(self):
         # reload resources
         # TODO replace this a call resource_handler.reload_resources()
-        resources = self.app.wx_main.resource_browser.resource_browser
+        resources = self.app.wx_main.resource_browser.resource_tree
         resources.create_or_rebuild_tree(self.project.project_path, rebuild_event=False)
         resources.Refresh()
         self.load_all_mods(resources.resources["py"])
@@ -768,12 +768,12 @@ class LevelEditor(DirectObject):
         return new_selections
 
     def reparent_np(self, src_np, target_np):
-        if src_np.getPythonTag(constants.TAG_PICKABLE).uid in globals.LIGHT_UIDs:
+        if src_np.getPythonTag(constants.TAG_PICKABLE).uid in ed_globals.LIGHT_UIDs:
             self.active_scene.scene_lights.remove(src_np)
 
         src_np.wrtReparentTo(target_np)
 
-        if src_np.getPythonTag(constants.TAG_PICKABLE).uid in globals.LIGHT_UIDs:
+        if src_np.getPythonTag(constants.TAG_PICKABLE).uid in ed_globals.LIGHT_UIDs:
             self.active_scene.scene_lights.append(src_np)
 
         constants.obs.trigger("OnReparentNPs", src_np, target_np)

@@ -11,10 +11,10 @@ class Globals:
 
     @property
     def selected_resource_item(self):
-        resource_browser = p3d_app.wx_main.resource_browser.resource_browser
-        selection = resource_browser.GetSelection()
+        tiles_panel = p3d_app.wx_main.resource_browser.tiles_panel
+        selection = tiles_panel.SELECTED_TILE
         if selection:
-            return resource_browser.GetItemData(selection)
+            return selection.data
         return None
 
     @property

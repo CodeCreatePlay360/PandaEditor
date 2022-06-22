@@ -228,7 +228,7 @@ class WxMenuBar(wx.MenuBar):
             constants.obs.trigger("ProjectEvent", PROJ_EVENTS[evt.GetId()])
 
         elif evt.GetId() in UI_TAB_EVENTS:
-            constants.obs.trigger("EventAddTab", UI_TAB_EVENTS[evt.GetId()])
+            constants.obs.trigger("LoadPanel", UI_TAB_EVENTS[evt.GetId()])
 
         elif evt.GetId() in UI_LAYOUT_EVENTS:
             constants.obs.trigger("UILayoutEvent", UI_LAYOUT_EVENTS[evt.GetId()])
@@ -249,7 +249,7 @@ class WxMenuBar(wx.MenuBar):
             constants.obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
 
         elif evt.GetId() in self.ed_plugins_menus.keys():
-            constants.obs.trigger("LoadEdPluginPanel", self.ed_plugins_menus[evt.GetId()])
+            constants.obs.trigger("LoadPanel", self.ed_plugins_menus[evt.GetId()])
 
         elif evt.GetId() in SOCIAL_MEDIA_LINKS:
             constants.obs.trigger("OpenSocialMediaLink", SOCIAL_MEDIA_LINKS[evt.GetId()])

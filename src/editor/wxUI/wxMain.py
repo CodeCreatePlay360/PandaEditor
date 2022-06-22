@@ -1,10 +1,8 @@
-import os
-
 import wx
 import wx.lib.agw.aui as aui
 
 from editor.wxUI.wxMenuBar import WxMenuBar
-from editor.wxUI.resourceBrowser import _ResourceBrowser
+from editor.wxUI.resourceBrowser import ResourceBrowser
 from editor.wxUI.sceneBrowser import SceneBrowserPanel
 from editor.wxUI.inspectorPanel import InspectorPanel
 from editor.wxUI.logPanel import LogPanel
@@ -46,13 +44,15 @@ PROJ_EVENTS = {
 
 # resources
 ICON_FILE = ICONS_PATH + "\\" + "pandaIcon.ico"
-NEW_ICON = ICONS_PATH + "\\" + "fileNew_32.png"
+NEW_SESSION_ICON = ICONS_PATH + "\\" + "fileNew_32.png"
 OPEN_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
-SAVE_ICON = ICONS_PATH + "\\" + "fileSave_32.png"
-SAVE_AS_ICON = ICONS_PATH + "\\" + "fileSaveAs_32.png"
+SAVE_SESSION_ICON = ICONS_PATH + "\\" + "fileSave_32.png"
+SAVE_SESSION_AS_ICON = ICONS_PATH + "\\" + "fileSaveAs_32.png"
 PROJ_OPEN_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
 PROJ_SAVE_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
 IMPORT_LIBRARY_ICON = ICONS_PATH + "\\" + "importLib_32.png"
+IMPORT_PACKAGE_ICON = ICONS_PATH + "\\" + "add_package.png"
+OPEN_STORE_ICON = ICONS_PATH + "\\" + "shop_network.png"
 
 PLAY_ICON = ICONS_PATH + "\\" + "playIcon_32x.png"
 STOP_ICON = ICONS_PATH + "\\" + "stopIcon_32.png"
@@ -64,29 +64,6 @@ NO_SOUND_ICON = ICONS_PATH + "\\" + "noSoundIcon.png"
 
 DISABLED_ICON = ICONS_PATH + "\\" + "disabled_icon.png"
 
-DEFAULT_AUI_LAYOUT = "layout2|name=FileMenuToolBar;caption=Toolbar;state=67379964;\
-dir=1;layer=10;row=0;pos=0;prop=100000;bestw=135;besth=42;minw=-1;minh=-1;maxw=-1;\
-maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;\
-transparent=255|name=ProjectMenuToolbar;caption=Toolbar;state=67379964;dir=1;layer=10;\
-row=0;pos=137;prop=100000;bestw=95;besth=42;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;\
-floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=SceneControlsToolbar;\
-caption=Toolbar;state=67379964;dir=1;layer=10;row=0;pos=234;prop=100000;bestw=95;besth=42;\
-minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;\
-transparent=255|name=PlayControlsToolbar;caption=Toolbar;state=67379964;dir=1;layer=10;\
-row=0;pos=331;prop=100000;bestw=55;besth=42;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;\
-floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=EditorViewport;\
-caption=EditorView;state=134481916;dir=4;layer=0;row=0;pos=0;prop=100000;bestw=1;besth=1;\
-minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;\
-transparent=255|name=ObjectInspectorTab;caption=InspectorTab;state=201590780;dir=4;layer=0;\
-row=2;pos=0;prop=100000;bestw=1;besth=20;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=1018;\
-floaty=383;floatw=1;floath=20;notebookid=-1;transparent=255|name=ResourceBrowser;\
-caption=ResourceBrowser;state=201590780;dir=3;layer=1;row=0;pos=0;prop=43181;\
-bestw=16;besth=35;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=509;floaty=657;floatw=576;\
-floath=216;notebookid=-1;transparent=255|name=LogTab;caption=LogTab;state=201590780;dir=3;\
-layer=1;row=0;pos=1;prop=156817;bestw=118;besth=49;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=637;\
-floaty=555;floatw=118;floath=49;notebookid=-1;\
-transparent=255|dock_size(1,10,0)=44|dock_size(4,0,0)=813|dock_size(4,0,2)=335|dock_size(3,1,0)=262|"
-
 
 class WxFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -97,6 +74,7 @@ class WxFrame(wx.Frame):
 
         self.load_resources()
 
+        # TODO change this to use resource globals
         icon_file = ICON_FILE
         icon = wx.Icon(icon_file, wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
@@ -124,7 +102,7 @@ class WxFrame(wx.Frame):
         self.ed_viewport_panel = wxPanda.Viewport(self, style=wx.BORDER_SUNKEN)  # editor_viewport
         self.inspector_panel = InspectorPanel(self)
         self.log_panel = LogPanel(self)  # log panel
-        self.resource_browser = _ResourceBrowser(self)
+        self.resource_browser = ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
         # self.auxiliary_panel = AuxiliaryPanel(self)
 
@@ -147,7 +125,7 @@ class WxFrame(wx.Frame):
                                Caption("EditorViewport").
                                CloseButton(False).
                                MaximizeButton(True).
-                               Direction(4).Layer(0).Row(1).Position(0)),
+                               Direction(4).Layer(0).Row(2).Position(0)),
 
             # dir=4;layer=0;row=2;pos=0
             "ObjectInspectorTab": (self.inspector_panel,
@@ -157,7 +135,7 @@ class WxFrame(wx.Frame):
                                    Caption("InspectorTab").
                                    CloseButton(True).
                                    MaximizeButton(False).
-                                   Direction(4).Layer(0).Row(2).Position(0)),
+                                   Direction(4).Layer(0).Row(3).Position(0)),
 
             # dir=3;layer=1;row=0;pos=0
             "ResourceBrowser": (self.resource_browser,
@@ -208,12 +186,12 @@ class WxFrame(wx.Frame):
             self.aui_manager.AddPane(pane_def[0], pane_def[2])
 
             if pane_def[2].name == "SceneGraph":
-                proportion_x = (20 / 100) * size.x
+                proportion_x = (15 / 100) * size.x
                 proportion_y = (60 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
 
             if pane_def[2].name == "EditorViewport":
-                proportion_x = (55 / 100) * size.x
+                proportion_x = (60 / 100) * size.x
                 proportion_y = (60 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
 
@@ -226,22 +204,24 @@ class WxFrame(wx.Frame):
             if pane_def[2].name == "ResourceBrowser":
                 proportion_y = (30 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(1, proportion_y))
-                pane_def[2].dock_proportion = 25
+                pane_def[2].dock_proportion = 65
 
             if pane_def[2].name == "LogTab":
                 proportion_y = (30 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(1, proportion_y))
-                pane_def[2].dock_proportion = 75
+                pane_def[2].dock_proportion = 35
 
     def load_resources(self):
-        self.new_icon = wx.Bitmap(NEW_ICON)
-        self.open_icon = wx.Bitmap(OPEN_ICON)
-        self.save_icon = wx.Bitmap(SAVE_ICON)
-        self.save_as_icon = wx.Bitmap(SAVE_AS_ICON)
+        self.new_session_icon = wx.Bitmap(NEW_SESSION_ICON)
+        # self.open_icon = wx.Bitmap(OPEN_ICON)
+        self.save_session_icon = wx.Bitmap(SAVE_SESSION_ICON)
+        self.save_session_as_icon = wx.Bitmap(SAVE_SESSION_AS_ICON)
 
         self.proj_open_icon = wx.Bitmap(PROJ_OPEN_ICON)
         self.proj_save_icon = wx.Bitmap(PROJ_SAVE_ICON)
         self.import_lib_icon = wx.Bitmap(IMPORT_LIBRARY_ICON)
+        self.import_package_icon = wx.Bitmap(IMPORT_PACKAGE_ICON)
+        self.open_store_icon = wx.Bitmap(OPEN_STORE_ICON)
 
         self.play_icon = wx.Bitmap(PLAY_ICON)
         self.stop_icon = wx.Bitmap(STOP_ICON)
@@ -251,23 +231,21 @@ class WxFrame(wx.Frame):
         self.sound_icon = wx.Bitmap(SOUND_ICON)
         self.no_sound_icon = wx.Bitmap(NO_SOUND_ICON)
 
-        self.disabled_icon = wx.Bitmap(DISABLED_ICON)
-
     def build_filemenu_tb(self):
         self.filemenu_tb = aui.AuiToolBar(self)
 
-        new_btn = self.filemenu_tb.AddTool(TB_EVT_NEW, '', self.new_icon,
-                                           disabled_bitmap=self.disabled_icon,
+        new_btn = self.filemenu_tb.AddTool(TB_EVT_NEW, '', self.new_session_icon,
+                                           disabled_bitmap=self.new_session_icon,
                                            kind=wx.ITEM_NORMAL,
                                            short_help_string="NewScene")
 
-        save_btn = self.filemenu_tb.AddTool(TB_EVT_SAVE, '', self.save_icon,
-                                            disabled_bitmap=self.disabled_icon,
+        save_btn = self.filemenu_tb.AddTool(TB_EVT_SAVE, '', self.save_session_icon,
+                                            disabled_bitmap=self.save_session_icon,
                                             kind=wx.ITEM_NORMAL,
                                             short_help_string="SaveScene")
 
-        save_as_btn = self.filemenu_tb.AddTool(TB_EVT_SAVE_AS, '', self.save_as_icon,
-                                               disabled_bitmap=self.disabled_icon,
+        save_as_btn = self.filemenu_tb.AddTool(TB_EVT_SAVE_AS, '', self.save_session_as_icon,
+                                               disabled_bitmap=self.save_session_as_icon,
                                                kind=wx.ITEM_NORMAL,
                                                short_help_string="SaveSceneAs")
 
@@ -285,14 +263,24 @@ class WxFrame(wx.Frame):
         self.proj_meuns_tb = aui.AuiToolBar(self)
 
         open_proj_btn = self.proj_meuns_tb.AddTool(TB_EVT_PROJ_OPEN, '', self.proj_open_icon,
-                                                   disabled_bitmap=self.disabled_icon,
+                                                   disabled_bitmap=self.proj_open_icon,
                                                    kind=wx.ITEM_NORMAL,
                                                    short_help_string="OpenProject")
 
         import_lib_btn = self.proj_meuns_tb.AddTool(TB_EVT_APPEND_LIB, '', self.import_lib_icon,
-                                                    disabled_bitmap=self.disabled_icon,
+                                                    disabled_bitmap=self.import_lib_icon,
                                                     kind=wx.ITEM_NORMAL,
                                                     short_help_string="AppendLibrary")
+
+        import_package_btn = self.proj_meuns_tb.AddTool(wx.NewId(), '', self.import_package_icon,
+                                                        disabled_bitmap=self.import_package_icon,
+                                                        kind=wx.ITEM_NORMAL,
+                                                        short_help_string="ImportP3dPackage")
+
+        open_store_btn = self.proj_meuns_tb.AddTool(wx.NewId(), '', self.open_store_icon,
+                                                    disabled_bitmap=self.open_store_icon,
+                                                    kind=wx.ITEM_NORMAL,
+                                                    short_help_string="ImportP3dPackage")
 
         # add to aui
         self.aui_manager.AddPane(self.proj_meuns_tb, aui.AuiPaneInfo().Name("ProjectMenuToolbar").
@@ -303,11 +291,10 @@ class WxFrame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.on_event, import_lib_btn)
 
     def build_play_ctrls_tb(self):
-        # build
         self.playctrls_tb = aui.AuiToolBar(self)
 
         self.ply_btn = self.playctrls_tb.AddTool(TB_EVT_PLAY, "", bitmap=self.play_icon,
-                                                 disabled_bitmap=self.disabled_icon,
+                                                 disabled_bitmap=self.play_icon,
                                                  kind=wx.ITEM_NORMAL,
                                                  short_help_string="StartGame")
 
@@ -324,14 +311,14 @@ class WxFrame(wx.Frame):
 
         self.lights_toggle_btn = self.scene_ctrls_tb.AddTool(TB_EVT_TOGGLE_LIGHTS, "",
                                                              bitmap=self.lights_off_icon,
-                                                             disabled_bitmap=self.disabled_icon,
+                                                             disabled_bitmap=self.lights_off_icon,
                                                              kind=wx.ITEM_NORMAL,
                                                              short_help_string="ToggleSceneLights")
 
         self.sounds_on = True
         self.sound_toggle_btn = self.scene_ctrls_tb.AddTool(TB_EVT_TOGGLE_SOUND, "",
                                                             bitmap=self.sound_icon,
-                                                            disabled_bitmap=self.disabled_icon,
+                                                            disabled_bitmap=self.sound_icon,
                                                             kind=wx.ITEM_NORMAL,
                                                             short_help_string="ToggleSound")
 
@@ -362,6 +349,10 @@ class WxFrame(wx.Frame):
     def add_panel(self, panel):
         if panel in self.user_panel_defs.keys():
             panel_def = self.user_panel_defs[panel]
+
+        elif panel in self.panel_defs.keys():
+            panel_def = self.panel_defs[panel]
+
         else:
             print("[WxMain] Unable to add panel {0}, Panel not found in panel_definitions.".format(panel))
             return

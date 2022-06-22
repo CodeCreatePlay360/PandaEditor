@@ -1,11 +1,11 @@
 import wx
+import editor.uiGlobals as uiGlobals
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from panda3d.core import Vec2, Vec3, LColor, LPoint3f, LVecBase3f, LVecBase2f
 
 import editor.wxUI.wxCustomProperties as wxProperty
 from editor.wxUI.wxFoldPanel import WxFoldPanelManager
-from editor.colourPalette import ColourPalette as Colours
 
 
 class TextPanel(wx.Panel):
@@ -35,7 +35,7 @@ class BaseInspectorPanel(ScrolledPanel):
     def __init__(self, parent, *args, **kwargs):
         ScrolledPanel.__init__(self, parent, *args, **kwargs)
 
-        self.SetBackgroundColour(Colours.NORMAL_GREY)
+        self.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         self.wxMain = parent

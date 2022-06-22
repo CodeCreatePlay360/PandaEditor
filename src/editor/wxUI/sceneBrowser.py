@@ -1,18 +1,17 @@
 import wx
 import editor.constants as constants
+import editor.uiGlobals as uiGlobals
 from panda3d.core import NodePath
-from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.baseTreeControl import BaseTreeControl
-from editor.colourPalette import ColourPalette as Colours
 
 
 EVT_RENAME_ITEM = wx.NewId()
 EVT_REMOVE_ITEM = wx.NewId()
 
 
-class SceneBrowserPanel(ScrolledPanel):
+class SceneBrowserPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
-        ScrolledPanel.__init__(self, *args, **kwargs)
+        wx.Panel.__init__(self, *args, **kwargs)
 
         self.wx_main = args[0]
 
@@ -23,7 +22,7 @@ class SceneBrowserPanel(ScrolledPanel):
 
         self.SetSizer(sizer)
         self.Layout()
-        self.SetupScrolling()
+        # self.SetupScrolling()
 
 
 class SceneBrowser(BaseTreeControl):
@@ -41,7 +40,7 @@ class SceneBrowser(BaseTreeControl):
         self.organize_tree = True  # organize a tree based on file_extensions
 
         # ---------------------------------------------------------------------------- #
-        self.SetBackgroundColour(Colours.NORMAL_GREY)
+        self.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
