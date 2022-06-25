@@ -2,86 +2,84 @@ import wx
 import editor.commands as commands
 import editor.constants as constants
 
+Evt_Create_Project = wx.NewId()
+Evt_Open_Project = wx.NewId()
+Evt_New_Scene = wx.NewId()
+Evt_Open_Scene = wx.NewId()
+Evt_Save_Scene = wx.NewId()
+Evt_Save_Scene_As = wx.NewId()
+Evt_Append_Library = wx.NewId()
+Evt_Build_Project = wx.NewId()
 
-EVT_SET_PROJECT = wx.NewId()
-EVT_OPEN_PROJECT = wx.NewId()
-EVT_NEW = wx.NewId()
-EVT_OPEN = wx.NewId()
-EVT_SAVE = wx.NewId()
-EVT_SAVE_AS = wx.NewId()
-EVT_APPEND_LIBRARY = wx.NewId()
-EVT_BUILD = wx.NewId()
+Evt_Add_Inspector_Panel = wx.NewId()
+Evt_Add_Resource_Panel = wx.NewId()
+Evt_Add_Scene_Graph_Panel = wx.NewId()
+Evt_Add_Console_Panel = wx.NewId()
 
-EVT_ADD_EDITOR_TAB = wx.NewId()
-EVT_ADD_INSPECTOR_TAB = wx.NewId()
-EVT_ADD_RESOURCES_TAB = wx.NewId()
-EVT_ADD_SCENE_GRAPH_TAB = wx.NewId()
-EVT_ADD_LOG_TAB = wx.NewId()
+Evt_Save_UI_Layout = wx.NewId()
+Evt_Load_UI_Layout = wx.NewId()
+Evt_Reload_Editor = wx.NewId()
 
-EVT_UI_SAVE_LAYOUT = wx.NewId()
+Evt_Add_Empty_NP = wx.NewId()
+Evt_Add_Camera = wx.NewId()
+Evt_Add_Sun_Light = wx.NewId()
+Evt_Add_Point_Light = wx.NewId()
+Evt_Add_Spot_Light = wx.NewId()
+Evt_Add_Ambient_Light = wx.NewId()
 
-RELOAD_EDITOR_DATA = wx.NewId()
+Evt_App_Cube = wx.NewId()
+Evt_Add_Capsule = wx.NewId()
+Evt_App_Cone = wx.NewId()
+Evt_Add_Plane = wx.NewId()
 
-EVT_ADD_EMPTY_NP = wx.NewId()
-EVT_ADD_CAMERA = wx.NewId()
-EVT_ADD_SUN_LIGHT = wx.NewId()
-EVT_ADD_POINT_LIGHT = wx.NewId()
-EVT_ADD_SPOT_LIGHT = wx.NewId()
-EVT_ADD_AMBIENT_LIGHT = wx.NewId()
+Evt_Open_Discord = wx.NewId()
+Evt_Open_Patreon = wx.NewId()
+Evt_Open_Discourse = wx.NewId()
 
-EVT_ADD_CUBE = wx.NewId()
-EVT_ADD_CAPSULE = wx.NewId()
-EVT_ADD_CONE = wx.NewId()
-EVT_ADD_PLANE = wx.NewId()
+Evt_Close_App = wx.NewId()
 
-EVT_OPEN_DISCORD = wx.NewId()
-EVT_OPEN_PATREON = wx.NewId()
-EVT_OPEN_DISCOURSE = wx.NewId()
+EVENT_MAP = {
+    # EventID = (EventName, *args)
+    Evt_Create_Project: ("CreateNewProject", None),
+    Evt_Open_Project: ("OpenProject", None),
+    Evt_New_Scene: ("CreateNewSession", None),
+    Evt_Open_Scene: ("OpenSession", None),
+    Evt_Save_Scene: ("SaveSession", None),
+    Evt_Save_Scene_As: ("SaveSessionAs", None),
+    Evt_Append_Library: ("AppendLibrary", None),
+    Evt_Build_Project: ("BuildProject", None),
 
-EVT_CLOSE_APP = wx.NewId()
+    Evt_Add_Capsule: ("AddObject", constants.CAPSULE_PATH),
+    Evt_App_Cone: ("AddObject", constants.CONE_PATH),
+    Evt_Add_Plane: ("AddObject", constants.PLANE_PATH),
+    Evt_App_Cube: ("AddObject", constants.CUBE_PATH),
 
-UI_TAB_EVENTS = {
-    EVT_ADD_EDITOR_TAB: "EditorViewport",
-    EVT_ADD_INSPECTOR_TAB: "ObjectInspectorTab",
-    EVT_ADD_RESOURCES_TAB: "ResourceBrowser",
-    EVT_ADD_SCENE_GRAPH_TAB: "SceneBrowser",
-    EVT_ADD_LOG_TAB: "LogTab",
+    Evt_Add_Sun_Light: ("AddLight", "DirectionalLight"),
+    Evt_Add_Point_Light: ("AddLight", "PointLight"),
+    Evt_Add_Spot_Light: ("AddLight", "SpotLight"),
+    Evt_Add_Ambient_Light: ("AddLight", "AmbientLight"),
+
+    Evt_Add_Camera: ("AddCamera", None),
+
+    Evt_Add_Inspector_Panel: ("AddPanel", "ObjectInspectorPanel"),
+    Evt_Add_Resource_Panel: ("AddPanel", "ResourceBrowserPanel"),
+    Evt_Add_Scene_Graph_Panel: ("AddPanel", "SceneBrowserPanel"),
+    Evt_Add_Console_Panel: ("AddPanel", "ConsolePanel"),
+
+    Evt_Save_UI_Layout: ("SaveUILayout", None),
+    Evt_Load_UI_Layout: ("LoadUILayout", None),
+
+    Evt_Open_Discord: ("OpenSocialMediaLink", "Discord"),
+    Evt_Open_Discourse: ("OpenSocialMediaLink", "Discourse"),
+    Evt_Open_Patreon: ("OpenSocialMediaLink", "Patreon"),
+
+    Evt_Close_App: ("CloseApp", None)
 }
+
+
 
 UI_LAYOUT_EVENTS = {
-    EVT_UI_SAVE_LAYOUT: "SaveUILayout"
-}
-
-OBJECT_EVENTS = {
-    EVT_ADD_CAPSULE: constants.CAPSULE_PATH,
-    EVT_ADD_CONE: constants.CONE_PATH,
-    EVT_ADD_PLANE: constants.PLANE_PATH,
-    EVT_ADD_CUBE: constants.CUBE_PATH
-}
-
-LIGHT_EVENTS = {
-    EVT_ADD_SUN_LIGHT: "DirectionalLight",
-    EVT_ADD_POINT_LIGHT: "PointLight",
-    EVT_ADD_SPOT_LIGHT: "SpotLight",
-    EVT_ADD_AMBIENT_LIGHT: "AmbientLight"
-}
-
-PROJ_EVENTS = {
-    EVT_SET_PROJECT: "SetProject",
-    EVT_OPEN_PROJECT: "OpenProject",
-    EVT_NEW: "NewScene",
-    EVT_OPEN: "OpenScene",
-    EVT_SAVE: "SaveScene",
-    EVT_SAVE_AS: "SaveSceneAs",
-    EVT_APPEND_LIBRARY: "AppendLibrary",
-    EVT_BUILD: "Build",
-    # EVT_QUIT: "CloseApplication",
-}
-
-SOCIAL_MEDIA_LINKS = {
-    EVT_OPEN_DISCORD: "Discord",
-    EVT_OPEN_PATREON: "Patreon",
-    EVT_OPEN_DISCOURSE: "Panda3dDiscourse",
+    Evt_Save_UI_Layout: "SaveUILayout"
 }
 
 
@@ -110,24 +108,24 @@ class WxMenuBar(wx.MenuBar):
         # main application and current scene related menu items
         file_menu = wx.Menu()
         self.Append(file_menu, "File")
-        menu_items = [(EVT_NEW, "&New Scene\tCtrl+N", None),
-                      (EVT_OPEN, "&Open\tCtrl+O", None),
+        menu_items = [(Evt_New_Scene, "&New Scene\tCtrl+N", None),
+                      (Evt_Open_Scene, "&Open\tCtrl+O", None),
                       "",
-                      (EVT_SAVE, "&Save Scene\tCtrl+S", None),
-                      (EVT_SAVE_AS, "&Save Scene As\tCtrl+Shift+S", None),
+                      (Evt_Save_Scene, "&Save Scene\tCtrl+S", None),
+                      (Evt_Save_Scene_As, "&Save Scene As\tCtrl+Shift+S", None),
                       "",
-                      (EVT_CLOSE_APP, "&Exit\tCtrl+E", None)]
+                      (Evt_Close_App, "&Exit\tCtrl+E", None)]
         build_menu_bar(file_menu, menu_items)
 
         # project related menus
         proj_menu = wx.Menu()
         self.Append(proj_menu, "Project")
-        menu_items = [(EVT_SET_PROJECT, "&Start New Project", None),
-                      (EVT_OPEN_PROJECT, "&Load Project", None),
+        menu_items = [(Evt_Create_Project, "&Start New Project", None),
+                      (Evt_Open_Project, "&Load Project", None),
                       "",
-                      (EVT_APPEND_LIBRARY, "&Append Library", None),
+                      (Evt_Append_Library, "&Append Library", None),
                       "",
-                      (EVT_BUILD, "Build", None),
+                      (Evt_Build_Project, "Build", None),
                       ]
         build_menu_bar(proj_menu, menu_items)
 
@@ -136,29 +134,29 @@ class WxMenuBar(wx.MenuBar):
         self.Append(object_menu, "Object")
 
         # add empty
-        menu_items = [(EVT_ADD_EMPTY_NP, "Add Empty", None)]
+        menu_items = [(Evt_Add_Empty_NP, "Add Empty", None)]
         build_menu_bar(object_menu, menu_items)
 
         # camera
-        menu_items = [(EVT_ADD_CAMERA, "Add Camera", None)]
+        menu_items = [(Evt_Add_Camera, "Add Camera", None)]
         build_menu_bar(object_menu, menu_items)
 
         # lights
         lights_obj_menu = wx.Menu()
-        menu_items = [(EVT_ADD_SUN_LIGHT, "SunLight", None),
-                      (EVT_ADD_POINT_LIGHT, "PointLight", None),
-                      (EVT_ADD_SPOT_LIGHT, "SpotLight", None),
-                      (EVT_ADD_AMBIENT_LIGHT, "AmbientLight", None)
+        menu_items = [(Evt_Add_Sun_Light, "SunLight", None),
+                      (Evt_Add_Point_Light, "PointLight", None),
+                      (Evt_Add_Spot_Light, "SpotLight", None),
+                      (Evt_Add_Ambient_Light, "AmbientLight", None)
                       ]
         build_menu_bar(lights_obj_menu, menu_items)
         object_menu.Append(wx.ID_ANY, "Lights", lights_obj_menu)
 
         # gameobjects
         game_obj_menu = wx.Menu()
-        menu_items = [(EVT_ADD_CUBE, "Cube", None),
-                      (EVT_ADD_CAPSULE, "Capsule", None),
-                      (EVT_ADD_CONE, "Cone", None),
-                      (EVT_ADD_PLANE, "Plane", None)
+        menu_items = [(Evt_App_Cube, "Cube", None),
+                      (Evt_Add_Capsule, "Capsule", None),
+                      (Evt_App_Cone, "Cone", None),
+                      (Evt_Add_Plane, "Plane", None)
                       ]
         build_menu_bar(game_obj_menu, menu_items)
         object_menu.Append(wx.ID_ANY, "GameObject", game_obj_menu)
@@ -167,24 +165,24 @@ class WxMenuBar(wx.MenuBar):
         panels = wx.Menu()
         self.Append(panels, "Panels")
 
-        menu_items = [(EVT_ADD_INSPECTOR_TAB, "Inspector", None),
-                      (EVT_ADD_RESOURCES_TAB, "ResourceBrowser", None),
-                      (EVT_ADD_SCENE_GRAPH_TAB, "SceneGraph", None),
-                      (EVT_ADD_LOG_TAB, "ConsolePanel", None)]
+        menu_items = [(Evt_Add_Inspector_Panel, "Inspector", None),
+                      (Evt_Add_Resource_Panel, "ResourceBrowser", None),
+                      (Evt_Add_Scene_Graph_Panel, "SceneGraph", None),
+                      (Evt_Add_Console_Panel, "ConsolePanel", None)]
         build_menu_bar(panels, menu_items)
 
         # editor layout menus
         self.ed_layout_menu = wx.Menu()
         self.Append(self.ed_layout_menu, "Layout")
 
-        menu_items = [(EVT_UI_SAVE_LAYOUT, "SaveLayout", None)]
+        menu_items = [(Evt_Save_UI_Layout, "SaveLayout", None)]
         build_menu_bar(self.ed_layout_menu, menu_items)
 
         # menu items related to editor operations
         ed_menu = wx.Menu()
         self.Append(ed_menu, "Editor")
 
-        menu_items = [(RELOAD_EDITOR_DATA, "Reload", None)]
+        menu_items = [(Evt_Reload_Editor, "Reload", None)]
         build_menu_bar(ed_menu, menu_items)
 
         # editor plugins menus
@@ -195,9 +193,9 @@ class WxMenuBar(wx.MenuBar):
         social_links = wx.Menu()
         self.Append(social_links, "Social")
 
-        menu_items = [(EVT_OPEN_DISCORD, "Discord", None),
-                      (EVT_OPEN_DISCOURSE, "Panda3d discourse", None),
-                      (EVT_OPEN_PATREON, "Patreon", None)]
+        menu_items = [(Evt_Open_Discord, "Discord", None),
+                      (Evt_Open_Discourse, "Panda3d discourse", None),
+                      (Evt_Open_Patreon, "Patreon", None)]
         build_menu_bar(social_links, menu_items)
 
     def add_layout_menu(self, name):
@@ -224,37 +222,25 @@ class WxMenuBar(wx.MenuBar):
         pass
 
     def on_event(self, evt):
-        if evt.GetId() in PROJ_EVENTS:
-            constants.obs.trigger("ProjectEvent", PROJ_EVENTS[evt.GetId()])
+        if evt.GetId() in EVENT_MAP:
+            evt_name = EVENT_MAP[evt.GetId()][0]
+            args = EVENT_MAP[evt.GetId()][1]
 
-        elif evt.GetId() in UI_TAB_EVENTS:
-            constants.obs.trigger("LoadPanel", UI_TAB_EVENTS[evt.GetId()])
-
-        elif evt.GetId() in UI_LAYOUT_EVENTS:
-            constants.obs.trigger("UILayoutEvent", UI_LAYOUT_EVENTS[evt.GetId()])
-
-        elif evt.GetId() in LIGHT_EVENTS:
-            constants.command_manager.do(commands.AddLight(constants.p3d_app, LIGHT_EVENTS[evt.GetId()]))
-            # constants.obs.trigger("AddLight", LIGHT_EVENTS[evt.GetId()])
-
-        elif evt.GetId() is EVT_ADD_CAMERA:
-            constants.command_manager.do(commands.AddCamera(constants.p3d_app))
-            # constants.obs.trigger("AddCamera")
-
-        elif evt.GetId() in OBJECT_EVENTS:
-            constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, OBJECT_EVENTS[evt.GetId()]))
-            # obs.trigger("AddObject", OBJECT_EVENTS[evt.GetId()])
-
-        elif evt.GetId() in self.user_layout_menus.keys():
-            constants.obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
+            if evt_name == "AddNodePath":
+                constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, args))
+            elif evt_name == "AddLight":
+                constants.command_manager.do(commands.AddLight(constants.p3d_app, args))
+            elif evt_name == "AddCamera":
+                constants.command_manager.do(commands.AddCamera(constants.p3d_app))
+            elif evt_name == "AddPanel":
+                constants.obs.trigger("LoadPanel", args)
+            else:
+                constants.obs.trigger(evt_name, args)
 
         elif evt.GetId() in self.ed_plugins_menus.keys():
             constants.obs.trigger("LoadPanel", self.ed_plugins_menus[evt.GetId()])
 
-        elif evt.GetId() in SOCIAL_MEDIA_LINKS:
-            constants.obs.trigger("OpenSocialMediaLink", SOCIAL_MEDIA_LINKS[evt.GetId()])
-
-        elif evt.GetId() == EVT_CLOSE_APP:
-            constants.obs.trigger("EvtCloseApp")
+        elif evt.GetId() in self.user_layout_menus.keys():
+            constants.obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
 
         evt.Skip()

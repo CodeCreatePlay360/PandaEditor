@@ -7,39 +7,34 @@ from editor.wxUI.sceneBrowser import SceneBrowserPanel
 from editor.wxUI.inspectorPanel import InspectorPanel
 from editor.wxUI.logPanel import LogPanel
 from editor.wxUI.auxiliaryPanel import AuxiliaryPanel
-
 from editor.wxUI.wxDialogs import DialogManager
 from editor.p3d import wxPanda
 from editor.constants import object_manager, obs, ICONS_PATH
-
 from thirdparty.wxCustom.auiManager import AuiManager
 
 # scene events
-TB_EVT_NEW = wx.NewId()
-TB_EVT_OPEN = wx.NewId()
-TB_EVT_SAVE = wx.NewId()
-TB_EVT_SAVE_AS = wx.NewId()
+Evt_Open_Project = wx.NewId()
+Evt_New_Scene = wx.NewId()
+Evt_Open_Scene = wx.NewId()
+Evt_Save_Scene = wx.NewId()
+Evt_Save_Scene_As = wx.NewId()
+Evt_Append_Library = wx.NewId()
 
-TB_EVT_PROJ_OPEN = wx.NewId()
-TB_EVT_PROJ_SAVE = wx.NewId()
-TB_EVT_APPEND_LIB = wx.NewId()
+Evt_Play = wx.NewId()
+Evt_Toggle_Scene_Lights = wx.NewId()
+Evt_Toggle_Sounds = wx.NewId()
 
-TB_EVT_PLAY = wx.NewId()
-TB_EVT_TOGGLE_LIGHTS = wx.NewId()
-TB_EVT_TOGGLE_SOUND = wx.NewId()
+Event_Map = {
+    Evt_Open_Project: ("OpenProject", None),
+    Evt_New_Scene: ("CreateNewSession", None),
+    Evt_Open_Scene: ("OpenSession", None),
+    Evt_Save_Scene: ("SaveSession", None),
+    Evt_Save_Scene_As: ("SaveSessionAs", None),
+    Evt_Append_Library: ("AppendLibrary", None),
 
-PROJ_EVENTS = {
-    TB_EVT_NEW: "NewScene",
-    TB_EVT_OPEN: "OpenScene",
-    TB_EVT_SAVE: "SaveScene",
-    TB_EVT_SAVE_AS: "SaveSceneAs",
-    TB_EVT_PROJ_OPEN: "OpenProject",
-    TB_EVT_PROJ_SAVE: "SaveProject",
-    TB_EVT_APPEND_LIB: "AppendLibrary",
-
-    TB_EVT_PLAY: "SwitchEdState",
-    TB_EVT_TOGGLE_LIGHTS: "ToggleSceneLights",
-    TB_EVT_TOGGLE_SOUND: "ToggleSounds",
+    Evt_Play: ("SwitchEdState", None),
+    Evt_Toggle_Scene_Lights: ("ToggleSceneLights", None),
+    Evt_Toggle_Sounds: ("ToggleSounds", None)
 }
 
 # resources
@@ -108,54 +103,54 @@ class WxFrame(wx.Frame):
 
         # default panel definitions
         self.panel_defs = {
-            "SceneBrowser": (self.scene_graph_panel,
-                             True,
-                             aui.AuiPaneInfo().
-                             Name("SceneGraph").
-                             Caption("SceneGraph").
-                             CloseButton(True).
-                             MaximizeButton(False).
-                             Direction(4).Layer(0).Row(0).Position(0)),
+            "SceneBrowserPanel": (self.scene_graph_panel,
+                                  True,
+                                  aui.AuiPaneInfo().
+                                  Name("SceneGraphPanel").
+                                  Caption("SceneGraph").
+                                  CloseButton(True).
+                                  MaximizeButton(False).
+                                  Direction(4).Layer(0).Row(0).Position(0)),
 
             # dir=4;layer=0;row=0;pos=0
-            "EditorViewport": (self.ed_viewport_panel,
-                               True,
-                               aui.AuiPaneInfo().
-                               Name("EditorViewport").
-                               Caption("EditorViewport").
-                               CloseButton(False).
-                               MaximizeButton(True).
-                               Direction(4).Layer(0).Row(2).Position(0)),
+            "EditorViewportPanel": (self.ed_viewport_panel,
+                                    True,
+                                    aui.AuiPaneInfo().
+                                    Name("EditorViewportPanel").
+                                    Caption("EditorViewport").
+                                    CloseButton(False).
+                                    MaximizeButton(True).
+                                    Direction(4).Layer(0).Row(2).Position(0)),
 
             # dir=4;layer=0;row=2;pos=0
-            "ObjectInspectorTab": (self.inspector_panel,
-                                   True,
-                                   aui.AuiPaneInfo().
-                                   Name("ObjectInspectorTab").
-                                   Caption("InspectorTab").
-                                   CloseButton(True).
-                                   MaximizeButton(False).
-                                   Direction(4).Layer(0).Row(3).Position(0)),
+            "ObjectInspectorPanel": (self.inspector_panel,
+                                     True,
+                                     aui.AuiPaneInfo().
+                                     Name("ObjectInspectorPanel").
+                                     Caption("Object Inspector").
+                                     CloseButton(True).
+                                     MaximizeButton(False).
+                                     Direction(4).Layer(0).Row(3).Position(0)),
 
             # dir=3;layer=1;row=0;pos=0
-            "ResourceBrowser": (self.resource_browser,
-                                True,
-                                aui.AuiPaneInfo().
-                                Name("ResourceBrowser").
-                                Caption("ResourceBrowser").
-                                CloseButton(True).
-                                MaximizeButton(False).
-                                Direction(3).Layer(1).Row(0).Position(1)),
+            "ResourceBrowserPanel": (self.resource_browser,
+                                     True,
+                                     aui.AuiPaneInfo().
+                                     Name("ResourceBrowserPanel").
+                                     Caption("ResourceBrowser").
+                                     CloseButton(True).
+                                     MaximizeButton(False).
+                                     Direction(3).Layer(1).Row(0).Position(1)),
 
             # dir=3;layer=1;row=0;pos=1
-            "LogTab": (self.log_panel,
-                       True,
-                       aui.AuiPaneInfo().
-                       Name("LogTab").
-                       Caption("LogTab").
-                       CloseButton(True).
-                       MaximizeButton(False).
-                       Direction(3).Layer(1).Row(0).Position(0)),
+            "ConsolePanel": (self.log_panel,
+                             True,
+                             aui.AuiPaneInfo().
+                             Name("ConsolePanel").
+                             Caption("Console").
+                             CloseButton(True).
+                             MaximizeButton(False).
+                             Direction(3).Layer(1).Row(0).Position(0)),
         }
 
         # user defined panel definitions for editor plugins
@@ -185,28 +180,28 @@ class WxFrame(wx.Frame):
 
             self.aui_manager.AddPane(pane_def[0], pane_def[2])
 
-            if pane_def[2].name == "SceneGraph":
+            if pane_def[2].name == "SceneGraphPanel":
                 proportion_x = (15 / 100) * size.x
                 proportion_y = (60 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
 
-            if pane_def[2].name == "EditorViewport":
+            if pane_def[2].name == "EditorViewportPanel":
                 proportion_x = (60 / 100) * size.x
                 proportion_y = (60 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
 
-            if pane_def[2].name == "ObjectInspectorTab":
+            if pane_def[2].name == "ObjectInspectorPanel":
                 proportion_x = (25 / 100) * size.x
                 proportion_y = (60 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
                 pane_def[2].dock_proportion = 100
 
-            if pane_def[2].name == "ResourceBrowser":
+            if pane_def[2].name == "ResourceBrowserPanel":
                 proportion_y = (30 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(1, proportion_y))
                 pane_def[2].dock_proportion = 65
 
-            if pane_def[2].name == "LogTab":
+            if pane_def[2].name == "ConsolePanel":
                 proportion_y = (30 / 100) * size.y
                 pane_def[2].MinSize1(wx.Size(1, proportion_y))
                 pane_def[2].dock_proportion = 35
@@ -234,17 +229,23 @@ class WxFrame(wx.Frame):
     def build_filemenu_tb(self):
         self.filemenu_tb = aui.AuiToolBar(self)
 
-        new_btn = self.filemenu_tb.AddTool(TB_EVT_NEW, '', self.new_session_icon,
+        new_btn = self.filemenu_tb.AddTool(Evt_New_Scene,
+                                           '',
+                                           self.new_session_icon,
                                            disabled_bitmap=self.new_session_icon,
                                            kind=wx.ITEM_NORMAL,
                                            short_help_string="NewScene")
 
-        save_btn = self.filemenu_tb.AddTool(TB_EVT_SAVE, '', self.save_session_icon,
+        save_btn = self.filemenu_tb.AddTool(Evt_Save_Scene,
+                                            '',
+                                            self.save_session_icon,
                                             disabled_bitmap=self.save_session_icon,
                                             kind=wx.ITEM_NORMAL,
                                             short_help_string="SaveScene")
 
-        save_as_btn = self.filemenu_tb.AddTool(TB_EVT_SAVE_AS, '', self.save_session_as_icon,
+        save_as_btn = self.filemenu_tb.AddTool(Evt_Save_Scene_As,
+                                               '',
+                                               self.save_session_as_icon,
                                                disabled_bitmap=self.save_session_as_icon,
                                                kind=wx.ITEM_NORMAL,
                                                short_help_string="SaveSceneAs")
@@ -262,22 +263,30 @@ class WxFrame(wx.Frame):
     def build_proj_menus_tb(self):
         self.proj_meuns_tb = aui.AuiToolBar(self)
 
-        open_proj_btn = self.proj_meuns_tb.AddTool(TB_EVT_PROJ_OPEN, '', self.proj_open_icon,
+        open_proj_btn = self.proj_meuns_tb.AddTool(Evt_Open_Project,
+                                                   '',
+                                                   self.proj_open_icon,
                                                    disabled_bitmap=self.proj_open_icon,
                                                    kind=wx.ITEM_NORMAL,
                                                    short_help_string="OpenProject")
 
-        import_lib_btn = self.proj_meuns_tb.AddTool(TB_EVT_APPEND_LIB, '', self.import_lib_icon,
+        import_lib_btn = self.proj_meuns_tb.AddTool(Evt_Append_Library,
+                                                    '',
+                                                    self.import_lib_icon,
                                                     disabled_bitmap=self.import_lib_icon,
                                                     kind=wx.ITEM_NORMAL,
                                                     short_help_string="AppendLibrary")
 
-        import_package_btn = self.proj_meuns_tb.AddTool(wx.NewId(), '', self.import_package_icon,
+        import_package_btn = self.proj_meuns_tb.AddTool(wx.NewId(),
+                                                        '',
+                                                        self.import_package_icon,
                                                         disabled_bitmap=self.import_package_icon,
                                                         kind=wx.ITEM_NORMAL,
                                                         short_help_string="ImportP3dPackage")
 
-        open_store_btn = self.proj_meuns_tb.AddTool(wx.NewId(), '', self.open_store_icon,
+        open_store_btn = self.proj_meuns_tb.AddTool(wx.NewId(),
+                                                    '',
+                                                    self.open_store_icon,
                                                     disabled_bitmap=self.open_store_icon,
                                                     kind=wx.ITEM_NORMAL,
                                                     short_help_string="ImportP3dPackage")
@@ -293,7 +302,9 @@ class WxFrame(wx.Frame):
     def build_play_ctrls_tb(self):
         self.playctrls_tb = aui.AuiToolBar(self)
 
-        self.ply_btn = self.playctrls_tb.AddTool(TB_EVT_PLAY, "", bitmap=self.play_icon,
+        self.ply_btn = self.playctrls_tb.AddTool(Evt_Play,
+                                                 "",
+                                                 bitmap=self.play_icon,
                                                  disabled_bitmap=self.play_icon,
                                                  kind=wx.ITEM_NORMAL,
                                                  short_help_string="StartGame")
@@ -309,14 +320,16 @@ class WxFrame(wx.Frame):
     def build_scene_ctrls_tb(self):
         self.scene_ctrls_tb = aui.AuiToolBar(self)
 
-        self.lights_toggle_btn = self.scene_ctrls_tb.AddTool(TB_EVT_TOGGLE_LIGHTS, "",
+        self.lights_toggle_btn = self.scene_ctrls_tb.AddTool(Evt_Toggle_Scene_Lights,
+                                                             "",
                                                              bitmap=self.lights_off_icon,
                                                              disabled_bitmap=self.lights_off_icon,
                                                              kind=wx.ITEM_NORMAL,
                                                              short_help_string="ToggleSceneLights")
 
         self.sounds_on = True
-        self.sound_toggle_btn = self.scene_ctrls_tb.AddTool(TB_EVT_TOGGLE_SOUND, "",
+        self.sound_toggle_btn = self.scene_ctrls_tb.AddTool(Evt_Toggle_Sounds,
+                                                            "",
                                                             bitmap=self.sound_icon,
                                                             disabled_bitmap=self.sound_icon,
                                                             kind=wx.ITEM_NORMAL,
@@ -400,9 +413,9 @@ class WxFrame(wx.Frame):
         self.status_bar.SetStatusText(txt)
 
     def on_event(self, evt):
-        if evt.GetId() in PROJ_EVENTS:
-            obs.trigger("ProjectEvent", PROJ_EVENTS[evt.GetId()])
-
+        if evt.GetId() in Event_Map:
+            evt_name = Event_Map[evt.GetId()][0]
+            obs.trigger(evt_name)
         evt.Skip()
 
     def on_evt_left_down(self, evt):
@@ -412,5 +425,5 @@ class WxFrame(wx.Frame):
         event.Skip()
 
     def on_event_close(self, event):
-        obs.trigger("EvtCloseApp", close_wx=False)
+        obs.trigger("CloseApp", close_wx=False)
         event.Skip()

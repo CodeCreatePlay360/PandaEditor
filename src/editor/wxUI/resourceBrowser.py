@@ -2,7 +2,6 @@ import os
 import shutil
 import wx
 import editor.constants as constants
-import editor.commands as commands
 import editor.uiGlobals as uiGlobals
 import editor.wxUI.globals as wxGlobals
 import editor.resources.globals as resourceGlobals
@@ -24,9 +23,6 @@ EVT_CREATE_PY_MOD = wx.NewId()
 EVT_CREATE_TXT_FILE = wx.NewId()
 EVT_CREATE_P3D_USER_MOD = wx.NewId()
 EVT_CREATE_ED_TOOL = wx.NewId()
-
-EVT_LOAD_MODEL = wx.NewId()
-EVT_LOAD_ACTOR = wx.NewId()
 
 EVT_APPEND_LIBRARY = wx.NewId()
 EVT_IMPORT_ASSETS = wx.NewId()
@@ -125,8 +121,10 @@ class ResourceTree(BaseTreeControl):
         # ---------------------------------------------------------------------------- #
         self.image_list = wx.ImageList(16, 16)  # create an image list for tree control to use
 
-        self.folder_icon_bitmap = wx.Bitmap(resourceGlobals.EXTENSIONS["folder"])
-        self.image_list.Add(self.folder_icon_bitmap)
+        self.folder_icon_bitmap_blue = wx.Bitmap(resourceGlobals.FOLDER_ICON_BLUE)
+        self.folder_icon_bitmap_green = wx.Bitmap(resourceGlobals.FOLDER_ICON_GREEN)
+        self.image_list.Add(self.folder_icon_bitmap_blue)
+        self.image_list.Add(self.folder_icon_bitmap_green)
         self.SetImageList(self.image_list)
         # ---------------------------------------------------------------------------- #
 
@@ -156,9 +154,6 @@ class ResourceTree(BaseTreeControl):
             EVT_CREATE_TXT_FILE: (self.create_asset, "txt_file"),
             EVT_CREATE_P3D_USER_MOD: (self.create_asset, "p3d_user_mod"),
             EVT_CREATE_ED_TOOL: (self.create_asset, "p3d_ed_tool"),
-
-            EVT_LOAD_MODEL: (self.load_model, None),
-            EVT_LOAD_ACTOR: (self.load_actor, None),
 
             EVT_APPEND_LIBRARY: (self.append_library, None),
             EVT_IMPORT_ASSETS: (self.import_assets, None),
@@ -196,24 +191,6 @@ class ResourceTree(BaseTreeControl):
         evt.Skip()
 
     def create_popup_menu(self, evt):
-        '''
-        selections = self.GetSelections()
-
-        if len(selections) > 1:
-            item_ext = "generic"
-        else:
-            item = selections[0]
-            item_path = self.GetItemData(item)
-            item_text = self.GetItemText(item)
-            item_ext = item_text.split(".")[-1]  # file_extension
-            is_item_dir = os.path.isdir(item_path)
-
-            if is_item_dir:
-                item_ext = "directory"
-            elif item_ext not in self.file_menus.keys():
-                item_ext = "generic"
-        '''
-
         popup_menu = wx.Menu()
 
         create_add_menu_items(popup_menu)
@@ -252,12 +229,12 @@ class ResourceTree(BaseTreeControl):
                 self.resources[ext] = []
 
             # setup a default project library
-            parent_item = self.AppendItem(self.root_node, "Project", data=path, image=0)
-            self.libraries["Project"] = path
+            tree_item = self.AppendItem(self.root_node, "Project", data=path, image=1)
+            self.libraries["Project"] = (path, tree_item)
 
-            self.create_tree_from_dir(dir_path=path, parent=parent_item)
+            self.create_tree_from_dir(dir_path=path, parent=tree_item)
             self.dir_watcher.schedule(path, append=False)  # start monitoring
-            self.Expand(parent_item)
+            self.Expand(tree_item)
         else:
             print("[ResourceBrowser] Rebuilding resources")
 
@@ -272,33 +249,17 @@ class ResourceTree(BaseTreeControl):
             for ext in resourceGlobals.EXTENSIONS.keys():
                 self.resources[ext] = []
 
-            root_node = None
             # recreate all the libraries
             for key in self.libraries.keys():
-                path = self.libraries[key]
-                parent_item = self.AppendItem(self.root_node, key, data=path, image=0)
-                if key == "Project":
-                    root_node = parent_item
-                self.create_tree_from_dir(path, parent_item)
+                path = self.libraries[key][0]
+                tree_item = self.AppendItem(self.root_node, key, data=path, image=1)
+                self.create_tree_from_dir(path, tree_item)
 
-            self.Refresh()
+            root_node = self.libraries["Project"][1]
             self.Expand(root_node)
+            self.Refresh()
 
     def create_tree_from_dir(self, dir_path=None, parent=None):
-        def append_item(_file_path, _file_name):
-            extension = _file_path.split(".")[-1]
-
-            # make sure extension exists otherwise add a new key
-            if extension in self.resources.keys():
-                pass
-            else:
-                self.resources[extension] = []
-
-            # __item = self.AppendItem(parent, file, data=file_path)  # image=icon
-            # self.name_to_item[file] = __item
-            self.resources[extension].append(_file_path)
-            # self.SetItemTextColour(item, wx.Colour(255, 255, 190, 255))
-
         dir_files = os.listdir(dir_path)
 
         for file in dir_files:
@@ -313,22 +274,27 @@ class ResourceTree(BaseTreeControl):
                 self.create_tree_from_dir(file_path, item)
 
             elif os.path.isfile(file_path) and file != "__init__":
-                append_item(file_path, file)
+                extension = file_path.split(".")[-1]
 
-    def organize(self, _files):
-        while len(_files) != 0:
-            _file = _files.pop()
-            extension = _file.split(".")[-1]
-            if extension not in self.files_and_extensions.keys():
-                self.files_and_extensions[extension] = []
-            self.files_and_extensions[extension].append(_file)
-            self.organize(_files)
+                # make sure extension exists otherwise add a new key
+                if extension in self.resources.keys():
+                    pass
+                else:
+                    self.resources[extension] = []
+
+                self.resources[extension].append(file_path)
 
     def append_library(self, name, path):
-        self.libraries[name] = path
-        self.dir_watcher.schedule(path)
+        if name not in self.libraries.keys():
+            tree_item = self.AppendItem(self.root_node, name, data=path, image=1)
+            self.libraries[name] = (path, tree_item)
+            self.dir_watcher.schedule(path)
+        else:
+            print("Library with name {0} already exists".format(name))
 
     def remove_library(self, name):
+        tree_item = self.libraries[name][1]
+        self.Delete(tree_item)
         self.dir_watcher.unschedule(self.libraries[name])
         del self.libraries[name]
 
@@ -355,12 +321,16 @@ class ResourceTree(BaseTreeControl):
         elif op == "remove_item" and can_perform_operation():
             self.remove_item()
 
-    def do_drag_drop(self, src_path: str, target_path: str):
+    def do_drag_drop(self, src_item, target_item):
         """src_path = the file/dir being dragged
         target_path = the file/dir src_path is dropped onto"""
 
-        src_path = self.GetItemData(src_path)
-        target_path = self.GetItemData(target_path)
+        if self.GetItemText(src_item) in self.libraries.keys():
+            print("Cannot drag drop library item")
+            return
+
+        src_path = self.GetItemData(src_item)
+        target_path = self.GetItemData(target_item)
 
         # move source file / dir to target path
         # target directory must exist
@@ -421,6 +391,10 @@ class ResourceTree(BaseTreeControl):
             selection = self.GetSelection()
             current_path = self.GetItemData(selection)
             item_text = self.GetItemText(selection)
+
+            if item_text == "Project":
+                print("[ResourceBrowser] Cannot rename this item...!")
+                return
 
             # if the selected item is a library item, then remove existing library entry,
             # and create a new one with existing data as of original entry
@@ -489,18 +463,9 @@ class ResourceTree(BaseTreeControl):
         dm = wx_main.dialogue_manager
         dm.create_dialog("TextEntryDialog", "CreateNewAsset", dm, descriptor_text="New Asset Name", ok_call=on_ok)
 
-    def load_model(self, *args):
-        path = self.GetItemPyData(self.GetSelection())
-        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=False))
-
-    def load_actor(self, *args):
-        path = self.GetItemPyData(self.GetSelection())
-        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=True))
-        # constants.obs.trigger("WxEvent", constants.ui_Evt_Load_Actor, self.GetItemPyData(self.GetSelection()))
-
     def import_assets(self, *args):
         def create_wild_card(wild_card=""):
-            for ext in EXTENSIONS:
+            for ext in resourceGlobals.EXTENSIONS:
                 wild_card += "*" + "." + ext + ";"
             return wild_card
 

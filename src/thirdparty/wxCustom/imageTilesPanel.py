@@ -3,6 +3,7 @@ import wx
 import editor.constants as constants
 import editor.uiGlobals as uiGlobals
 import editor.wxUI.globals as wxGlobals
+import editor.commands as commands
 from editor.utils import PathUtils
 from wx.lib.scrolledpanel import ScrolledPanel
 
@@ -203,10 +204,12 @@ class ImageTile(wx.Panel):
                          ok_call=on_ok)
 
     def load_model(self):
-        print("load model {0}".format(self.data))
+        path = self.data
+        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=False))
 
     def load_actor(self):
-        print("load act0r {0}".format(self.data))
+        path = self.data
+        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=True))
 
 
 class ImageTilesPanel(ScrolledPanel):

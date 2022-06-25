@@ -8,7 +8,6 @@ from editor.utils.exceptionHandler import try_execute, try_execute_1
 from panda3d.core import BitMask32
 from editor.commandManager import CommandManager
 
-
 EDITOR_STATE = 0
 GAME_STATE = 1
 
@@ -47,8 +46,6 @@ TEXTURE_EXTENSIONS = []
 command_manager = CommandManager()
 obs = Observable()  # the event manager object
 p3d_app = None
-selected_resource_item = None  # selected resource item
-selected_np = None
 
 
 class ObjectManager:
@@ -107,15 +104,6 @@ class LevelEditorEventHandler:
         if args[0] in le_event_handler.keys():
             le_event_handler[args[0]](*args[1:])
 
-    @staticmethod
-    def on_le_start():
-        pass
-
-    @staticmethod
-    def on_scene_start(*args):
-        scene_graph = object_manager.get("SceneGraphPanel")
-        le = object_manager.get("LevelEditor")
-        scene_graph.init(le.active_scene.render)
 
     @staticmethod
     def on_enable_ed_mode(*args):
@@ -130,12 +118,6 @@ class LevelEditorEventHandler:
     @staticmethod
     def on_enable_game_mode(*args):
         pass
-
-    @staticmethod
-    @obs.on("OnAddNodePath")
-    def on_add_np(nps):
-        scene_graph = object_manager.get("SceneGraphPanel")
-        scene_graph.add_np(nps)
 
     @staticmethod
     @obs.on("UpdatePropertiesPanel")
@@ -170,84 +152,6 @@ class LevelEditorEventHandler:
         # else resets object inspection panel
         properties_panel.reset()
 
-    def toggle_scene_lights(val=None):
-        le = object_manager.get("LevelEditor")
-
-        if val is None:
-            # invert scene lights on status
-            current_status = le.toggle_scene_lights()
-        else:
-            current_status = val
-
-        # change graphics
-        wx_main = object_manager.get("WxMain")
-        if current_status:
-            wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_on_icon)
-        elif not current_status:
-            wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_off_icon)
-
-        wx_main.aui_manager.Update()
-
-    @staticmethod
-    @obs.on("AddLight")
-    def add_light(light):
-        object_manager.get("LevelEditor").add_light(light)
-
-    @staticmethod
-    @obs.on("AddCamera")
-    def add_camera():
-        # print("currently support is limited to only camera per scene...!")
-        object_manager.get("LevelEditor").add_camera()
-
-    @staticmethod
-    @obs.on("AddObject")
-    def add_object(path):
-        object_manager.get("LevelEditor").add_object(path)
-
-    @staticmethod
-    def on_remove_selected():
-        def on_ok(*args):
-            le = object_manager.get("LevelEditor")
-            scene_graph_panel = object_manager.get("SceneGraphPanel")
-            properties_panel = object_manager.get("PropertiesPanel")
-
-            selections = []
-            for np in le.selection.selected_nps:
-                selections.append(np)
-            le.selection.deselect_all()
-
-            scene_graph_panel.on_remove_nps(selections)
-            le.remove_selected_nps(selections)
-            properties_panel.reset()
-
-        wx_main = object_manager.get("WxMain")
-        dm = wx_main.dialogue_manager
-        dm.create_dialog("YesNoDialog", "Delete Item",
-                         dm,
-                         descriptor_text="Are you sure you want to delete this selection ?",
-                         ok_call=on_ok)
-
-    @staticmethod
-    def on_remove_nodepaths(self):
-        """This event is called after node paths have been removed... for any cleanup operations"""
-        pass
-
-    @staticmethod
-    def np_selected(nps):
-        if len(nps) > 0:
-            np = nps[0]
-
-            object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
-            object_manager.get("ProjectBrowser").UnselectAll()
-            object_manager.get("SceneGraphPanel").select_np(nps)
-
-    @staticmethod
-    @obs.on("DeselectAllNps")
-    def deselect_all():
-        object_manager.get("PropertiesPanel").reset()
-        object_manager.get("ProjectBrowser").UnselectAll()
-        object_manager.get("SceneGraphPanel").deselect_all()
-
     @staticmethod
     @obs.on("XFormTask")
     def on_xform_task(force_update_all=False):
@@ -267,12 +171,6 @@ le_EVT_On_Enable_Ed_Mode = "OnEnableEdMode"
 le_Evt_On_Enable_Game_Mode = "OnEnableGameMode"
 
 le_event_handler = {
-    le_Evt_Start: LevelEditorEventHandler.on_le_start,
-    le_Evt_On_Scene_Start: LevelEditorEventHandler.on_scene_start,
-    le_Evt_On_Add_NodePath: LevelEditorEventHandler.on_add_np,
-    le_Evt_NodePath_Selected: LevelEditorEventHandler.np_selected,
-    le_Evt_Deselect_All: LevelEditorEventHandler.deselect_all,
-    le_Evt_Remove_NodePaths: LevelEditorEventHandler.on_remove_selected,
     le_EVT_On_Enable_Ed_Mode: LevelEditorEventHandler.on_enable_ed_mode,
     le_Evt_On_Enable_Game_Mode: LevelEditorEventHandler.on_enable_game_mode, }
 
@@ -283,47 +181,8 @@ class ProjectEventHandler:
     @staticmethod
     @obs.on("ProjectEvent")
     def on_proj_event(evt, *args):
-        if evt == "AppendLibrary":
-            ProjectEventHandler.append_library()
-
-        elif evt == "SetProject":
+        if evt == "SetProject":
             ProjectEventHandler.create_new_project()
-
-        elif evt == "LoadDefaultProject":
-            ProjectEventHandler.load_default_project()
-
-        elif evt == "NewScene":
-            ProjectEventHandler.start_new_scene()
-
-        elif evt == "SwitchEdState":
-            le = object_manager.get("LevelEditor")
-            wx_main = object_manager.get("WxMain")
-
-            # get the current editor state
-            ed_state = le.ed_state  # 0 = editor, 1 = game_state
-
-            if len(args) > 0:
-                le.switch_state(args[0])
-
-            elif ed_state == 0:
-                le.switch_state(1)
-
-            elif ed_state == 1:
-                le.switch_state(0)
-
-            # change graphics
-            if le.ed_state == 1:
-                wx_main.ply_btn.SetBitmap(wx_main.stop_icon)
-            elif le.ed_state == 0:
-                wx_main.ply_btn.SetBitmap(wx_main.play_icon)
-
-            wx_main.aui_manager.Update()
-
-        elif evt == "ToggleSceneLights":
-            LevelEditorEventHandler.toggle_scene_lights()
-
-    def load_default_project(self):
-        pass
 
     @staticmethod
     def create_new_project(*args):
@@ -365,59 +224,6 @@ class ProjectEventHandler:
         dialog = dm.create_dialog("ProjectDialog", "PandaEditor", dm, ok_call=on_ok, cancel_call=on_cancel)
         return
 
-    @staticmethod
-    def open_project(*args):
-        pass
-
-    @staticmethod
-    def start_new_scene(*args):
-        le = object_manager.get("LevelEditor")
-
-        if le.ed_state is GAME_STATE:
-            print("Exit game mode to create a new scene..!")
-            return
-
-        dlg = wx.MessageDialog(parent=None,
-                               message="Confirm start new scene ?",
-                               caption="NewScene",
-                               style=wx.YES | wx.NO | wx.ICON_QUESTION)
-        res = dlg.ShowModal()
-        if res == wx.ID_YES:
-            le = object_manager.get("LevelEditor")
-            le.create_new_scene()
-
-    @staticmethod
-    def append_library(*args):
-        le = object_manager.get("LevelEditor")
-
-        if le.ed_state is GAME_STATE:
-            print("Exit game mode to append new library..!")
-            return
-
-        dir_dialog = wx.DirDialog(None, style=wx.DD_DEFAULT_STYLE)
-
-        if dir_dialog.ShowModal() == wx.ID_OK:
-            path = dir_dialog.GetPath()
-            name = ""
-            dlg = wx.TextEntryDialog(object_manager.get("WxMain"), 'LibraryName', 'Set Library Name', value="")
-            if dlg.ShowModal() == wx.ID_OK:
-                name = dlg.GetValue()
-            if name == "":
-                return
-
-            if le.project.on_add_library(name, path):
-                object_manager.get("ProjectBrowser").append_library(name, path)
-                DirectoryEventHandler.on_directory_event()
-
-    @staticmethod
-    @obs.on("OnRemoveLibrary")
-    def remove_library(lib_path):
-        """event called when a library is removed"""
-        le = object_manager.get("LevelEditor")
-        le.project.on_remove_library(lib_path)
-        DirectoryEventHandler.on_directory_event()
-
-    @staticmethod
     @obs.on("ToolExecutionFailed")
     def plugin_execution_failed(tool_name):
         print("plugin {} execution failed", tool_name)
@@ -439,313 +245,82 @@ class UserModuleEvent:
         le.unregister_editor_plugins()
 
 
-class WxEventHandler:
-    """Handles events coming from different wx widgets"""
+# ---------------------------------------- ** ---------------------------------------- #
+@obs.on("CreateNewProject")
+def create_new_project(*args):
+    print("create new project")
 
-    @staticmethod
-    @obs.on("WxEvent")
-    def on_wx_event(*args):
-        if args[0] in wx_event_handler.keys():
-            wx_event_handler[args[0]](*args[1:])
 
-    @staticmethod
-    @obs.on("OnNodePathSelected")
-    def on_np_selected(args):
-        le = object_manager.get("LevelEditor")
-        le.selection.set_selected(args, append=len(args) > 1)
-        le.update_gizmo()
-        obs.trigger("UpdateInspector", *args)
+@obs.on("OpenProject")
+def open_project(*args):
+    print("open project")
 
-    @staticmethod
-    def add_model(*args):
-        le = object_manager.get("LevelEditor")
 
-        model_path = args[0]
-        xx = model_path[len(le.project.project_path) + 1:]
-        le.add_nodepath(xx)
+@obs.on("BuildProject")
+def build_project(*args):
+    print("build project")
 
-    def add_actor(*args):
-        le = object_manager.get("LevelEditor")
 
-        actor_path = args[0]
-        xx = actor_path[len(le.project.project_path) + 1:]
-        le.add_actor(xx)
-
-    @staticmethod
-    @obs.on("UILayoutEvent")
-    def evt_ui_layout(evt):
-        if evt == "SaveUILayout":
-            WxEventHandler.register_user_layout()
-
-    @staticmethod
-    def register_user_layout():
-        wx_main = object_manager.get("WxMain")
-        aui_mgr = wx_main.aui_manager
-
-        def on_ok(layout_name):
-            if layout_name == "":
-                return
-
-            if aui_mgr.save_current_layout(layout_name):
-                wx_main.menu_bar.add_layout_menu(layout_name)
-
-        # get a name for this layout from user
-        dm = wx_main.dialogue_manager
-        dm.create_dialog("TextEntryDialog", "NewEditorLayout", dm,
-                         descriptor_text="Enter new layout name", ok_call=on_ok)
-
-    @staticmethod
-    @obs.on("LoadUserLayout")
-    def load_user_layout(layout):
-        wx_main = object_manager.get("WxMain")
-        aui_mgr = wx_main.aui_manager
-
-        if aui_mgr.load_layout(layout):
-            print("loaded layout: ", layout)
-
-
-ui_Evt_On_NodePath_Selected = "OnNodePathSelected"
-ui_Evt_Load_Model = "LoadModel"
-ui_Evt_Load_Actor = "LoadActor"
-ui_Evt_Reparent_NodePath = "ReparentNodePath"
-
-wx_event_handler = {ui_Evt_On_NodePath_Selected: WxEventHandler.on_np_selected,
-                    ui_Evt_Load_Model: WxEventHandler.add_model,
-                    ui_Evt_Load_Actor: WxEventHandler.add_actor}
-
-
-# ---------------------------------------- LEVEL EDITOR EVENTs ---------------------------------------- #
-# events emitted by level editor or related to level editor
-
-@obs.on("OnSceneStart")
-def on_scene_start():
-    """should be called as soon as a new scene is started"""
-    scene_graph = object_manager.get("SceneGraphPanel")
-    le = object_manager.get("LevelEditor")
-    scene_graph.init(le.active_scene.render)
-
-
-@obs.on("OnAddObjects(s)")
-def on_add_objects(objects: list):
-    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
-    scene_graph.add_np(objects)
-
-
-@obs.on("RenameNPs")
-def on_rename_nps(np):
-    def on_ok(new_name: str):
-        if old_name != new_name:
-            command_manager.do(commands.RenameNPs(p3d_app, np, old_name, new_name))
-
-    old_name = np.get_name()
-
-    dm = p3d_app.wx_main.dialogue_manager
-    dm.create_dialog("TextEntryDialog",
-                     "Rename Item",
-                     dm,
-                     descriptor_text="RenameSelection",
-                     ok_call=on_ok,
-                     initial_text=old_name)
-
-
-@obs.on("OnRenameNPs")
-def rename_nps(np, new_name):
-    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
-    scene_graph.on_item_rename(np, new_name)
-    LevelEditorEventHandler.update_properties_panel()
-
-
-@obs.on("ReparentNPs")
-def reparent_np(src_np, target_np):
-    """reparents target_np to src_np via LeveleEditor.reparent_np"""
-
-    command_manager.do(commands.ReparentNPs(p3d_app, src_np, target_np))
-    # p3d_app.level_editor.reparent_np(src_np, target_np)
-
-
-@obs.on("OnReparentNPs")
-def on_reparent_nps(src_np, target_np):
-    """executed after a re-parent operation in scene graph"""
-
-    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
-    scene_graph.reparent(src_np, target_np)
-
-
-@obs.on("RemoveNPs")
-def remove_nps(objects: list):
-    def on_ok():
-        command_manager.do(commands.RemoveObjects(p3d_app, objects))
-
-    wx_main = p3d_app.wx_main
-
-    dm = wx_main.dialogue_manager
-    dm.create_dialog("YesNoDialog", "Remove selections",
-                     dm,
-                     descriptor_text="Confirm remove selection(s) ?",
-                     ok_call=on_ok)
-
-
-@obs.on("OnRemoveNPs")
-def on_remove_nps(nps):
-    """on remove nps is called just before permanently removing nps"""
-    scene_graph_panel = p3d_app.wx_main.scene_graph_panel.scene_graph
-    inspector_panel = p3d_app.wx_main.inspector_panel
-
-    scene_graph_panel.on_remove_nps(nps)
-    inspector_panel.reset()
-
-
-@obs.on("OnSelectNPs")
-def on_select_objects(objects: list):
-    if len(objects) > 0:
-        np = objects[0]
-        object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
-        object_manager.get("ProjectBrowser").UnselectAll()
-        object_manager.get("SceneGraphPanel").select_np(objects)
-
-
-@obs.on("OnDeselectAllNPs")
-def on_deselect_all():
-    object_manager.get("PropertiesPanel").reset()
-    # object_manager.get("ProjectBrowser").UnselectAll()
-    object_manager.get("SceneGraphPanel").deselect_all()
-
-
-@obs.on("ToggleSceneLights")
-def toggle_lights(value):
-    le = object_manager.get("LevelEditor")
-    wx_main = object_manager.get("WxMain")
-
-    if value is None:
-        # invert scene lights on or off status
-        current_status = le.toggle_scene_lights()
-    else:
-        current_status = value
-
-    # change graphics
-    if current_status:
-        wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_on_icon)
-    elif not current_status:
-        wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_off_icon)
-
-    wx_main.aui_manager.Update()
-
-
-@obs.on("PluginFailed")
-def plugin_execution_failed(plugin):
-    print("Plugin {0} execution failed".format(plugin._name))
-    le = object_manager.get("LevelEditor")
-    le.unregister_editor_plugins(plugin)
-
-
-# ---------------------------------------- Wx EVENTs ---------------------------------------- #
-# events emitted by wx-widgets
-import editor.resources.globals as ResourceGlobals
-
-
-@obs.on("ResourceItemSelected")
-def resource_item_selected(selections):
-    """event called when an item is selected in resource browser"""
-
-    image_tiles_panel = p3d_app.wx_main.resource_browser.tiles_panel
-    image_tiles_panel.remove_all_tiles()
-
-    for _dir, path in selections:
-        dir_items = os.listdir(path)
-        for item in dir_items:
-
-            if os.path.isdir(path + "/" + item):
-                continue
-
-            split = item.split(".")
-            extension = split[-1]
-            file_name = split[0]
-            file_path = path + "/" + file_name + "." + extension
-
-            if extension in ResourceGlobals.EXTENSIONS:
-
-                # change icon for py file if its editor plugin
-                if extension == "py" and p3d_app.level_editor.is_module(file_name):
-                    module = p3d_app.level_editor.get_module(file_name)
-                    if module._editor_plugin:
-                        image = ResourceGlobals.EXTENSIONS["ed_plugin"]
-                    else:
-                        image = ResourceGlobals.EXTENSIONS[extension]
-                # -------------------------------------------------
-
-                else:
-                    image = ResourceGlobals.EXTENSIONS[extension]
-
-            else:
-                image = ResourceGlobals.EXTENSIONS["generic"]
-
-            image_tiles_panel.add_tile(image=image, label=file_name, extension=extension, data=file_path)
-
-    image_tiles_panel.update_tiles()
-
-
-@obs.on("ResourceTileSelected")
-def resource_tile_selected(tile_data):
+@obs.on("CreateNewSession")
+def create_new_session(*args):
     le = p3d_app.level_editor
-    le.deselect_all()
-    inspector_panel = p3d_app.wx_main.inspector_panel
 
-    def on_module_selected(module):
-        inspector_panel.layout_object_properties(module, module._name, module.get_properties())
-
-    def on_txt_file_selected(txt_file):
-        inspector_panel.set_text(txt_file)
-
-    # try to get module from level editor
-    file_name = tile_data
-    file_name = file_name.split(".")[0]
-
-    if le.is_module(file_name):
-        # if it's a user module
-        on_module_selected(le.get_module(file_name))
-
-    elif le.is_text_file(file_name):
-        # if it's a text file
-        on_txt_file_selected(le.get_text_file(file_name))
-
-    else:
-        inspector_panel.reset()
-
-
-@obs.on("OnSelectSceneGraphItem")
-def on_select_scene_graph_item(nps):
-    p3d_app.level_editor.set_selected(nps)
-
-
-@obs.on("PropertyModified")
-def property_modified(*args):
-    """should be called when a wx-property from object inspector is modified"""
-    # object_manager.get("PropertiesPanel").update_properties_panel(*args)
-    le = p3d_app.level_editor
-    le.update_gizmo()
-
-
-@obs.on("UpdateInspector")
-def update_inspector(*args):
-    pp = object_manager.get("PropertiesPanel")
-    pr = object_manager.get("ProjectBrowser")
-    le = object_manager.get("LevelEditor")
-
-    if len(args) > 0:
-        np = args[0]
-    elif len(le.selection.selected_nps) > 0:
-        np = le.selection.selected_nps[0]
-        np = np.getPythonTag(TAG_PICKABLE)
-    else:
+    if le.ed_state is GAME_STATE:
+        print("Exit game mode to create a new scene..!")
         return
 
-    pp.layout_object_properties(np, np.get_name(), np.get_properties())
+    dlg = wx.MessageDialog(parent=None,
+                           message="Confirm create new session ?",
+                           caption="NewSession",
+                           style=wx.YES | wx.NO | wx.ICON_QUESTION)
+    res = dlg.ShowModal()
+    if res == wx.ID_YES:
+        le = object_manager.get("LevelEditor")
+        le.create_new_scene()
 
 
-@obs.on("LoadPanel")
-def add_panel(panel):
-    """event called when a request to a new tab is made from main menu bar"""
-    p3d_app.wx_main.add_panel(panel)
+@obs.on("OpenSession")
+def open_session(*args):
+    print("open session")
+
+
+@obs.on("SaveSession")
+def save_session(*args):
+    print("save session")
+
+
+@obs.on("SaveSessionAs")
+def save_session_as(*args):
+    print("save session as")
+
+
+@obs.on("AppendLibrary")
+def append_library(*args):
+    le = p3d_app.level_editor
+    resource_tree = p3d_app.wx_main.resource_browser.resource_tree
+
+    if le.ed_state is GAME_STATE:
+        print("Exit game mode to append new library..!")
+        return
+
+    dir_dialog = wx.DirDialog(None, style=wx.DD_DEFAULT_STYLE)
+
+    if dir_dialog.ShowModal() == wx.ID_OK:
+        path = dir_dialog.GetPath()
+        dlg = wx.TextEntryDialog(object_manager.get("WxMain"), 'LibraryName', 'Set Library Name', value="")
+        if dlg.ShowModal() == wx.ID_OK:
+            name = dlg.GetValue()
+
+            if name != "":
+                resource_tree.append_library(name, path)
+
+
+@obs.on("OnRemoveLibrary")
+def remove_library(lib_path):
+    """event called to remove a library"""
+    le = object_manager.get("LevelEditor")
+    le.project.on_remove_library(lib_path)
+    DirectoryEventHandler.on_directory_event()
 
 
 @obs.on("CreateAsset")
@@ -839,6 +414,255 @@ def create_asset(asset_type, path):
         try_execute(write_p3d_module, module_name, base_cls, cls_name, is_ed_plugin)
 
 
+@obs.on("OnSceneStart")
+def on_scene_start():
+    """should be called after a new scene is created"""
+    scene_graph = object_manager.get("SceneGraphPanel")
+    le = object_manager.get("LevelEditor")
+    scene_graph.init(le.active_scene.render)
+
+
+@obs.on("OnAddObjects(s)")
+def on_add_objects(objects: list):
+    """should be called after adding new node_paths in scene graph"""
+    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
+    scene_graph.add_np(objects)
+
+
+# ---------------------------------------- ** ---------------------------------------- #
+@obs.on("RenameNPs")
+def on_rename_nps(np):
+    def on_ok(new_name: str):
+        if old_name != new_name:
+            command_manager.do(commands.RenameNPs(p3d_app, np, old_name, new_name))
+
+    old_name = np.get_name()
+
+    dm = p3d_app.wx_main.dialogue_manager
+    dm.create_dialog("TextEntryDialog",
+                     "Rename Item",
+                     dm,
+                     descriptor_text="RenameSelection",
+                     ok_call=on_ok,
+                     initial_text=old_name)
+
+
+@obs.on("OnRenameNPs")
+def rename_nps(np, new_name):
+    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
+    scene_graph.on_item_rename(np, new_name)
+    LevelEditorEventHandler.update_properties_panel()
+
+
+@obs.on("ReparentNPs")
+def reparent_np(src_np, target_np):
+    """reparents target_np to src_np via LeveleEditor.reparent_np"""
+
+    command_manager.do(commands.ReparentNPs(p3d_app, src_np, target_np))
+    # p3d_app.level_editor.reparent_np(src_np, target_np)
+
+
+@obs.on("OnReparentNPs")
+def on_reparent_nps(src_np, target_np):
+    """executed after a re-parent operation in scene graph"""
+
+    scene_graph = p3d_app.wx_main.scene_graph_panel.scene_graph
+    scene_graph.reparent(src_np, target_np)
+
+
+@obs.on("RemoveNPs")
+def remove_nps(objects: list):
+    def on_ok():
+        command_manager.do(commands.RemoveObjects(p3d_app, objects))
+
+    wx_main = p3d_app.wx_main
+
+    dm = wx_main.dialogue_manager
+    dm.create_dialog("YesNoDialog", "Remove selections",
+                     dm,
+                     descriptor_text="Confirm remove selection(s) ?",
+                     ok_call=on_ok)
+
+
+@obs.on("OnRemoveNPs")
+def on_remove_nps(nps):
+    """on remove nps is called just before permanently removing nps"""
+    scene_graph_panel = p3d_app.wx_main.scene_graph_panel.scene_graph
+    inspector_panel = p3d_app.wx_main.inspector_panel
+
+    scene_graph_panel.on_remove_nps(nps)
+    inspector_panel.reset()
+
+
+@obs.on("OnSelectNPs")
+def on_select_objects(objects: list):
+    if len(objects) > 0:
+        np = objects[0]
+        object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
+        object_manager.get("ProjectBrowser").UnselectAll()
+        object_manager.get("SceneGraphPanel").select_np(objects)
+
+
+@obs.on("OnDeselectAllNPs")
+def on_deselect_all():
+    object_manager.get("PropertiesPanel").reset()
+    # object_manager.get("ProjectBrowser").UnselectAll()
+    object_manager.get("SceneGraphPanel").deselect_all()
+
+
+@obs.on("SwitchEdState")
+def switch_ed_state():
+    le = object_manager.get("LevelEditor")
+    wx_main = object_manager.get("WxMain")
+
+    # get the current editor state
+    ed_state = le.ed_state  # 0 = editor, 1 = game_state
+
+    if ed_state == 0:
+        le.switch_state(1)
+    elif ed_state == 1:
+        le.switch_state(0)
+
+    # change graphics
+    if le.ed_state == 1:
+        wx_main.ply_btn.SetBitmap(wx_main.stop_icon)
+    elif le.ed_state == 0:
+        wx_main.ply_btn.SetBitmap(wx_main.play_icon)
+
+    wx_main.aui_manager.Update()
+
+
+@obs.on("ToggleSceneLights")
+def toggle_lights(value=None):
+    le = object_manager.get("LevelEditor")
+    wx_main = object_manager.get("WxMain")
+
+    if value is None:
+        # invert scene lights on or off status
+        current_status = le.toggle_scene_lights()
+    else:
+        current_status = value
+
+    # change graphics
+    if current_status:
+        wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_on_icon)
+
+    elif not current_status:
+        wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_off_icon)
+
+    wx_main.aui_manager.Update()
+
+
+@obs.on("PluginFailed")
+def plugin_execution_failed(plugin):
+    print("Plugin {0} execution failed".format(plugin._name))
+    le = object_manager.get("LevelEditor")
+    le.unregister_editor_plugins(plugin)
+
+
+# ---------------------------------------- Wx EVENTs ---------------------------------------- #
+# events emitted by wx-widgets
+import editor.resources.globals as ResourceGlobals
+
+
+@obs.on("ResourceItemSelected")
+def resource_item_selected(selections):
+    """event called when an item is selected in resource browser"""
+
+    image_tiles_panel = p3d_app.wx_main.resource_browser.tiles_panel
+    image_tiles_panel.remove_all_tiles()
+
+    for _dir, path in selections:
+        dir_items = os.listdir(path)
+        for item in dir_items:
+
+            if os.path.isdir(path + "/" + item):
+                continue
+
+            split = item.split(".")
+            extension = split[-1]
+            file_name = split[0]
+            file_path = path + "/" + item
+
+            if extension in ResourceGlobals.EXTENSIONS:
+                # change icon for py file if its editor plugin
+                if extension == "py" and p3d_app.level_editor.is_module(file_name):
+                    module = p3d_app.level_editor.get_module(file_name)
+                    if module._editor_plugin and module.has_unique_panel():
+                        image = ResourceGlobals.EXTENSIONS["ed_plugin"]
+                    else:
+                        image = ResourceGlobals.EXTENSIONS[extension]
+                # -------------------------------------------------
+
+                else:
+                    image = ResourceGlobals.EXTENSIONS[extension]
+
+            else:
+                image = ResourceGlobals.EXTENSIONS["generic"]
+
+            image_tiles_panel.add_tile(image=image, label=file_name, extension=extension, data=file_path)
+
+    image_tiles_panel.update_tiles()
+
+
+@obs.on("ResourceTileSelected")
+def resource_tile_selected(tile_data):
+    le = p3d_app.level_editor
+    le.deselect_all()
+    inspector_panel = p3d_app.wx_main.inspector_panel
+
+    def on_module_selected(module):
+        inspector_panel.layout_object_properties(module, module._name, module.get_properties())
+
+    def on_txt_file_selected(txt_file):
+        inspector_panel.set_text(txt_file)
+
+    # try to get module from level editor
+    file_name = tile_data
+    file_name = file_name.split(".")[0]
+
+    if le.is_module(file_name):
+        # if it's a user module
+        on_module_selected(le.get_module(file_name))
+
+    elif le.is_text_file(file_name):
+        # if it's a text file
+        on_txt_file_selected(le.get_text_file(file_name))
+
+    else:
+        inspector_panel.reset()
+
+
+@obs.on("OnSelectSceneGraphItem")
+def on_select_scene_graph_item(nps):
+    p3d_app.level_editor.set_selected(nps)
+
+
+@obs.on("PropertyModified")
+def property_modified(*args):
+    """should be called when a wx-property from object inspector is modified"""
+    # object_manager.get("PropertiesPanel").update_properties_panel(*args)
+    le = p3d_app.level_editor
+    le.update_gizmo()
+
+
+@obs.on("UpdateInspector")
+def update_inspector(*args):
+    pp = object_manager.get("PropertiesPanel")
+    pr = object_manager.get("ProjectBrowser")
+    le = object_manager.get("LevelEditor")
+
+    if len(args) > 0:
+        np = args[0]
+    elif len(le.selection.selected_nps) > 0:
+        np = le.selection.selected_nps[0]
+        np = np.getPythonTag(TAG_PICKABLE)
+    else:
+        return
+
+    pp.layout_object_properties(np, np.get_name(), np.get_properties())
+
+
 @obs.on("ResizeEvent")
 def resize_event(*args):
     """emitted when window is resized, can be called manually for example
@@ -853,6 +677,36 @@ def resize_event(*args):
             user_module.on_resize_event()
 
 
+@obs.on("LoadPanel")
+def add_panel(panel):
+    """event called when a request to a new tab is made from main menu bar"""
+    p3d_app.wx_main.add_panel(panel)
+
+
+@obs.on("SaveUILayout")
+def register_user_layout(*args):
+    wx_main = object_manager.get("WxMain")
+    aui_mgr = wx_main.aui_manager
+
+    def on_ok(layout_name):
+        if layout_name == "":
+            return
+
+        if aui_mgr.save_current_layout(layout_name):
+            wx_main.menu_bar.add_layout_menu(layout_name)
+
+    # get a name for this layout from user
+    dm = wx_main.dialogue_manager
+    dm.create_dialog("TextEntryDialog", "NewEditorLayout", dm,
+                     descriptor_text="Enter new layout name", ok_call=on_ok)
+
+
+@obs.on("LoadUserLayout")
+def load_user_layout(layout):
+    wx_main = p3d_app.wx_main
+    wx_main.aui_manager.load_layout(layout)
+
+
 @obs.on("OpenSocialMediaLink")
 def open_social_media_link(link: str):
     if link == "Patreon":
@@ -862,10 +716,10 @@ def open_social_media_link(link: str):
         webbrowser.open("https://discourse.panda3d.org/t/pandaeditor-alpha-release/28408", new=2)
 
     elif link == "Discord":
-        webbrowser.open("https://rutracker.org/forum/viewtopic.php?t=6100355", new=2)
+        webbrowser.open("https://discord.gg/QU2y6q7G9F", new=2)
 
 
-@obs.on("EvtCloseApp")
+@obs.on("CloseApp")
 def exit_app(close_wx=True):
     if close_wx:
         object_manager.get("WxMain").Close()
