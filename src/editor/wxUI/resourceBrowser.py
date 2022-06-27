@@ -69,8 +69,8 @@ class ResourceBrowser(wx.Panel):
     class State:
         """class representing a saved state of ResourceBrowser"""
 
-        def __init__(self):
-            self.selected_items = []
+        def __init__(self, selected_items: list):
+            self.selected_items = selected_items
 
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
@@ -253,6 +253,7 @@ class ResourceTree(BaseTreeControl):
             for key in self.libraries.keys():
                 path = self.libraries[key][0]
                 tree_item = self.AppendItem(self.root_node, key, data=path, image=1)
+                self.name_to_item[key] = tree_item
                 self.create_tree_from_dir(path, tree_item)
 
             root_node = self.libraries["Project"][1]
@@ -515,12 +516,18 @@ class ResourceTree(BaseTreeControl):
 
     def save_state(self):
         """saves the current state of tree e.g. currently selected tree items"""
-        self.saved_state = ResourceBrowser.State()
+        selected_items = []
         for item in self.GetSelections():
             item_text = self.GetItemText(item)
-            self.saved_state.selected_items.append(item_text)
+            selected_items.append(item_text)
+
+        self.saved_state = ResourceBrowser.State(selected_items)
 
     def reload_state(self):
         """reloads saved state"""
         for item_text in self.saved_state.selected_items:
-            self.SelectItem(self.name_to_item[item_text])
+            try:
+                self.SelectItem(self.name_to_item[item_text])
+            except KeyError:
+                print("[ResourceTree] Key {0} was not found".format(item_text))
+                self.SelectItem(self.name_to_item["Project"])

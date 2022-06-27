@@ -1,10 +1,8 @@
 import wx
 import editor.uiGlobals as uiGlobals
-from wx.lib.scrolledpanel import ScrolledPanel
-
-from panda3d.core import Vec2, Vec3, LColor, LPoint3f, LVecBase3f, LVecBase2f
-
 import editor.wxUI.wxCustomProperties as wxProperty
+from wx.lib.scrolledpanel import ScrolledPanel
+from panda3d.core import Vec2, Vec3, LColor, LPoint3f, LVecBase3f, LVecBase2f
 from editor.wxUI.wxFoldPanel import WxFoldPanelManager
 
 

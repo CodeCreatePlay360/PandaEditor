@@ -137,16 +137,16 @@ class ShowBase(SB.ShowBase):
     def update_aspect_ratio(self):
         aspect_ratio = self.getAspectRatio(self.main_win)
 
-        if self.ed_camera is not None:
-            self.ed_camera.node().getLens().setAspectRatio(aspect_ratio)
-            self.ed_camera.update_axes()
-
         if self.player_camera is not None:
             self.player_camera.node().getLens().setAspectRatio(aspect_ratio)
 
         # maintain aspect ratio pixel2d
         if self.ed_aspect2d is not None:
             self.ed_aspect2d.setScale(1.0 / aspect_ratio, 1.0, 1.0)
+
+        if self.ed_camera is not None:
+            self.ed_camera.node().getLens().setAspectRatio(aspect_ratio)
+            self.ed_camera.update_axes()
 
     def windowEvent(self, *args, **kwargs):
         """ Overridden to fix the aspect ratio of the editor camera and

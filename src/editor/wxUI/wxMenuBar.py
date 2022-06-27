@@ -27,9 +27,9 @@ Evt_Add_Point_Light = wx.NewId()
 Evt_Add_Spot_Light = wx.NewId()
 Evt_Add_Ambient_Light = wx.NewId()
 
-Evt_App_Cube = wx.NewId()
+Evt_Add_Cube = wx.NewId()
 Evt_Add_Capsule = wx.NewId()
-Evt_App_Cone = wx.NewId()
+Evt_Add_Cone = wx.NewId()
 Evt_Add_Plane = wx.NewId()
 
 Evt_Open_Discord = wx.NewId()
@@ -50,9 +50,9 @@ EVENT_MAP = {
     Evt_Build_Project: ("BuildProject", None),
 
     Evt_Add_Capsule: ("AddObject", constants.CAPSULE_PATH),
-    Evt_App_Cone: ("AddObject", constants.CONE_PATH),
+    Evt_Add_Cone: ("AddObject", constants.CONE_PATH),
     Evt_Add_Plane: ("AddObject", constants.PLANE_PATH),
-    Evt_App_Cube: ("AddObject", constants.CUBE_PATH),
+    Evt_Add_Cube: ("AddObject", constants.CUBE_PATH),
 
     Evt_Add_Sun_Light: ("AddLight", "DirectionalLight"),
     Evt_Add_Point_Light: ("AddLight", "PointLight"),
@@ -153,9 +153,9 @@ class WxMenuBar(wx.MenuBar):
 
         # gameobjects
         game_obj_menu = wx.Menu()
-        menu_items = [(Evt_App_Cube, "Cube", None),
+        menu_items = [(Evt_Add_Cube, "Cube", None),
                       (Evt_Add_Capsule, "Capsule", None),
-                      (Evt_App_Cone, "Cone", None),
+                      (Evt_Add_Cone, "Cone", None),
                       (Evt_Add_Plane, "Plane", None)
                       ]
         build_menu_bar(game_obj_menu, menu_items)
@@ -226,7 +226,7 @@ class WxMenuBar(wx.MenuBar):
             evt_name = EVENT_MAP[evt.GetId()][0]
             args = EVENT_MAP[evt.GetId()][1]
 
-            if evt_name == "AddNodePath":
+            if evt_name == "AddObject":
                 constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, args))
             elif evt_name == "AddLight":
                 constants.command_manager.do(commands.AddLight(constants.p3d_app, args))

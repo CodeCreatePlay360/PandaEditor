@@ -132,7 +132,7 @@ class ImageTile(wx.Panel):
         self.image = self.image.Scale(new_width, new_height)
         self.image_ctrl.SetBitmap(wx.Bitmap(self.image))
 
-    def on_select(self, evt):
+    def on_select(self, evt=None):
         if ImageTilesPanel.SELECTED_TILE:
             ImageTilesPanel.SELECTED_TILE.on_deselect()
 
@@ -144,7 +144,9 @@ class ImageTile(wx.Panel):
         self.Refresh()
 
         constants.obs.trigger("ResourceTileSelected", self.label)
-        evt.Skip()
+
+        if evt:
+            evt.Skip()
 
     def on_deselect(self):
         self.is_selected = False
@@ -215,6 +217,12 @@ class ImageTile(wx.Panel):
 class ImageTilesPanel(ScrolledPanel):
     """class representing a single image tile"""
 
+    class State:
+        def __init__(self, selected_tile_index):
+            """Class representing state of ImageTilesPanel"""
+
+            self.selected_tile_index = selected_tile_index
+
     SELECTED_TILE = None
     TILES_PER_ROW = 5
     TILE_POS_OFFSET = 12
@@ -224,11 +232,32 @@ class ImageTilesPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, parent)
         self.SetBackgroundColour(uiGlobals.ColorPalette.DARK_GREY)
 
+        constants.object_manager.add_object("TilesPanel", self)
+
         self.resource_tree = resource_tree
         self.parent = parent
         self.image_tiles = []
+        self.saved_state = None
 
         self.Bind(wx.EVT_SIZE, self.on_evt_resize)
+
+    def add_tile(self, image, label, extension, data):
+        tile = ImageTile(parent=self,
+                         label=label,
+                         extension=extension,
+                         style=wx.BORDER_NONE,
+                         color=uiGlobals.ColorPalette.DARK_GREY,
+                         size=(10, 10),
+                         position=(0, 0),
+                         data=data)
+
+        self.image_tiles.append(tile)
+        tile.set_image(image)
+
+    def deselect_all(self):
+        for tile in self.image_tiles:
+            tile.on_deselect()
+        self.SELECTED_TILE = None
 
     def update_tiles(self):
         if self.GetSize().x <= 1:
@@ -259,19 +288,6 @@ class ImageTilesPanel(ScrolledPanel):
                 tile.update()
                 tile_index += 1
 
-    def add_tile(self, image, label, extension, data):
-        tile = ImageTile(parent=self,
-                         label=label,
-                         extension=extension,
-                         style=wx.BORDER_NONE,
-                         color=uiGlobals.ColorPalette.DARK_GREY,
-                         size=(10, 10),
-                         position=(0, 0),
-                         data=data)
-
-        self.image_tiles.append(tile)
-        tile.set_image(image)
-
     def remove_all_tiles(self):
         for tile in self.image_tiles:
             tile.Destroy()
@@ -289,3 +305,17 @@ class ImageTilesPanel(ScrolledPanel):
     def on_evt_resize(self, evt):
         self.update_tiles()
         evt.Skip()
+
+    def save_state(self):
+        for i in range(len(self.image_tiles)):
+            if self.SELECTED_TILE == self.image_tiles[i]:
+                self.saved_state = ImageTilesPanel.State(i)
+
+    def reload_state(self):
+        if self.saved_state:
+            self.deselect_all()
+            for i in range(len(self.image_tiles)):
+                if self.saved_state.selected_tile_index == i:
+                    self.image_tiles[i].on_select()
+                    self.SELECTED_TILE = self.image_tiles[i]
+                    break

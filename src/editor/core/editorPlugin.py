@@ -25,3 +25,10 @@ class EditorPlugin(PModBase):
     # TODO replace this with property
     def has_unique_panel(self):
         return self._unique_panel is not None
+
+    def clear_ui(self):
+        for np in self._aspect2d.getChildren():
+            if np.get_name() == "CameraAxes":
+                continue
+            else:
+                np.remove_node()

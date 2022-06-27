@@ -77,8 +77,6 @@ class Game:
                 _res = cls_instance.start(late_update_sort=_late_update_sort)
                 if not _res:
                     return False
-                # print("[Game] Started", _mod.class_instance._name)
-
             return True
 
         # copy modules execution sort orders as an int list

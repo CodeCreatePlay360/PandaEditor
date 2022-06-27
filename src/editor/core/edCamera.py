@@ -43,8 +43,9 @@ class EditorCamera(p3d_core.NodePath):
 
         # create axes
         self.axes = p3d_core.NodePath(Axes())
+        self.axes.set_name("CameraAxes")
         self.axes.reparentTo(render2d)
-        self.axes.set_scale(0.005)
+        self.axes.set_scale(0.008)
 
         self.task = None
 
@@ -96,8 +97,7 @@ class EditorCamera(p3d_core.NodePath):
         # Set rotation to inverse of camera rotation
         y_pos = common_maths.map_to_range(0, self.win.getYSize(), 0, 1, self.win.getYSize())
         aspect = self.win.getXSize() / self.win.getYSize()
-        self.axes.set_pos(p3d_core.Vec3(aspect - 0.2, 0, y_pos - 0.2))
-
+        self.axes.set_pos(p3d_core.Vec3(aspect - 0.25, 0, y_pos - 0.25))
         camera_quat = p3d_core.Quat(self.getQuat())
         camera_quat.invertInPlace()
         self.axes.setQuat(camera_quat)

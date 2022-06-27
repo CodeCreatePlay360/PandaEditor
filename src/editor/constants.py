@@ -72,29 +72,6 @@ class ObjectManager:
 object_manager = ObjectManager()
 
 
-class DirectoryEventHandler:
-    """handler all events related to project resources"""
-
-    @staticmethod
-    @obs.on("DirectoryEvent")
-    def on_directory_event(*args):
-        proj_browser = object_manager.get("ProjectBrowser")
-        le = object_manager.get("LevelEditor")
-
-        proj_browser.save_state()  # for example currently selected items
-        proj_browser.create_or_rebuild_tree("", rebuild_event=True)  # rebuild resources panel
-
-        # reload all the resources
-        le.load_all_mods(proj_browser.resources["py"])  # reload all user mods and editor plugins
-        le.load_text_files(proj_browser.resources["txt"])  # reload all text files
-
-        proj_browser.reload_state()
-
-        # update properties panel
-        # DO not call this here, it is also called in le.load_all_mods.
-        # LevelEditorEventHandler.update_properties_panel()
-
-
 class LevelEditorEventHandler:
     """handles all events coming from level editor"""
 
@@ -103,7 +80,6 @@ class LevelEditorEventHandler:
     def on_le_event(*args):
         if args[0] in le_event_handler.keys():
             le_event_handler[args[0]](*args[1:])
-
 
     @staticmethod
     def on_enable_ed_mode(*args):
@@ -501,6 +477,7 @@ def on_select_objects(objects: list):
         object_manager.get("PropertiesPanel").layout_object_properties(np, np.get_name(), np.get_properties())
         object_manager.get("ProjectBrowser").UnselectAll()
         object_manager.get("SceneGraphPanel").select_np(objects)
+        object_manager.get("TilesPanel").deselect_all()
 
 
 @obs.on("OnDeselectAllNPs")
@@ -511,17 +488,21 @@ def on_deselect_all():
 
 
 @obs.on("SwitchEdState")
-def switch_ed_state():
+def switch_ed_state(state=None):
+    print("switch ed state", state)
+
     le = object_manager.get("LevelEditor")
     wx_main = object_manager.get("WxMain")
 
-    # get the current editor state
-    ed_state = le.ed_state  # 0 = editor, 1 = game_state
-
-    if ed_state == 0:
-        le.switch_state(1)
-    elif ed_state == 1:
-        le.switch_state(0)
+    if state is None:
+        ed_state = le.ed_state  # 0 = editor, 1 = game_state
+        if ed_state == 0:
+            le.switch_state(1)
+        elif ed_state == 1:
+            le.switch_state(0)
+    else:
+        ed_state = state
+        le.switch_state(ed_state)
 
     # change graphics
     if le.ed_state == 1:
@@ -558,6 +539,12 @@ def plugin_execution_failed(plugin):
     print("Plugin {0} execution failed".format(plugin._name))
     le = object_manager.get("LevelEditor")
     le.unregister_editor_plugins(plugin)
+
+
+@obs.on("CleanUnusedLoadedNPs")
+def clean_unused_loaded_nps(nps_to_remove):
+    # TODO explanation
+    p3d_app.level_editor.remove_nps(nps_to_remove, permanent=True)
 
 
 # ---------------------------------------- Wx EVENTs ---------------------------------------- #
@@ -635,6 +622,8 @@ def resource_tile_selected(tile_data):
 
 @obs.on("OnSelectSceneGraphItem")
 def on_select_scene_graph_item(nps):
+    # do not call deselect on resource tree or tiles panel, it is called in "constants.on_select_objects",
+    # triggered after call to level_editor.set_selected
     p3d_app.level_editor.set_selected(nps)
 
 
@@ -707,6 +696,28 @@ def load_user_layout(layout):
     wx_main.aui_manager.load_layout(layout)
 
 
+@obs.on("DirectoryEvent")
+def on_directory_event(*args):
+    resource_tree = p3d_app.wx_main.resource_browser.resource_tree
+    tiles_panel = p3d_app.wx_main.resource_browser.tiles_panel
+    le = p3d_app.level_editor
+
+    resource_tree.save_state()  # for example currently selected items
+    tiles_panel.save_state()
+    resource_tree.create_or_rebuild_tree("", rebuild_event=True)  # rebuild resources panel
+
+    # reload all the resources
+    le.load_all_mods(resource_tree.resources["py"])  # reload all user mods and editor plugins
+    le.load_text_files(resource_tree.resources["txt"])  # reload all text files
+
+    resource_tree.reload_state()
+    tiles_panel.reload_state()
+
+    # update properties panel
+    # DO not call this here as it is also called from le.load_all_mods.
+    # LevelEditorEventHandler.update_properties_panel()
+
+
 @obs.on("OpenSocialMediaLink")
 def open_social_media_link(link: str):
     if link == "Patreon":
@@ -724,10 +735,3 @@ def exit_app(close_wx=True):
     if close_wx:
         object_manager.get("WxMain").Close()
     object_manager.get("P3dApp").Quit()
-
-
-# ---------------------------------------- All other events ---------------------------------------- #
-@obs.on("CleanUnusedLoadedNPs")
-def clean_unused_loaded_nps(nps_to_remove):
-    # TODO explanation
-    p3d_app.level_editor.remove_nps(nps_to_remove, permanent=True)

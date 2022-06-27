@@ -11,6 +11,8 @@ class EdPlugin(EditorPlugin):
     def __init__(self, *args, **kwargs):
         EditorPlugin.__init__(self, *args, **kwargs)
 
+        return
+
         # __init__ should not contain anything except for variable declaration...!
         self.curr_game_viewport_style = 0
         self.hidden_attrs = "curr_game_viewport_style"
@@ -45,6 +47,7 @@ class EdPlugin(EditorPlugin):
 
     # on_start method is called once
     def on_start(self):
+        return
         # self.create_ui()         # direct gui
         le = self._le              # level editor
         wx_panel = self._panel     # the top most parent "Panel" of wxPython, if request to unique panel is

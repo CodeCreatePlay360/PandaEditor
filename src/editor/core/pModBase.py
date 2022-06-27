@@ -14,7 +14,7 @@ def stop_execution(module):
     if module._editor_plugin:
         constant.obs.trigger("PluginFailed", module)
     else:
-        constant.obs.trigger("ProjectEvent", "SwitchEdState", 0)
+        constant.obs.trigger("SwitchEdState", 0)
 
 
 class PModBase(DirectObject):
