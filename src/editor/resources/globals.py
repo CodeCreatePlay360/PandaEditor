@@ -3,41 +3,37 @@ EDITOR_RESOURCES_PATH = ""
 ICONS_PATH = "src/editor/resources/icons"
 
 FOLDER_ICON_BLUE = ICONS_PATH + "\\" + "folder16.png"
-FOLDER_ICON_GREEN = ICONS_PATH + "\\" + "folder16_green.png"
-FILE_ICON = ICONS_PATH + "\\" + "ResourceTiles//file.png"
-MODEL_ICON = ICONS_PATH + "\\" + "ResourceTiles//3d-model.png"
-IMAGE_ICON = ICONS_PATH + "\\" + "ResourceTiles//image.png"
-AUDIO_ICON = ICONS_PATH + "\\" + "ResourceTiles//audio.png"
-VIDEO_ICON = ICONS_PATH + "\\" + "ResourceTiles//video.png"
-PY_FILE_ICON = ICONS_PATH + "\\" + "ResourceTiles//python.png"
-ED_PLUGIN_ICON = ICONS_PATH + "\\" + "ResourceTiles//plugin.png"
-TXT_FILE = ICONS_PATH + "\\" + "ResourceTiles//txt.png"
+LIB_FOLDER_ICON = ICONS_PATH + "\\" + "libFolderIcon.png"
+
+Music_icon = ICONS_PATH + "\\" + "ResourceTiles//music.png"
+Video_icon = ICONS_PATH + "\\" + "ResourceTiles//video.png"
 
 # all supported extensions
-EXTENSIONS = {"generic": FILE_ICON,
+EXTENSIONS = {"generic": Music_icon,
 
               # model files
-              "egg": MODEL_ICON,
-              "bam": MODEL_ICON,
-              "pz":  MODEL_ICON,
-              "fbx": MODEL_ICON,
-              "obj": MODEL_ICON,
+              "egg":  Music_icon,
+              "bam":  Music_icon,
+              "pz":   Music_icon,
+              # "fbx":  MODEL_ICON,
+              "obj":  Music_icon,
+              # "gltf": MODEL_ICON,
 
               # image files
-              "tiff": IMAGE_ICON,
-              "tga":  IMAGE_ICON,
-              "jpg":  IMAGE_ICON,
-              "png":  IMAGE_ICON,
+              "tiff": Music_icon,
+              "tga":  Music_icon,
+              "jpg":  Music_icon,
+              "png":  Music_icon,
 
               # other
-              "py":  PY_FILE_ICON,
-              "ed_plugin": ED_PLUGIN_ICON,
-              "txt": TXT_FILE,
+              "py":  Music_icon,
+              "ed_plugin": Music_icon,
+              "txt": Music_icon,
 
               # audio
-              "mp3": AUDIO_ICON,
-              "wav": AUDIO_ICON,
+              "mp3": Music_icon,
+              "wav": Music_icon,
 
               # video
-              ".mp4": VIDEO_ICON,
+              ".mp4": Music_icon,
               }

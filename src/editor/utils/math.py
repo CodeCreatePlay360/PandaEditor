@@ -23,6 +23,14 @@ def clamp_angle(angle, min_val, max_val):
         angle += 360
     if angle > 360:
         angle -= 360
-    clamp = max(min(angle, max_val), min_val)
-    return clamp
+    _clamp = max(min(angle, max_val), min_val)
+    return _clamp
+
+
+def is_point_in_rect(rect, btm_left, btm_right, top_right, top_left):
+    """determines if a point is inside rect"""
+    # this is basically like drawing diagonals
+    # x1 = point.x > BottomLeftCorner.x and point.x < TopRightCorner.x
+    # x2 = point.z > BottomRightCorner.z and point.z < TopLeftCorner.z
+    pass
 

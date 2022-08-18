@@ -6,65 +6,6 @@ AUI_NOTEBOOK_FLAGS = aui.AUI_NB_TAB_SPLIT | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCR
                      aui.AUI_NB_TAB_FIXED_WIDTH
 
 
-class AuiNotebook(aui.AuiNotebook):
-    def __init__(self, parent, agw_flags, art_provider):
-        aui.AuiNotebook.__init__(self, parent)
-        self.SetAGWWindowStyleFlag(agw_flags)
-        self.SetArtProvider(art_provider)
-
-        self.active_tabs = []
-
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_page_close)
-
-    def add_page(self, panel, name):
-        if not self.active_tabs.__contains__(name):
-            self.AddPage(panel, name, False)
-            self.active_tabs.append(name)
-
-    def load_save_data(self, save_data):
-        # make sure save data class is not None or on it's default values
-        if save_data.tabs is None or save_data.layout == "":
-            return
-
-        page_count = self.notebook.GetPageCount()
-
-        while page_count != -1:
-            self.notebook.RemovePage(0)
-            page_count -= 1
-
-        self.notebook.clear_all_tabs()
-        self.notebook.Refresh()
-        self.notebook.Layout()
-
-        for i in range(len(save_data.tabs)):
-            panel = self.wx_main.panels_repo[save_data.tabs[i]]
-            self.notebook.add_page(panel, save_data.tabs[i].__str__())
-
-        self.notebook.LoadPerspective(save_data.layout)
-        
-    def clear_all_tabs(self):
-        self.active_tabs.clear()
-        
-    def get_save_data(self):
-        notebook_save_data = NotebookSaveData(self.notebook.SavePerspective(), self.notebook.active_tabs)
-        return notebook_save_data
-        
-    def on_page_close(self, evt):
-        name = self.GetPage(evt.GetSelection()).name
-        if self.active_tabs.__contains__(name):
-            self.active_tabs.remove(name)
-        evt.Skip()
-
-
-class NotebookSaveData:
-    def __init__(self, layout="", tabs=None):
-        self.layout = layout
-        self.tabs = []
-        if tabs is not None:
-            for tab in tabs:
-                self.tabs.append(tab)
-
-
 class AuiManagerSaveData:
     def __init__(self, layout, panels):
         self.layout = layout
@@ -83,18 +24,15 @@ class AuiManager(aui.AuiManager):
 
     def save_current_layout(self, name):
         if name not in self.__saved_layouts.keys():
-
             layout = self.SavePerspective()
-            print(layout)
             panel_names = [x.name for x in self.GetAllPanes()]
-
             save_data_obj = AuiManagerSaveData(layout, panel_names)
-
             self.__saved_layouts[name] = save_data_obj
-
             return True
-
-        return False
+        else:
+            print("[AuiManager (function: save_current_layout)] Unable to save layout, key {0} already "
+                  "exists".format(name))
+            return False
 
     def save_layout(self, name, panels, layout):
         save_data_obj = AuiManagerSaveData(layout, panels)

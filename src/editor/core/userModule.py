@@ -26,5 +26,6 @@ class UserModule:
             properties = self.saved_data.properties
             for name, val in properties:
                 if hasattr(self.class_instance, name):
-                    setattr(self.class_instance, name, val)
+                    if not self.class_instance.is_discarded_attr(name):
+                        setattr(self.class_instance, name, val)
                     # print("[UserModule] reloaded data name {0} value {1}".format(name, val))

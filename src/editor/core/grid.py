@@ -1,12 +1,10 @@
 from __future__ import division
 from panda3d.core import *
-from editor.p3d.object import Object
 
 
-class ThreeAxisGrid(Object):
+class ThreeAxisGrid(NodePath):
     def __init__(self, *args, **kwargs):
-        Object.__init__(self, *args, **kwargs)
-
+        NodePath.__init__(self, "AxisGrid")
         self.grid_size = 100
         self.gridStep = 10
         self.sub_divisions = 10
@@ -39,7 +37,6 @@ class ThreeAxisGrid(Object):
         self.subdivLinesNode = None
         self.subdivLinesNodePath = None
 
-        # Create line objects
         self.axisLines = LineSegs()
         self.gridLines = LineSegs()
         self.subdivision_Lines = LineSegs()
@@ -49,9 +46,14 @@ class ThreeAxisGrid(Object):
         self.gridStep = grid_step
         self.sub_divisions = sub_divisions
 
-        self.axisLines = LineSegs()
-        self.gridLines = LineSegs()
-        self.subdivision_Lines = LineSegs()
+        # self.axisLines = LineSegs()
+        self.axisLines.moveTo(0, 0, 0)
+
+        # self.gridLines = LineSegs()
+        self.gridLines.moveTo(0, 0, 0)
+
+        # self.subdivision_Lines = LineSegs()
+        self.subdivision_Lines.moveTo(0, 0, 0)
 
         # Set line thicknesses
         self.axisLines.setThickness(self.axis_thickness)
@@ -108,30 +110,26 @@ class ThreeAxisGrid(Object):
 
         # Draw Y axis line
         self.axisLines.setColor(self.y_axis_color)
+        self.axisLines.moveTo(0, 0, 0)
         self.axisLines.moveTo(0, -self.grid_size, 0)
         self.axisLines.drawTo(0, self.grid_size, 0)
 
-        # Create ThreeAxisGrid nodes and nodepaths
-        # Create parent node and path
-        self.parentNode = PandaNode('AxisGrid')
-        self.parentNodePath = NodePath(self.parentNode)
-
-        # Create axis lines node and path, then reparent
-        self.axisLinesNode = self.axisLines.create()
+        # Create axis lines node and path, then re-parent
+        self.axisLinesNode = self.axisLines.create(None)
         self.axisLinesNodePath = NodePath(self.axisLinesNode)
-        self.axisLinesNodePath.reparentTo(self.parentNodePath)
+        self.axisLinesNodePath.reparentTo(self)
 
-        # Create grid lines node and path, then reparent
-        self.gridLinesNode = self.gridLines.create()
+        # Create grid lines node and path, then re-parent
+        self.gridLinesNode = self.gridLines.create(None)
         self.gridLinesNodePath = NodePath(self.gridLinesNode)
-        self.gridLinesNodePath.reparentTo(self.parentNodePath)
+        self.gridLinesNodePath.reparentTo(self)
 
-        # Create subdivision lines node and path then reparent
-        self.subdivLinesNode = self.subdivision_Lines.create()
+        # Create subdivision lines node and path then re-parent
+        self.subdivLinesNode = self.subdivision_Lines.create(None)
         self.subdivLinesNodePath = NodePath(self.subdivLinesNode)
-        self.subdivLinesNodePath.reparentTo(self.parentNodePath)
+        self.subdivLinesNodePath.reparentTo(self)
 
-        return self.parentNodePath
+        # self.parentNodePath = self
 
     # Thanks to Edvard Majakari for this float-accepting range method
     def myfrange(self, start, stop=None, step=None):

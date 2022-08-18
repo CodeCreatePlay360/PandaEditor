@@ -9,7 +9,7 @@ class AddLight(Command):
         self.light_np = None
 
     def do(self, *args, **kwargs):
-        self.light_np = self.app.level_editor.add_light(self.light_type)
+        self.light_np = self.app.level_editor.add_light(self.light_type, select=kwargs.pop("select", True))
 
     def undo(self):
         self.app.level_editor.remove_nps([self.light_np])

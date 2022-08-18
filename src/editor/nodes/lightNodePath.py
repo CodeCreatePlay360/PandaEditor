@@ -1,25 +1,29 @@
 import editor.utils as ed_utils
-from editor.nodes.baseNp import BaseNp
+from editor.nodes.baseNodePath import BaseNodePath
 from panda3d.core import LColor, PerspectiveLens
 
 
-class LightNp(BaseNp):
+class LightNp(BaseNodePath):
     def __init__(self, np, uid=None, *args, **kwargs):
         self.intensity = 1.0
 
         # this attribute is the actual pure color(Hue), as seen, unscaled by intensity
         self.ed_light_colour = LColor(255, 255, 255, 255)
+        self.is_active = True
 
-        BaseNp.__init__(self, np, uid, *args, **kwargs)
+        BaseNodePath.__init__(self, np, uid, *args, **kwargs)
 
         self.set_color(self.ed_light_colour)
         self.setScale(4)
+
+    def clear_light(self):
+        pass
 
     def create_properties(self):
         super().create_properties()
 
         space = ed_utils.EdProperty.EmptySpace(0, 10)
-        label = ed_utils.EdProperty.Label(name="LightSettings", is_bold=True)
+        label = ed_utils.EdProperty.Label(name="Light Properties", is_bold=True)
 
         colour = ed_utils.EdProperty.FuncProperty(name="Light Color", value=self.get_color(),
                                                   setter=self.set_color, getter=self.get_color)
@@ -27,10 +31,14 @@ class LightNp(BaseNp):
         intensity = ed_utils.EdProperty.FuncProperty(name="Color intensity", value=self.intensity,
                                                      setter=self.set_intensity, getter=self.get_intensity)
 
+        is_active = ed_utils.EdProperty.FuncProperty(name="Is Active", value=self.is_active,
+                                                     setter=self.toggle_active, getter=self.get_active_status)
+
         self.properties.append(space)
         self.properties.append(label)
         self.properties.append(colour)
         self.properties.append(intensity)
+        self.properties.append(is_active)
 
     def create_save_data(self):
         super(LightNp, self).create_save_data()
@@ -38,7 +46,10 @@ class LightNp(BaseNp):
         self._save_data_info["EdLightIntensity"] = [self.get_intensity, self.set_intensity]
 
     def set_intensity(self, val):
-        self.intensity = val
+        if not self.is_active:
+            self.intensity = 0
+        else:
+            self.intensity = val
 
         # update light color according to intensity
         r = ed_utils.common_maths.map_to_range(0, 255, 0, 1, self.ed_light_colour.x)
@@ -68,6 +79,11 @@ class LightNp(BaseNp):
         b = b * self.intensity
         self.node().setColor(LColor(r, g, b, 1))
 
+    def toggle_active(self, val):
+        self.is_active = val
+        if not self.is_active:
+            self.set_intensity(0)
+
     def get_light(self):
         return self.node()
 
@@ -76,6 +92,9 @@ class LightNp(BaseNp):
 
     def get_color(self):
         return self.ed_light_colour
+
+    def get_active_status(self):
+        return self.is_active
 
     def on_remove(self):
         super().on_remove()

@@ -9,10 +9,14 @@ import editor.constants as constants
 import editor.globals as ed_globals
 import editor.commands as commands
 
+from datetime import date
 from direct.showbase.DirectObject import DirectObject
+from direct.showbase.Loader import Loader
 from direct.showbase.ShowBase import taskMgr
 from editor.project import Project
 from editor.selection import Selection
+from editor.pluginManager import PluginsManager
+from editor.editorSettings import EditorSettings
 
 
 class LevelEditor(DirectObject):
@@ -23,7 +27,11 @@ class LevelEditor(DirectObject):
         constants.object_manager.add_object("LevelEditor", self)
 
         self.app = panda_app
+
         self.project = Project(panda_app)
+        self.editor_settings = EditorSettings(self)
+        self.plugins_manager = PluginsManager()
+
         self.active_scene = None
 
         # gizmos, grid, selection
@@ -62,39 +70,48 @@ class LevelEditor(DirectObject):
                               }
 
         self.scene_lights_on = False  # scene lights are on or off ?
-        self.mouse_1_down = False     # is mouse button 1 down ?
-        self.mouse_2_down = False     # is mouse button 2 down ?
+        self.mouse_1_down = False  # is mouse button 1 down ?
+        self.mouse_2_down = False  # is mouse button 2 down ?
         self.ed_state = constants.EDITOR_STATE  # is current state editor or game state ?
 
-        self.maximized_play_mode = False
-        self.mouse_mode = None
+        self.__game_viewport_maximized = False
+        self.current_mouse_mode = None
 
         # editor update task
         self.update_task = None
-        self.current_time = 0
+        self.current_xform_time = 0
         self.x_form_delay = 0.1  # delay time before updating inspector panel
         self.update_task = taskMgr.add(self.update, 'EditorUpdateTask', sort=1)
 
         # available loaded resources
         # TODO replace this with ResourceHandler
+        self.__loader = Loader(self.app.show_base)
         self.__ed_plugins = {}
         self.__user_modules = {}
         self.__text_files = {}
         # ---------------------------------------
 
+        # TODO replace this with something global
+        self.today = date.today()
+
         self.bind_key_events()
 
     def start(self):
+        p3d_core.get_model_path().clear()
+        panda_path = p3d_core.Filename.fromOsSpecific(constants.MODELS_PATH)
+        p3d_core.get_model_path().prependDirectory(panda_path)
         self.create_new_project("DefaultProject", constants.DEFAULT_PROJECT_PATH)
+        constants.obs.trigger("OnLevelEditorFinishInit")
 
     def update(self, task):
         """this method should be called ever frame in editor_state and game_state"""
-        if task.time > self.current_time:
-            constants.obs.trigger("XFormTask")
-            self.current_time += self.x_form_delay
 
-            if self.app.wx_main.resource_browser.resource_tree.GetSelection() is None:
-                pass
+        # XFormTask updates Inspector panel
+        if task.time > self.current_xform_time:
+            constants.obs.trigger("XFormTask")
+            self.current_xform_time += self.x_form_delay
+
+        constants.obs.trigger("EditorUpdate")
 
         return task.cont
 
@@ -122,7 +139,7 @@ class LevelEditor(DirectObject):
         self.active_gizmo = "pos"
 
         # add a default sunlight
-        constants.command_manager.do(commands.AddLight(constants.p3d_app, "DirectionalLight"))
+        constants.command_manager.do(commands.AddLight(constants.p3d_app, "DirectionalLight"), select=False)
         light_np = self.active_scene.render.find("**/DirectionalLight")
         light_np = light_np.getPythonTag(constants.TAG_PICKABLE)
         light_np.setPos(400, 200, 350)
@@ -130,14 +147,14 @@ class LevelEditor(DirectObject):
         light_np.set_color(p3d_core.Vec4(255, 250, 140, 255))
 
         # add a default player camera
-        constants.command_manager.do(commands.AddCamera(constants.p3d_app))
+        constants.command_manager.do(commands.AddCamera(constants.p3d_app), select=False)
         cam = self.active_scene.render.find("**/PlayerCam").getNetPythonTag(constants.TAG_PICKABLE)
         cam.setPos(-239.722, 336.966, 216.269)
         cam.setHpr(p3d_core.Vec3(-145.0, -20, 0))
         self.set_player_camera(cam)
 
         # add a default cube
-        constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, constants.CUBE_PATH))
+        constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, constants.CUBE_PATH), select=False)
         obj = self.active_scene.render.find("**/cube.fbx")
         obj.setScale(0.5)
 
@@ -184,7 +201,6 @@ class LevelEditor(DirectObject):
             if len(_np.getChildren()) > 0:
                 for child in _np.getChildren():
                     if type(child) is p3d_core.NodePath and child.hasPythonTag(constants.TAG_PICKABLE):
-
                         child = child.getPythonTag(constants.TAG_PICKABLE)
                         child.restore_data()
 
@@ -263,29 +279,32 @@ class LevelEditor(DirectObject):
         if not constants.try_execute_1(import_modules):
             return
 
-        old_panels = []
         save_data = {}  # save module data here, [cls_name] = save_data, and do any necessary cleanup
         for cls_name in self.__user_modules.keys():
-            self.__user_modules[cls_name].class_instance.ignore_all()
-            self.__user_modules[cls_name].class_instance.clear_ui()
-            self.__user_modules[cls_name].save_data()
-            save_data[cls_name] = self.__user_modules[cls_name].saved_data
+            user_mod = self.__user_modules[cls_name]
+            cls_instance = user_mod.class_instance
 
-            if self.__user_modules[cls_name].class_instance._editor_plugin:
-                if self.__user_modules[cls_name].class_instance.has_unique_panel():
-                    panel = self.__user_modules[cls_name].class_instance.get_unique_panel()
-                    old_panels.append(panel)
+            cls_instance.ignore_all()
 
+            # do not clear ui for editor plugins,
+            # all editor plugins use a common aspect_2d,
+            # clear them all at once.
+            if cls_instance.module_type == constants.EditorPlugin:
+                cls_instance.clear_ui()
+
+            user_mod.save_data()
+            save_data[cls_name] = user_mod.saved_data
+
+        self.app.show_base.clear_ed_aspect_2d()
         self.__user_modules.clear()
         self.unregister_editor_plugins()  # TODO replace this with unload
-        ed_plugins = []    # save editor tools here
+        ed_plugins = []  # save editor tools here
         game_modules = {}  # save runtime modules here
 
         for mod, cls_name in imported_modules:
             if hasattr(mod, cls_name):
                 cls = getattr(mod, cls_name)
                 obj_type = None
-                runtime_plugin = True  # set this to false if editor plugin
 
                 try:
                     obj_type = cls.__mro__[1]
@@ -301,22 +320,19 @@ class LevelEditor(DirectObject):
                 # instantiate the class and catch any errors from its init method
                 cls_instance = None
                 try:
-
                     if obj_type == ed_core.runtimeModule.RuntimeModule:
-                        runtime_plugin = True
                         cls_instance = init_runtime_module(cls_name, cls)
 
                     if obj_type == ed_core.editorPlugin.EditorPlugin:
-                        runtime_plugin = False
                         cls_instance = init_ed_plugin(cls_name, cls)
 
-                    cls_instance._editor_plugin = not runtime_plugin
+                    module_type = cls_instance.module_type
 
                 except Exception as e:
                     tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
                     for x in tb_str:
                         print(x)
-                    print("LevelEditor --> Unable to load user module {0}".format(cls_name))
+                    print("{0} Unable to load user module {1}".format(self.today, cls_name))
                     continue
 
                 # create a new user module
@@ -328,8 +344,9 @@ class LevelEditor(DirectObject):
                     self.__user_modules[cls_name].saved_data = save_data[cls_name]
                     self.__user_modules[cls_name].reload_data()
 
-                if runtime_plugin:
+                if module_type == constants.RuntimeModule:
                     game_modules[cls_name] = self.__user_modules[cls_name]
+                    print("[{0}] Loaded runtime user module {1}.".format(self.today, cls_name))
                 else:
                     # it's an editor plugin
                     ed_plugin = self.__user_modules[cls_name].class_instance
@@ -337,7 +354,7 @@ class LevelEditor(DirectObject):
                     ed_plugins.append(ed_plugin)
 
         # finally, register editor tools
-        self.register_editor_plugins(ed_plugins, old_panels)
+        self.register_editor_plugins(ed_plugins)
         self.project.game.game_modules = game_modules
         constants.obs.trigger("UpdatePropertiesPanel")
         # print("[LevelEditor] Modules loaded successfully.")
@@ -348,43 +365,23 @@ class LevelEditor(DirectObject):
         for file in text_files:
             name = file.split("/")[-1]
             name = name.split(".")[0]
-            # print("[LevelEditor] Loaded text file (NAME) {0} (PATH) {1}".format(name, file))
             self.__text_files[name] = file
+            print("[{0}] Loaded text file {1}.".format(self.today, name))
 
-    def register_editor_plugins(self, plugins, old_panels):
-        new_panels = []
-
+    def register_editor_plugins(self, plugins):
         for plugin in plugins:
             self.__ed_plugins[plugin._name] = plugin
-
-            # process any unique panel request by this plugin
-            if plugin.has_unique_panel():
-                panel = self.app.wx_main.add_panel_def(plugin.get_unique_panel())
-                if panel:
-                    plugin._panel = panel
-                    new_panels.append(plugin.get_unique_panel())
-                    # add a menubar entry for this plugin as well
-                    self.app.wx_main.menu_bar.add_plugins_menu(plugin.get_unique_panel())
-                    # print("[LevelEditor] Unique panel added for {0}".format(plugin._name))
-                else:
-                    print("[LevelEditor] Unique panel request failed for {0} a panel with same name already "
-                          "exists".format(plugin._name))
-
             plugin.start(sort=1)
-
-        for panel in old_panels:
-            if panel not in new_panels:
-                # then delete this panel
-                self.app.wx_main.delete_panel(panel)
+            self.app.wx_main.menu_bar.add_plugin_menu(plugin._name)
+            print("[{0}] Loaded editor plugin {1}.".format(self.today, plugin._name))
 
     def unregister_editor_plugins(self, plugin=None):
         if plugin:
             plugin.stop()
-            self.app.wx_main.clear_panel_contents(plugin._panel)
         else:
             for key in self.__ed_plugins.keys():
                 self.__ed_plugins[key].stop()
-                self.app.wx_main.clear_panel_contents(self.__ed_plugins[key]._panel)
+                self.app.wx_main.clear_panel_contents("")
 
             self.__ed_plugins.clear()
             self.app.wx_main.menu_bar.clear_plugin_menus()
@@ -392,10 +389,8 @@ class LevelEditor(DirectObject):
     @property
     def user_modules(self):
         user_modules = []
-
         for key in self.__user_modules.keys():
             user_modules.append(self.__user_modules[key].class_instance)
-
         return user_modules
 
     # ------------------------------Level editor section ----------------------------- #
@@ -405,18 +400,22 @@ class LevelEditor(DirectObject):
             camera=self.app.show_base.ed_camera,
             rootNp=self.app.show_base.edRender,
             root2d=self.app.show_base.edRender2d,
-            win=self.app.show_base.win,
+            win=self.app.show_base.main_win,
             mouseWatcherNode=self.app.show_base.ed_mouse_watcher_node,
         )
 
     def create_grid(self, size, grid_step, sub_divisions):
-        if self.grid_np:
-            self.grid_np.remove_node()
-        grid = ed_core.ThreeAxisGrid(rootNp=self.app.show_base.edRender)
-        self.grid_np = grid.create(size, grid_step, sub_divisions)
-        self.grid_np.reparent_to(self.app.show_base.edRender)
-        self.grid_np.show(constants.ED_GEO_MASK)
-        self.grid_np.hide(constants.GAME_GEO_MASK)
+        grid_np = self.app.show_base.edRender.find("AxisGrid")
+        if grid_np:
+            grid_np.clearPythonTag("AxisGridNP")
+            grid_np.remove_node()
+
+        grid_np = ed_core.ThreeAxisGrid()
+        grid_np.setPythonTag(grid_np, "AxisGridNP")
+        grid_np.create(size, grid_step, sub_divisions)
+        grid_np.reparent_to(self.app.show_base.edRender)
+        grid_np.show(constants.ED_GEO_MASK)
+        grid_np.hide(constants.GAME_GEO_MASK)
 
     def setup_gizmo_manager(self):
         """Create gizmo manager."""
@@ -514,10 +513,12 @@ class LevelEditor(DirectObject):
         pass
 
     def deselect_all(self):
+        len_selected = len(self.selection.selected_nps)
         self.selection.deselect_all()
         self.gizmo_mgr.SetActiveGizmo(None)
         self.gizmo = False
-        constants.obs.trigger("OnDeselectAllNPs")
+        if len_selected > 0:
+            constants.obs.trigger("OnDeselectAllNPs")
 
     def deselect_nps(self, nps):
         pass
@@ -537,7 +538,7 @@ class LevelEditor(DirectObject):
 
         self.ed_state = constants.EDITOR_STATE
 
-        if self.maximized_play_mode:
+        if self.__game_viewport_maximized:
             self.app.show_base.edDr.setActive(True)
             self.app.show_base.game_dr.set_dimensions((0, 0.4, 0, 0.4))
             self.project.game.display_region_2d.set_dimensions((0, 0.4, 0, 0.4))
@@ -548,7 +549,7 @@ class LevelEditor(DirectObject):
         self.bind_key_events()
 
         # for any cleanup operations
-        constants.obs.trigger("LevelEditorEvent", constants.le_EVT_On_Enable_Ed_Mode)
+        constants.obs.trigger("OnEnableEditorState")
         constants.obs.trigger("XFormTask", True)
 
     def enable_game_state(self):
@@ -560,7 +561,7 @@ class LevelEditor(DirectObject):
 
         self.save_ed_state()  # save editor state data
 
-        if self.maximized_play_mode:
+        if self.__game_viewport_maximized:
             self.app.show_base.edDr.setActive(False)
             self.app.show_base.game_dr.set_dimensions((0, 1, 0, 1))
             self.project.game.display_region_2d.set_dimensions((0, 1, 0, 1))
@@ -573,15 +574,15 @@ class LevelEditor(DirectObject):
                                       constants.DIR_LIGHT_MODEL),
                  "AmbientLight": (p3d_core.AmbientLight, ed_node_paths.EdAmbientLight, constants.AMBIENT_LIGHT_MODEL)}
 
-    NODE_TYPE_MAP = {"ModelNp": ed_node_paths.ModelNp,
-                     "DirectionalLight": ed_node_paths.EdDirectionalLight,
+    NODE_TYPE_MAP = {"DirectionalLight": ed_node_paths.EdDirectionalLight,
                      "PointLight": ed_node_paths.EdPointLight,
                      "SpotLight": ed_node_paths.EdSpotLight,
                      "AmbientLight": ed_node_paths.EdAmbientLight,
-                     "EdCameraNp": ed_node_paths.EdCameraNp}
+                     "EdCameraNp": ed_node_paths.CameraNodePath,
+                     "ModelNodePath": ed_node_paths.BaseNodePath}
 
-    def load_model(self, path):
-        """loads a 3d model from input argument 'path' to active render"""
+    def load_model(self, path, select=True):
+        """loads a 3d model from input argument "path" to active render"""
 
         # TODO insert an exception handler here
         # TODO replace show-base loader with a new loader instance
@@ -596,8 +597,8 @@ class LevelEditor(DirectObject):
                     child.setPythonTag(constants.TAG_PICKABLE, child)
                     add_children(child)
 
-        np = self.app.show_base.loader.loadModel(path)
-        np = ed_node_paths.ModelNp(np, uid="ModelNp", path=path)
+        np = self.__loader.loadModel(path)
+        np = ed_node_paths.BaseNodePath(np, uid="ModelNp", path=path)
         np.setColor(p3d_core.LColor(1, 1, 1, 1))
         np.setPythonTag(constants.TAG_PICKABLE, np)
 
@@ -610,7 +611,8 @@ class LevelEditor(DirectObject):
             pass
 
         constants.obs.trigger("OnAddObjects(s)", [np])
-        self.set_selected([np])
+        if select:
+            self.set_selected([np])
         return np
 
     def add_actor(self, path):
@@ -622,17 +624,17 @@ class LevelEditor(DirectObject):
         self.set_selected([actor])
         return actor
 
-    def add_camera(self, *args):
+    def add_camera(self, select=True):
         # and wrap it into editor camera
-        cam_np = ed_node_paths.EdCameraNp(uid="CameraNP")
+        cam_np = ed_node_paths.CameraNodePath(uid="CameraNP")
         cam_np.set_name("PlayerCam")
         cam_np.node().setCameraMask(constants.GAME_GEO_MASK)
         cam_np.setPythonTag(constants.TAG_PICKABLE, cam_np)
         cam_np.reparent_to(self.active_scene.render)
+        cam_np.setLightOff()
 
         # create a handle
-        cam_handle = self.app.show_base.loader.loadModel(constants.CAMERA_MODEL)
-        cam_handle.setLightOff()
+        cam_handle = self.__loader.loadModel(constants.CAMERA_MODEL)
         cam_handle.show(constants.ED_GEO_MASK)
         cam_handle.hide(constants.GAME_GEO_MASK)
 
@@ -646,11 +648,12 @@ class LevelEditor(DirectObject):
             self.set_player_camera(cam_np)
 
         constants.obs.trigger("OnAddObjects(s)", [cam_np])
-        self.set_selected([cam_np])
+        if select:
+            self.set_selected([cam_np])
         return cam_np
 
-    def add_object(self, path):
-        np = self.app.show_base.loader.loadModel(path, noCache=True)
+    def add_object(self, path, select=True):
+        np = self.__loader.loadModel(path, noCache=True)
         np.set_scale(0.5)
 
         # fix this name otherwise folder name also gets included
@@ -659,7 +662,7 @@ class LevelEditor(DirectObject):
         np.set_name(name)
         # ------------------------------------------------------
 
-        np = ed_node_paths.ModelNp(np, uid="ModelNp", path=path)
+        np = ed_node_paths.BaseNodePath(np, uid="ModelNodePath", path=path)
         np.setPythonTag(constants.TAG_PICKABLE, np)
         np.reparent_to(self.active_scene.render)
         np.setHpr(p3d_core.Vec3(0, 90, 0))
@@ -670,10 +673,11 @@ class LevelEditor(DirectObject):
 
         # constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, np)
         constants.obs.trigger("OnAddObjects(s)", [np])
-        self.set_selected([np])
+        if select:
+            self.set_selected([np])
         return np
 
-    def add_light(self, light):
+    def add_light(self, light, select=True):
         if self.LIGHT_MAP.__contains__(light):
 
             x = self.LIGHT_MAP[light]
@@ -703,11 +707,12 @@ class LevelEditor(DirectObject):
 
             self.active_scene.scene_lights.append(light_np)
 
-            model = self.app.show_base.loader.loadModel(model)
+            model = self.__loader.loadModel(model, noCache=True)
             model.reparentTo(light_np)
 
             constants.obs.trigger("OnAddObjects(s)", [light_np])
-            self.set_selected([light_np])
+            if select:
+                self.set_selected([light_np])
             return light_np
 
     def on_duplicate_nps(self):
@@ -756,7 +761,7 @@ class LevelEditor(DirectObject):
                 x = np.copyTo(self.active_scene.render)
                 x = recreate_object(x)  # recreate the parent
                 new_selections.append(x)
-                recreate_children(x)    # recreate children
+                recreate_children(x)  # recreate children
 
         # constants.obs.trigger("LevelEditorEvent", constants.le_Evt_On_Add_NodePath, new_selections)
         constants.obs.trigger("OnAddObjects(s)", new_selections)
@@ -841,6 +846,7 @@ class LevelEditor(DirectObject):
 
     def restore_nps(self, nps: list):
         """restores given nps or current selected nps from ed_render to active_scene"""
+
         def restore_np(_np):
             _np = _np.getPythonTag(constants.TAG_PICKABLE)
 
@@ -890,21 +896,19 @@ class LevelEditor(DirectObject):
         return self.scene_lights_on
 
     def set_selected(self, selections: list):
-        self.selection.set_selected(selections)
+        if len(selections) > 0:
+            self.selection.set_selected(selections)
 
-        # start transform------------------------------
-        self.gizmo_mgr.SetActiveGizmo(self.active_gizmo)
-        self.gizmo = True
-        self.update_gizmo()
-        # ----------------------------------------------
+            # start transform------------------------------
+            self.gizmo_mgr.SetActiveGizmo(self.active_gizmo)
+            self.gizmo = True
+            self.update_gizmo()
+            # ----------------------------------------------
 
-        constants.obs.trigger("OnSelectNPs", selections)
+            constants.obs.trigger("OnSelectNPs", selections)
 
-    def set_game_viewport_style(self, val: bool):
-        if type(val) is bool:
-            self.maximized_play_mode = val
-        else:
-            print("[LevelEditor] game viewport style value must be type bool")
+    def switch_ed_viewport_style(self):
+        self.__game_viewport_maximized = not self.__game_viewport_maximized
 
     def set_player_camera(self, cam):
         cam = cam.getNetPythonTag(constants.TAG_PICKABLE)
@@ -948,3 +952,7 @@ class LevelEditor(DirectObject):
 
     def is_light(self, np):
         pass
+
+    @property
+    def game_viewport_maximized(self):
+        return self.__game_viewport_maximized

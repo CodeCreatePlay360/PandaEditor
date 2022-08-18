@@ -3,7 +3,7 @@ import panda3d.core as pm
 from editor.p3d.object import Object
 from editor.p3d.marquee import Marquee
 from editor.p3d.mousePicker import MousePicker
-from editor.constants import TAG_IGNORE, TAG_PICKABLE
+from editor.constants import TAG_PICKABLE
 
 
 class Selection(Object):
@@ -88,10 +88,10 @@ class Selection(Object):
             if np not in new_selections:
                 new_selections.append(np)
 
+        new_selections = self.get_top_parent_nps(from_nps=new_selections)
+
         for np in new_selections:
             self.selected_nps.append(np)
-
-        new_selections = self.get_top_parent_nps(from_nps=new_selections)
 
         return new_selections
 

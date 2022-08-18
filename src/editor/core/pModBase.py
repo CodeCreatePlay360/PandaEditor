@@ -1,4 +1,4 @@
-import editor.constants as constant
+import editor.constants as constants
 import editor.utils as ed_utils
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import NodePath
@@ -11,10 +11,10 @@ def execute(*args, **kwargs):
 
 
 def stop_execution(module):
-    if module._editor_plugin:
-        constant.obs.trigger("PluginFailed", module)
+    if module.module_type == "EditorPlugin":
+        constants.obs.trigger("PluginFailed", module)
     else:
-        constant.obs.trigger("SwitchEdState", 0)
+        constants.obs.trigger("SwitchEdState", 0)
 
 
 class PModBase(DirectObject):
@@ -38,7 +38,8 @@ class PModBase(DirectObject):
         self._sort = 2  # default sort value for user modules
         self._late_update_sort = -1
 
-        self._enabled = True  # is this module enabled
+        self._active = True  # is this module enabled
+        self._started = False
         self._initialized = True
         self._error = False  # set this to true if there is an error on initialization
 
@@ -46,9 +47,11 @@ class PModBase(DirectObject):
         self._user_properties = []  # properties manually added by user
         self._hidden_attributes = []  #
 
+        self.module_type = None
+
         # to be discarded variables
         # these variables will not be saved
-        self._discarded_attrs = [
+        self._discarded_attributes = [
             "_MSGRmessengerId",
 
             "_name",
@@ -63,13 +66,15 @@ class PModBase(DirectObject):
             "_sort",
             "_late_update_sort",
 
-            "_enabled",
+            "_active",
             "_initialized",
             "_error",
 
             "_properties",
             "_user_properties",
             "_hidden_attributes",
+
+            "module_type",
 
             "_discarded_attrs"]
 
@@ -93,7 +98,12 @@ class PModBase(DirectObject):
             self._late_update_sort = late_update_sort
 
         def _start():
-            self.on_start()
+            if self._active:
+                # on start if module is active
+                self.on_start()
+                self._started = True
+            else:
+                self._started = False
 
             # start the object's update loop
             if not self.is_running(0):
@@ -103,8 +113,7 @@ class PModBase(DirectObject):
                                          priority=priority)
 
             # start the object's late update loop
-            # self._editor_plugin is generated on the fly do not declare it here
-            if not self._editor_plugin and not self.is_running(1):
+            if self.module_type == constants.RuntimeModule and not self.is_running(1):
                 self._late_task = taskMgr.add(self.late_update,
                                               "{0} LateUpdate".format(self._name),
                                               sort=self._late_update_sort,
@@ -120,7 +129,22 @@ class PModBase(DirectObject):
         pass
 
     def update(self, task):
-        res = ed_utils.try_execute(self.on_update)
+        if self._active:
+
+            # check for case if this module was not active when entering game_state,
+            # ---------------------------------------------------------------------
+            if not self._started:
+                if not ed_utils.try_execute(self.on_start):
+                    stop_execution(self)
+                    return
+                else:
+                    self._started = True
+            # ---------------------------------------------------------------------
+
+            res = ed_utils.try_execute(self.on_update)
+        else:
+            res = True
+
         if res is True:
             return task.cont
         else:
@@ -131,7 +155,11 @@ class PModBase(DirectObject):
         pass
 
     def late_update(self, task):
-        res = ed_utils.try_execute(self.on_late_update)
+        if self._active:
+            res = ed_utils.try_execute(self.on_late_update)
+        else:
+            res = True
+
         if res is True:
             return task.cont
         else:
@@ -151,6 +179,7 @@ class PModBase(DirectObject):
             taskMgr.remove(self._late_task)
             self._late_task = None
 
+        self._started = False
         self.on_stop()
 
     def on_stop(self):
@@ -171,10 +200,14 @@ class PModBase(DirectObject):
         if not self._user_properties.__contains__(prop) and isinstance(prop, ed_utils.EdProperty.Property):
             self._user_properties.append(prop)
 
+    def get_active_status(self):
+        return self._active
+
     def get_savable_atts(self):
         attrs = []
         for name, val in self.__dict__.items():
-            if self._discarded_attrs.__contains__(name) or hasattr(PModBase("", None), name) or type(val) == NodePath:
+            # print("Object {0} Attribute {1} Value {2}".format(self._name, name, val))
+            if self._discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name) or type(val) == NodePath:
                 continue
             attrs.append((name, val))
 
@@ -202,11 +235,13 @@ class PModBase(DirectObject):
             self._properties.append(prop)
 
         self._properties.extend(self._user_properties)
-
         return self._properties
 
+    def set_active(self, val):
+        self._active = val
+
     def is_discarded_attr(self, name):
-        if name in self._discarded_attrs:
+        if name in self._discarded_attributes:
             return True
         return False
 
@@ -221,12 +256,12 @@ class PModBase(DirectObject):
 
     @property
     def discarded_attrs(self):
-        return self._discarded_attrs
+        return self._discarded_attributes
 
     @discarded_attrs.setter
     def discarded_attrs(self, attr: str):
-        if hasattr(self, attr) and not self._discarded_attrs.__contains__(attr):
-            self._discarded_attrs.append(attr)
+        if hasattr(self, attr) and not self._discarded_attributes.__contains__(attr):
+            self._discarded_attributes.append(attr)
 
     def has_ed_property(self, name: str):
         for prop in self._properties:

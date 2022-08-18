@@ -54,6 +54,6 @@ class OnSceneUI(Object):
             self.play_btn["geom"] = self.btn_maps_geo.find("**/control_play_blue")
             self.stop_btn["geom"] = self.btn_maps_geo.find("**/control_stop_blue")
 
-    def on_resize(self, sizeX, sizeY):
-        self.play_btn.setPos(sizeX - 24, 0, -22)
-        self.stop_btn.setPos(sizeX - 24 - 34, 0, -22)
+    def on_resize(self, size_x, size_y):
+        self.play_btn.setPos(size_x - 24, 0, -22)
+        self.stop_btn.setPos(size_x - 24 - 34, 0, -22)

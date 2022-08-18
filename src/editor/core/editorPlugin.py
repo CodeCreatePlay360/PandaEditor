@@ -1,3 +1,4 @@
+import editor.constants as constants
 from editor.core.pModBase import PModBase
 
 
@@ -6,29 +7,5 @@ class EditorPlugin(PModBase):
         PModBase.__init__(self, *args, **kwargs)
 
         self._le = kwargs.pop("level_editor", None)
-        self._globals = kwargs.pop("globals", None)
-        self._panel = None
-        self._unique_panel = None
-
-        self.discarded_attrs = "_wx_panel"
+        self.module_type = constants.EditorPlugin
         self.discarded_attrs = "_le"
-        self.discarded_attrs = "_unique_panel"
-
-    def request_unique_panel(self, unique_panel_name: str):
-        if type(unique_panel_name) is str:
-            self._unique_panel = unique_panel_name
-
-    # TODO replace this with property
-    def get_unique_panel(self):
-        return self._unique_panel
-
-    # TODO replace this with property
-    def has_unique_panel(self):
-        return self._unique_panel is not None
-
-    def clear_ui(self):
-        for np in self._aspect2d.getChildren():
-            if np.get_name() == "CameraAxes":
-                continue
-            else:
-                np.remove_node()

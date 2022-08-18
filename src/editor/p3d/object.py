@@ -1,5 +1,4 @@
 from direct.showbase.DirectObject import DirectObject
-from editor.constants import TAG_IGNORE
 
 
 class Object(DirectObject, object):
@@ -26,6 +25,3 @@ class Object(DirectObject, object):
         
         # Default mouse watcher node to base.win if None specified.
         self.mouseWatcherNode = kwargs.pop('mouseWatcherNode', base.mouseWatcherNode)
-
-        # default tag to IGNORE if none is specified
-        self.tag = kwargs.pop("tag", TAG_IGNORE)

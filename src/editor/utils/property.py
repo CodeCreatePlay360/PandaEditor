@@ -97,13 +97,13 @@ class EmptySpace(Property):
     def __init__(self, x, y):
         super().__init__(name="", value=None, _type="space")
 
-        self.x = x  # horizontal spacing
-        self.y = y  # vertical spacing
+        self.space_x = x  # horizontal spacing
+        self.space_y = y  # vertical spacing
 
     def validate(self):
         super().validate()
 
-        if type(self.x) is not int or type(self.y) is not int:
+        if type(self.space_x) is not int or type(self.space_y) is not int:
             self.is_valid = False
         else:
             self.is_valid = True
@@ -146,9 +146,8 @@ class ButtonProperty(Property):
 
 
 class ChoiceProperty(FuncProperty):
-    def __init__(self, name, choices, value=0, setter=None, getter=None):
+    def __init__(self, name, choices, value=None, setter=None, getter=None):
         self.choices = choices
-
         super().__init__(name=name, value=value, _type="choice", setter=setter, getter=getter)
 
     def validate(self):
@@ -165,15 +164,20 @@ class ChoiceProperty(FuncProperty):
                 print("{0} all choices must be of type str".format(self.name))
                 return
 
-        # value must be int
-        if type(self.val) is not int:
+        if self.setter is None or self.getter is None:
+            self.is_valid = False
+            print("{0} setter or getter is null".format(self.name))
+            return
+
+        if type(self.get_value()) is not int:
             self.is_valid = False
             print("{0} value must be of type int".format(self.name))
             return
 
-        if self.setter is None or self.getter is None:
+        # value must be int
+        if self.val and type(self.val) is not int:
             self.is_valid = False
-            print("{0} setter or getter is null".format(self.name))
+            print("{0} value must be of type int".format(self.name))
             return
 
         self.is_valid = True
@@ -182,8 +186,11 @@ class ChoiceProperty(FuncProperty):
         return self.choices
 
     def set_value(self, val: int, *args, **kwargs):
+        if not self.is_valid:
+            return
+
         if type(val) is not int:
-            print("error in edUI.ChoiceProperty.set_value arg val must be of type int")
+            print(self.name + " [Utils.ChoiceProperty] set_value arg val must be of type int")
             return
 
         super().set_value(val, *args, **kwargs)
@@ -222,8 +229,41 @@ class Slider(FuncProperty):
         super().validate()
 
 
-class StaticBox(Property):
-    def __init__(self, name, controls=None):
-        Property.__init__(self, name, value=None, _type="static_box")
+class HorizontalLayoutGroup(Property):
+    def __init__(self,  properties=None, name="HorizontalLayoutGroup"):
+        Property.__init__(self, name=name, value=None, _type="horizontal_layout_group")
+        if properties is None:
+            properties = []
+        self.properties = properties
 
-        self.controls = controls
+    def validate(self):
+        if type(self.properties) != list:
+            self.is_valid = False
+            return
+
+        for prop in self.properties:
+            prop.validate()
+            if not prop.is_valid:
+                self.is_valid = False
+                return
+
+        super().validate()
+
+
+class InfoBox(Property):
+    def __init__(self, text, info_type=0):
+        Property.__init__(self, name="", value=text, _type="info_box")
+
+        # info type 0=Message, 1=Warning, 2=Error
+        # info type value not in range (0-2) is evaluated as 0
+        self.info_type = 0 if info_type > 2 else info_type
+
+    def validate(self):
+        if type(self.val) != str:
+            self.is_valid = False
+            return
+
+        super(InfoBox, self).validate()
+
+    def get_text(self):
+        return self.val

@@ -1,6 +1,5 @@
 import os.path
 from panda3d.core import get_model_path, Filename
-from editor.resourceManager import ResourceManager
 from game.game import Game
 
 
@@ -12,8 +11,6 @@ class Project(object):
 
         self.project_name = ""
         self.project_path = ""
-
-        self.resource_manager = ResourceManager()
 
         self.user_modules = []
 
@@ -30,7 +27,6 @@ class Project(object):
 
         # sys.path.append(self.project_path)
         # clear panda3d's current model paths and set new according to new project path
-        get_model_path().clear()
         panda_path = Filename.fromOsSpecific(path)
         get_model_path().prependDirectory(panda_path)
 

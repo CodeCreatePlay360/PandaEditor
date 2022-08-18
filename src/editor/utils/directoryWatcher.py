@@ -49,9 +49,7 @@ class DirWatcher:
         # an observer watch object is returned by self.observer.schedule method,
         # obs-watch_and_paths object maps a path, and it's corresponding observer-watch object
         # obs-watch_and_paths[path] = observer-watch object
-        self.obswatch_and_paths = {}
-        #
-        
+        self.observer_paths = {}
         self.run()
 
     def run(self):
@@ -62,11 +60,11 @@ class DirWatcher:
     def schedule(self, path, append=True):
         if not append:
             self.observer.unschedule_all()
-        obswatch_object = self.observer.schedule(self.event_handler, path, recursive=True)
-        
-        self.obswatch_and_paths[path] = obswatch_object
+
+        observer_object = self.observer.schedule(self.event_handler, path, recursive=True)
+        self.observer_paths[path] = observer_object
         
     def unschedule(self, path):
-        obswatch_object = self.obswatch_and_paths[path]
-        self.observer.unschedule(obswatch_object)
-        del self.obswatch_and_paths[path]
+        observer_object = self.observer_paths[path]
+        self.observer.unschedule(observer_object)
+        del self.observer_paths[path]

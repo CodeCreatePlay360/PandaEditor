@@ -175,7 +175,7 @@ class WxMenuBar(wx.MenuBar):
         self.ed_layout_menu = wx.Menu()
         self.Append(self.ed_layout_menu, "Layout")
 
-        menu_items = [(Evt_Save_UI_Layout, "SaveLayout", None)]
+        menu_items = [(Evt_Save_UI_Layout, "SaveLayout", None), ""]
         build_menu_bar(self.ed_layout_menu, menu_items)
 
         # menu items related to editor operations
@@ -186,8 +186,12 @@ class WxMenuBar(wx.MenuBar):
         build_menu_bar(ed_menu, menu_items)
 
         # editor plugins menus
-        self.ed_plugins_menu = wx.Menu()
-        self.Append(self.ed_plugins_menu, "Plugins")
+        self.ed_plugin_menus = wx.Menu()
+        self.Append(self.ed_plugin_menus, "Plugins")
+
+        # custom user command menus
+        self.user_command_menus = wx.Menu()
+        self.Append(self.user_command_menus, "Commands")
 
         # social media links menu
         social_links = wx.Menu()
@@ -205,20 +209,20 @@ class WxMenuBar(wx.MenuBar):
             self.ed_layout_menu.Append(menu_item)
             self.user_layout_menus[_id] = name
 
-    def add_plugins_menu(self, menu_name: str):
+    def add_plugin_menu(self, menu_name: str):
         if menu_name not in self.ed_plugins_menus.values():
             _id = wx.NewId()
-            menu_item = wx.MenuItem(self.ed_plugins_menu, _id, menu_name)
-            self.ed_plugins_menu.Append(menu_item)
+            menu_item = wx.MenuItem(self.ed_plugin_menus, _id, menu_name)
+            self.ed_plugin_menus.Append(menu_item)
             self.ed_plugins_menus[_id] = menu_name
 
-    def add_custom_command_menu(self, menu_name: str):
-        pass
-
-    def clear_layout_menus(self):
+    def add_user_command_menu(self, menu_name: str):
         pass
 
     def clear_plugin_menus(self):
+        pass
+
+    def clear_command_menus(self):
         pass
 
     def on_event(self, evt):
@@ -238,7 +242,7 @@ class WxMenuBar(wx.MenuBar):
                 constants.obs.trigger(evt_name, args)
 
         elif evt.GetId() in self.ed_plugins_menus.keys():
-            constants.obs.trigger("LoadPanel", self.ed_plugins_menus[evt.GetId()])
+            constants.obs.trigger("OnPluginMenuEntrySelected", self.ed_plugins_menus[evt.GetId()])
 
         elif evt.GetId() in self.user_layout_menus.keys():
             constants.obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])

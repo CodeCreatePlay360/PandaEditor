@@ -2,7 +2,7 @@ import os
 import shutil
 import wx
 import editor.constants as constants
-import editor.uiGlobals as uiGlobals
+import editor.edPreferences as edPreferences
 import editor.wxUI.globals as wxGlobals
 import editor.resources.globals as resourceGlobals
 
@@ -33,12 +33,6 @@ def create_generic_menu_items(parent_menu):
     menu_items = [(EVT_RENAME_ITEM, "&Rename", None),
                   (EVT_REMOVE_ITEM, "&Remove", None),
                   (EVT_DUPLICATE_ITEM, "&Duplicate", None)]
-    wxGlobals.build_menu(parent_menu, menu_items)
-
-
-def create_3d_model_menu_items(parent_menu):
-    menu_items = [(EVT_LOAD_MODEL, "&Load Model", None),
-                  (EVT_LOAD_ACTOR, "&Load As Actor", None)]
     wxGlobals.build_menu(parent_menu, menu_items)
 
 
@@ -75,8 +69,9 @@ class ResourceBrowser(wx.Panel):
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
-        self.wx_main = args[0]
+        constants.object_manager.add_object("ResourceBrowser", self)
 
+        self.wx_main = args[0]
         self.splitter_win = wx.SplitterWindow(self)
 
         self.resource_tree = ResourceTree(self.splitter_win, self.wx_main)
@@ -99,10 +94,10 @@ class ResourceTree(BaseTreeControl):
         self.wx_main = wx_main
         self.organize_tree = True  # should tree be organized based on file extensions ?
 
-        constants.object_manager.add_object("ProjectBrowser", self)
+        constants.object_manager.add_object("ResourceTree", self)
 
         # ---------------------------------------------------------------------------- #
-        self.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
+        self.SetBackgroundColour(edPreferences.Colors.Image_Tile_BG)
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
@@ -122,7 +117,7 @@ class ResourceTree(BaseTreeControl):
         self.image_list = wx.ImageList(16, 16)  # create an image list for tree control to use
 
         self.folder_icon_bitmap_blue = wx.Bitmap(resourceGlobals.FOLDER_ICON_BLUE)
-        self.folder_icon_bitmap_green = wx.Bitmap(resourceGlobals.FOLDER_ICON_GREEN)
+        self.folder_icon_bitmap_green = wx.Bitmap(resourceGlobals.LIB_FOLDER_ICON)
         self.image_list.Add(self.folder_icon_bitmap_blue)
         self.image_list.Add(self.folder_icon_bitmap_green)
         self.SetImageList(self.image_list)
@@ -184,7 +179,7 @@ class ResourceTree(BaseTreeControl):
             data = self.GetItemData(item)
             selections.append((name, data))
 
-        constants.obs.trigger("ResourceItemSelected", selections)
+        constants.obs.trigger("OnResourceItemSelected", selections)
         evt.Skip()
 
     def on_item_activated(self, evt):
@@ -233,7 +228,6 @@ class ResourceTree(BaseTreeControl):
             self.libraries["Project"] = (path, tree_item)
 
             self.create_tree_from_dir(dir_path=path, parent=tree_item)
-            self.dir_watcher.schedule(path, append=False)  # start monitoring
             self.Expand(tree_item)
         else:
             print("[ResourceBrowser] Rebuilding resources")
@@ -284,6 +278,11 @@ class ResourceTree(BaseTreeControl):
                     self.resources[extension] = []
 
                 self.resources[extension].append(file_path)
+
+    def schedule_dir_watcher(self):
+        for key in self.libraries.keys():
+            path = self.libraries[key][0]
+            self.dir_watcher.schedule(path)
 
     def append_library(self, name, path):
         if name not in self.libraries.keys():
@@ -435,16 +434,23 @@ class ResourceTree(BaseTreeControl):
                 if item_text in self.libraries.keys():
                     self.remove_library(item_text)
                 else:
-                    if PathUtils.delete(item_path):
-                        del self.name_to_item[item_text]  # remove from name_to_items
-                        self.Delete(item)
+                    success = False
+                    try:
+                        success = PathUtils.delete(item_path)
+                    except PermissionError:
+                        print("PermissionError")
+                        dialogue.Destroy()
+                    finally:
+                        if success:
+                            del self.name_to_item[item_text]  # remove from name_to_items
+                            self.Delete(item)
 
         dm = self.wx_main.dialogue_manager
-        dm.create_dialog("YesNoDialog",
-                         "Delete Item",
-                         dm,
-                         descriptor_text="Confirm remove selection(s) ?",
-                         ok_call=on_ok)
+        dialogue = dm.create_dialog("YesNoDialog",
+                                    "Delete Item",
+                                    dm,
+                                    descriptor_text="Confirm remove selection(s) ?",
+                                    ok_call=on_ok)
 
     def create_asset(self, _type):
         def on_ok(text):

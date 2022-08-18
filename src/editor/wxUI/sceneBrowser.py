@@ -1,6 +1,6 @@
 import wx
 import editor.constants as constants
-import editor.uiGlobals as uiGlobals
+import editor.edPreferences as edPreferences
 from panda3d.core import NodePath
 from editor.wxUI.baseTreeControl import BaseTreeControl
 
@@ -36,11 +36,11 @@ class SceneBrowser(BaseTreeControl):
         BaseTreeControl.__init__(self, parent, *args, **kwargs)
 
         self.wx_main = wx_main
-        constants.object_manager.add_object("SceneGraphPanel", self)
+        constants.object_manager.add_object("SceneGraph", self)
         self.organize_tree = True  # organize a tree based on file_extensions
 
         # ---------------------------------------------------------------------------- #
-        self.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
+        self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT

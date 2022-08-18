@@ -93,10 +93,8 @@ class MousePicker(SingleTask):
         Return the first node in the collision queue if there is one, None
         otherwise.
         """
-
         if self.collHandler.getNumEntries():
             collEntry = self.collHandler.getEntry(0)
             self.node = collEntry.getIntoNodePath()
             return self.node
-
         return None

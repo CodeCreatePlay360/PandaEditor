@@ -1,6 +1,14 @@
 import sys
 import wx
-import editor.uiGlobals as uiGlobals
+import editor.edPreferences as edPreferences
+import editor.constants as constants
+from editor.wxUI.baseInspectorPanel import SelectionGrid, SelectionButton
+
+
+Models_icon = constants.ICONS_PATH + "//" + "3D-objects-icon.png"
+Textures_icon = constants.ICONS_PATH + "//" + "images.png"
+Sounds_icon = constants.ICONS_PATH + "//" + "music.png"
+Scripts_icon = constants.ICONS_PATH + "//" + "script_code.png"
 
 
 class LogPanel(wx.Panel):
@@ -42,18 +50,21 @@ class LogPanel(wx.Panel):
 
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
+        self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+        self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
         # Build log text control
         self.tc = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.NO_BORDER)
+        self.tc.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+        self.tc.SetForegroundColour(edPreferences.Colors.Console_Text)
 
-        self.tc.SetBackgroundColour(uiGlobals.ColorPalette.NORMAL_GREY)
-        self.tc.SetForegroundColour(uiGlobals.ColorPalette.EDITOR_TEXT_COLOR)
+        # self.create_selection_buttons()
 
         # Redirect text here
         sys.stdout = self.RedirectText(sys.stdout, self.tc)
         sys.stderr = self.RedirectText(sys.stderr, self.tc)
 
-        # Build sizers
+        # Build sizer
         self.bs1 = wx.BoxSizer(wx.VERTICAL)
         self.bs1.Add(self.tc, 1, wx.EXPAND)
         self.SetSizer(self.bs1)

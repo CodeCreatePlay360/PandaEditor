@@ -1,4 +1,5 @@
 import panda3d.core as p3d_core
+from editor.utils import EdProperty
 
 
 class Scene:
@@ -6,13 +7,13 @@ class Scene:
     def __init__(self, game, name, *args, **kwargs):
         self.game = game
         self.name = name
-        self.active_camera = None  # this is 3d rendering camera
+        self.active_camera = None  # this is main rendering camera
 
         # create a 3d rendering setup
         self.render = p3d_core.NodePath(self.name)
         self.render.reparent_to(self.game.render)
-        # -----------------------------------------
 
+        # -----------------------------------------
         # create a 2d rendering setup
         self.render_2d = None
         self.aspect_2d = None
@@ -21,9 +22,15 @@ class Scene:
         self.setup_2d_render()
 
         # -----------------------------------------
-
         self.scene_lights = []   # all scene lights in one repository
         self.scene_cameras = []  # all scene camera in one repository
+
+        # --------------------------------------------
+        # properties
+        self.skybox_path = ""
+        self.shadows = False
+
+        self._properties = []  # publicly editable properties for this scene, these should be removed from final build.
 
     def setup_2d_render(self):
         """setup a 2d rendering"""
@@ -49,3 +56,16 @@ class Scene:
 
     def setup_3d_render(self):
         pass
+
+    def get_properties(self):
+        self._properties.clear()
+        prop = EdProperty.ObjProperty(name="skybox_path", value=self.skybox_path, _type=type(self.skybox_path),
+                                      obj=self)
+        self._properties.append(prop)
+        return self._properties
+
+    def has_ed_property(self, property_label):
+        for prop in self._properties:
+            if prop.name == property_label:
+                return True
+        return False

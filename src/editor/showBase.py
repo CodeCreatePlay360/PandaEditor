@@ -107,15 +107,18 @@ class ShowBase(SB.ShowBase):
         self.render.reparentTo(self.edRender)
 
         # setup editor mouse watcher 3d
-        button_throwers, pointer_watcher_nodes = self.setupMouseCB(self.main_win)
-        self.ed_mouse_watcher = button_throwers[0].getParent()
-        self.ed_mouse_watcher_node = self.ed_mouse_watcher.node()
+        # button_throwers, pointer_watcher_nodes = self.setupMouseCB(self.main_win)
+        # self.ed_mouse_watcher = button_throwers[0].getParent()
+        self.ed_mouse_watcher_node = p3d_core.MouseWatcher()
+        self.mouseWatcher.get_parent().attachNewNode(self.ed_mouse_watcher_node)
 
         # create new 3d display region
         self.edDr = self.main_win.makeDisplayRegion(0, 1, 0, 1)
         self.edDr.setSort(-1)
         self.edDr.setClearColorActive(True)
         self.edDr.setClearColor((0.6, 0.6, 0.6, 1.0))
+
+        self.ed_mouse_watcher_node.set_display_region(self.edDr)
 
         self.ed_camera = EditorCamera(
             win=self.main_win,
@@ -133,6 +136,13 @@ class ShowBase(SB.ShowBase):
         self.game_dr = self.main_win.makeDisplayRegion(0, 0.4, 0, 0.4)
         self.game_dr.setClearColorActive(True)
         self.game_dr.setClearColor((0.8, 0.8, 0.8, 1.0))
+
+    def clear_ed_aspect_2d(self):
+        for np in self.aspect2d.getChildren():
+            if np.get_name() == "CameraAxes":
+                continue
+            else:
+                np.remove_node()
 
     def update_aspect_ratio(self):
         aspect_ratio = self.getAspectRatio(self.main_win)

@@ -67,10 +67,6 @@ class Game:
         def _start(j, _late_update_sort):
             for _mod in mod_exec_order[j]:
                 cls_instance = _mod.class_instance
-
-                if not cls_instance._enabled:
-                    return
-
                 _mod.save_data()
 
                 # start module's update

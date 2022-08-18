@@ -1,14 +1,14 @@
 from panda3d.core import PerspectiveLens, OrthographicLens, Vec2, Camera, NodePath
-from editor.nodes.baseNp import BaseNp
+from editor.nodes.baseNodePath import BaseNodePath
 from editor.utils import EdProperty
 from editor.constants import obs
 
 
-class EdCameraNp(BaseNp):
+class CameraNodePath(BaseNodePath):
     def __init__(self, uid=None, *args, **kwargs):
 
         cam = NodePath(Camera("PlayerCamera"))
-        BaseNp.__init__(self, cam, uid, *args, **kwargs)
+        BaseNodePath.__init__(self, cam, uid, *args, **kwargs)
 
         self.lens_type_map = 0  # [Lens type] 0: Perspective, 1: Ortho
         self.current_lens_type = -1
@@ -16,19 +16,28 @@ class EdCameraNp(BaseNp):
         self.set_perspective_lens()
 
     def create_properties(self):
-        super(EdCameraNp, self).create_properties()
+        super(CameraNodePath, self).create_properties()
 
         space_prop = EdProperty.EmptySpace(0, 10)
         lens_prop_label = EdProperty.Label(name="Lens", is_bold=True)
-        lens_prop = EdProperty.ChoiceProperty("LensType",
+        lens_prop = EdProperty.ChoiceProperty("Lens Type",
                                               choices=["Perspective", "Orthographic"],
                                               value=0,
                                               setter=self.set_lens,
                                               getter=self.get_lens_type)
 
+        # remove color property for camera
+        for prop in self.properties:
+            if prop.name == "Color":
+                self.properties.remove(prop)
+
         self.properties.append(space_prop)
         self.properties.append(lens_prop_label)
         self.properties.append(lens_prop)
+
+    def create_save_data(self):
+        super(CameraNodePath, self).create_save_data()
+        del self._save_data_info["Color"]
 
     def set_lens(self, lens_type: int):
         if lens_type == 0:
@@ -92,7 +101,7 @@ class EdCameraNp(BaseNp):
                                            setter=self.set_near_far,
                                            getter=self.get_near_far)
 
-        fov = EdProperty.FuncProperty(name="FieldOfView",
+        fov = EdProperty.FuncProperty(name="Field Of View",
                                       value=self.ed_get_fov(),
                                       setter=self.ed_set_fov,
                                       getter=self.ed_get_fov)
