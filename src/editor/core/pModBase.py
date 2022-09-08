@@ -11,7 +11,7 @@ def execute(*args, **kwargs):
 
 
 def stop_execution(module):
-    if module.module_type == "EditorPlugin":
+    if module.type == "EditorPlugin":
         constants.obs.trigger("PluginFailed", module)
     else:
         constants.obs.trigger("SwitchEdState", 0)
@@ -22,36 +22,39 @@ class PModBase(DirectObject):
         DirectObject.__init__(self)
 
         # these fields are defined here for convenience only,
-        # all these fields are defined in project.game as well.
-        self._name = kwargs.pop("name", None)
-        self.show_base = kwargs.pop("show_base", None)
-        self._win = kwargs.pop("win", None)
-        self.dr = kwargs.pop("dr", None)
-        self.dr2d = kwargs.pop("dr2d", None)
-        self._mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
-        self._render = kwargs.pop("render", None)
-        self._render2d = kwargs.pop("render2d", None)
-        self._aspect2d = kwargs.pop("aspect2d", None)
+        # also defined in project.game as well.
+        self.__name = kwargs.pop("name", None)
+        self.__show_base = kwargs.pop("show_base", None)
+        self.__win = kwargs.pop("win", None)
+        self.__dr = kwargs.pop("dr", None)
+        self.__dr2d = kwargs.pop("dr2d", None)
+        self.__mouse_watcher_node = kwargs.pop("mouse_watcher_node", None)
+        self.__render = kwargs.pop("render", None)
+        self.__render2d = kwargs.pop("render2d", None)
+        self.__aspect2d = kwargs.pop("aspect2d", None)
 
-        self._task = None
-        self._late_task = None
-        self._sort = 2  # default sort value for user modules
-        self._late_update_sort = -1
+        self.__path = kwargs.pop("path", None)
 
-        self._active = True  # is this module enabled
-        self._started = False
-        self._initialized = True
-        self._error = False  # set this to true if there is an error on initialization
+        self.__task = None
+        self.__late_task = None
+        self.__sort = 2  # default sort value for user modules
+        self.__late_update_sort = -1
 
-        self._properties = []  # auto generated properties for various attributes
-        self._user_properties = []  # properties manually added by user
-        self._hidden_attributes = []  #
+        self.__active = True  # is this module enabled
+        self.__started = False
+        self.__initialized = True
 
-        self.module_type = None
+        self.__properties = []  # auto generated properties for various attributes
+        self.__user_properties = []  # properties manually added by user
+        self.__hidden_attributes = []  #
+
+        self.__user_commands = []
+
+        self.__module_type = None
 
         # to be discarded variables
         # these variables will not be saved
-        self._discarded_attributes = [
+        self.__discarded_attributes = [
             "_MSGRmessengerId",
 
             "_name",
@@ -83,7 +86,7 @@ class PModBase(DirectObject):
             extra_args = []
         if type(extra_args) is not list:
             print("unable to accept event {0} from {1} argument extra_args must be of type list".format(
-                event, self._name))
+                event, self.__name))
             return
 
         xx = extra_args.copy()
@@ -92,32 +95,32 @@ class PModBase(DirectObject):
 
     def start(self, sort=None, late_update_sort=None, priority=None):
         if sort:
-            self._sort = sort
+            self.__sort = sort
 
         if late_update_sort:
-            self._late_update_sort = late_update_sort
+            self.__late_update_sort = late_update_sort
 
         def _start():
-            if self._active:
+            if self.__active:
                 # on start if module is active
                 self.on_start()
-                self._started = True
+                self.__started = True
             else:
-                self._started = False
+                self.__started = False
 
             # start the object's update loop
             if not self.is_running(0):
-                self._task = taskMgr.add(self.update,
-                                         "{0} Update".format(self._name),
-                                         sort=self._sort,
-                                         priority=priority)
+                self.__task = taskMgr.add(self.update,
+                                          "{0} Update".format(self.__name),
+                                          sort=self.__sort,
+                                          priority=priority)
 
             # start the object's late update loop
-            if self.module_type == constants.RuntimeModule and not self.is_running(1):
-                self._late_task = taskMgr.add(self.late_update,
-                                              "{0} LateUpdate".format(self._name),
-                                              sort=self._late_update_sort,
-                                              priority=None)
+            if self.type == constants.RuntimeModule and not self.is_running(1):
+                self.__late_task = taskMgr.add(self.late_update,
+                                               "{0} LateUpdate".format(self.__name),
+                                               sort=self.__late_update_sort,
+                                               priority=None)
 
         res = ed_utils.try_execute(_start)
         if not res:
@@ -129,16 +132,16 @@ class PModBase(DirectObject):
         pass
 
     def update(self, task):
-        if self._active:
+        if self.__active:
 
             # check for case if this module was not active when entering game_state,
             # ---------------------------------------------------------------------
-            if not self._started:
+            if not self.__started:
                 if not ed_utils.try_execute(self.on_start):
                     stop_execution(self)
                     return
                 else:
-                    self._started = True
+                    self.__started = True
             # ---------------------------------------------------------------------
 
             res = ed_utils.try_execute(self.on_update)
@@ -155,7 +158,7 @@ class PModBase(DirectObject):
         pass
 
     def late_update(self, task):
-        if self._active:
+        if self.__active:
             res = ed_utils.try_execute(self.on_late_update)
         else:
             res = True
@@ -171,15 +174,15 @@ class PModBase(DirectObject):
 
     def stop(self):
         # remove the object's task from the task manager
-        if self._task in taskMgr.getAllTasks():
-            taskMgr.remove(self._task)
-            self._task = None
+        if self.__task in taskMgr.getAllTasks():
+            taskMgr.remove(self.__task)
+            self.__task = None
 
-        if self._late_task in taskMgr.getAllTasks():
-            taskMgr.remove(self._late_task)
-            self._late_task = None
+        if self.__late_task in taskMgr.getAllTasks():
+            taskMgr.remove(self.__late_task)
+            self.__late_task = None
 
-        self._started = False
+        self.__started = False
         self.on_stop()
 
     def on_stop(self):
@@ -189,26 +192,28 @@ class PModBase(DirectObject):
         """ Return True if the object's task can be found in the task manager, False otherwise"""
 
         if task == 0:
-            return self._task in taskMgr.getAllTasks()
+            return self.__task in taskMgr.getAllTasks()
         elif task == 1:
-            return self._late_task in taskMgr.getAllTasks()
+            return self.__late_task in taskMgr.getAllTasks()
 
         return False
 
     def add_property(self, prop: ed_utils.EdProperty.Property):
         """manually adds a property"""
-        if not self._user_properties.__contains__(prop) and isinstance(prop, ed_utils.EdProperty.Property):
-            self._user_properties.append(prop)
+        if not self.__user_properties.__contains__(prop) and isinstance(prop, ed_utils.EdProperty.Property):
+            self.__user_properties.append(prop)
 
     def get_active_status(self):
-        return self._active
+        return self.__active
 
     def get_savable_atts(self):
         attrs = []
         for name, val in self.__dict__.items():
-            # print("Object {0} Attribute {1} Value {2}".format(self._name, name, val))
-            if self._discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name) or type(val) == NodePath:
+            if self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name) or \
+                    type(val) == NodePath:
+                # print("discarded attr name: {0}".format(name))
                 continue
+            # print("saved attr name: {0} val: {1}".format(name, val))
             attrs.append((name, val))
 
         return attrs
@@ -219,12 +224,12 @@ class PModBase(DirectObject):
         return None
 
     def get_properties(self):
-        self._properties = []
+        self.__properties = []
 
         for name, value in self.get_savable_atts():
 
             # hidden variables should be ignored
-            if name in self._hidden_attributes:
+            if name in self.__hidden_attributes:
                 continue
 
             # private variables should be ignored
@@ -232,50 +237,138 @@ class PModBase(DirectObject):
                 continue
 
             prop = ed_utils.EdProperty.ObjProperty(name=name, value=value, _type=type(value), obj=self)
-            self._properties.append(prop)
+            self.__properties.append(prop)
 
-        self._properties.extend(self._user_properties)
-        return self._properties
+        self.__properties.extend(self.__user_properties)
+        return self.__properties
 
     def set_active(self, val):
-        self._active = val
+        self.__active = val
 
     def is_discarded_attr(self, name):
-        if name in self._discarded_attributes:
+        if name in self.__discarded_attributes:
             return True
         return False
 
-    @property
-    def hidden_attrs(self):
-        return self._hidden_attributes
-
-    @hidden_attrs.setter
-    def hidden_attrs(self, attr: str):
-        if hasattr(self, attr) and not self._hidden_attributes.__contains__(attr):
-            self._hidden_attributes.append(attr)
-
-    @property
-    def discarded_attrs(self):
-        return self._discarded_attributes
-
-    @discarded_attrs.setter
-    def discarded_attrs(self, attr: str):
-        if hasattr(self, attr) and not self._discarded_attributes.__contains__(attr):
-            self._discarded_attributes.append(attr)
-
     def has_ed_property(self, name: str):
-        for prop in self._properties:
+        for prop in self.__properties:
             if prop.name == name:
                 return True
         return False
 
     def on_resize_event(self):
         """this method is called when window is resized"""
-        if self._aspect2d is not None and self.show_base is not None:
-            self._aspect2d.set_scale(1.0 / self.show_base.getAspectRatio(self._win), 1.0, 1.0)
+        if self.__aspect2d is not None and self.__show_base is not None:
+            self.__aspect2d.set_scale(1.0 / self.__show_base.getAspectRatio(self.__win), 1.0, 1.0)
 
     def clear_ui(self):
         """clears all direct gui elements, by default this is executed before unloading editor plugin,
          this method can be called manually as well"""
-        for np in self._aspect2d.getChildren():
+        for np in self.__aspect2d.getChildren():
             np.remove_node()
+
+    @property
+    def hidden_attrs(self):
+        return self.__hidden_attributes
+
+    @property
+    def discarded_attrs(self):
+        return self.__discarded_attributes
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def show_base(self):
+        return self.__show_base
+
+    @property
+    def win(self):
+        return self.__win
+
+    @property
+    def dr(self):
+        return self.__dr
+
+    @property
+    def dr2d(self):
+        return self.__dr2d
+
+    @property
+    def mouse_watcher_node(self):
+        return self.__mouse_watcher_node
+
+    @property
+    def render(self):
+        return self.__render
+
+    @property
+    def render2d(self):
+        return self.__render2d
+
+    @property
+    def aspect2d(self):
+        return self.__aspect2d
+
+    @property
+    def path(self):
+        return self.__path
+
+    @property
+    def task(self):
+        return self.__task
+
+    @property
+    def late_task(self):
+        return self.__late_task
+
+    @property
+    def sort(self):
+        return self.__sort
+
+    @property
+    def late_update_sort(self):
+        return self.__late_update_sort
+
+    @property
+    def active(self):
+        return self.__active
+
+    @property
+    def started(self):
+        return self.__started
+
+    @property
+    def initialized(self):
+        return self.__initialized
+
+    @property
+    def properties(self):
+        return self.__properties
+
+    @property
+    def user_properties(self):
+        return self.__user_properties
+
+    @property
+    def hidden_attributes(self):
+        return self.__hidden_attributes
+
+    @property
+    def type(self):
+        return self.__module_type
+
+    @hidden_attrs.setter
+    def hidden_attrs(self, attr: str):
+        if hasattr(self, attr) and not self.__hidden_attributes.__contains__(attr):
+            self.__hidden_attributes.append(attr)
+
+    @discarded_attrs.setter
+    def discarded_attrs(self, attr: str):
+        if hasattr(self, attr) and not self.__discarded_attributes.__contains__(attr):
+            self.__discarded_attributes.append(attr)
+
+    @type.setter
+    def type(self, val):
+        self.__module_type = val

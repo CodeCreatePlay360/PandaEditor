@@ -7,9 +7,10 @@ from editor.constants import TAG_PICKABLE
 
 
 class Selection(Object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, active_scene=None, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
 
+        self.active_scene = active_scene
         self.append = False
         self.selected_nps = []
         self.previous_matrices = {}  # [np] = matrix
@@ -21,14 +22,6 @@ class Selection(Object):
         # and collision nodes
         bit_mask = pm.GeomNode.getDefaultCollideMask() | pm.CollisionNode.getDefaultCollideMask()
         self.picker = MousePicker('picker', *args, fromCollideMask=bit_mask, **kwargs)
-
-    def get_nodepath_under_mouse(self):
-        """
-        Returns the closest node under the mouse, or None if there isn't one.
-        """
-        self.picker.on_update(None)
-        picked_np = self.picker.GetFirstNodePath()
-        return picked_np
 
     def set_selected(self, nps, append=False):
         if type(nps) is not list:
@@ -82,23 +75,37 @@ class Selection(Object):
                         new_selections.append(np)
 
         # Add any node path which was under the mouse to the selection.
-        np = self.get_nodepath_under_mouse()
+        np = self.get_np_under_mouse()
         if np is not None and np.hasNetPythonTag(TAG_PICKABLE):
             np = np.getNetPythonTag("PICKABLE")
             if np not in new_selections:
                 new_selections.append(np)
 
-        new_selections = self.get_top_parent_nps(from_nps=new_selections)
-
+        final = []
         for np in new_selections:
-            self.selected_nps.append(np)
+            self.top_np = None
+            self.get_top_np(np)
+            if self.top_np not in final:
+                final.append(self.top_np)
 
-        return new_selections
+        return final
 
-    def get_top_parent_nps(self, from_nps):
-        top_nps = []
-        for np in from_nps:
-            if not np.get_parent() in from_nps:
-                top_nps.append(np)
+    def get_np_under_mouse(self):
+        """
+        Returns the closest node under the mouse, or None if there isn't one.
+        """
+        self.picker.on_update(None)
+        picked_np = self.picker.GetFirstNodePath()
+        return picked_np
 
-        return top_nps
+    top_np = None
+
+    def get_top_np(self, np):
+        top_np = np.get_parent()
+        if top_np == self.active_scene:
+            self.top_np = np.getPythonTag("PICKABLE")
+            return
+
+        top_np = top_np.getPythonTag("PICKABLE")
+        if top_np != self.active_scene and top_np is not None:
+            self.get_top_np(top_np)

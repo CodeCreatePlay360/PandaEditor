@@ -1,16 +1,17 @@
 import panda3d.core as p3d_core
 import editor.constants as constants
 
-from direct.showbase import ShowBase as SB
+from direct.showbase import ShowBase as sb
 from panda3d.core import NodePath, Camera, OrthographicLens, PGTop
 from editor.core import EditorCamera
+from direct.showbase.ShowBase import taskMgr
 
 
-class ShowBase(SB.ShowBase):
+class ShowBase(sb.ShowBase):
     def __init__(self, ed_wx_win):
-        SB.ShowBase.__init__(self)
+        sb.ShowBase.__init__(self)
 
-        self.ed_wx_win = ed_wx_win  # wx python window
+        self.scene_win = ed_wx_win  # wx python window
         self.main_win = None  # Panda3d editor window we will render into
 
         self.edRender = None
@@ -48,7 +49,7 @@ class ShowBase(SB.ShowBase):
         self.edRender.setShaderAuto()
 
     def init_editor_win(self):
-        self.ed_wx_win.Initialize(useMainWin=True)
+        self.scene_win.initialize(use_main_win=True)
 
     def setup_editor_window(self):
         """set up an editor rendering, it included setting up 2d and 3d display regions,
@@ -68,7 +69,7 @@ class ShowBase(SB.ShowBase):
         self.dr2d.setSort(21)
         # ------------------------------------------- #
 
-        self.main_win = self.ed_wx_win.GetWindow()
+        self.main_win = self.scene_win.get_window()
 
         # ------------------ 2d rendering setup ------------------
         # create new 2d display region
@@ -147,8 +148,10 @@ class ShowBase(SB.ShowBase):
     def update_aspect_ratio(self):
         aspect_ratio = self.getAspectRatio(self.main_win)
 
-        if self.player_camera is not None:
+        try:
             self.player_camera.node().getLens().setAspectRatio(aspect_ratio)
+        except:
+            self.player_camera = None
 
         # maintain aspect ratio pixel2d
         if self.ed_aspect2d is not None:

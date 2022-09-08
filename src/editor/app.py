@@ -8,7 +8,6 @@ from editor.p3d import wxPanda
 from editor.commandManager import CommandManager, Command
 
 
-# TODO remove global fields from constants.py
 class MyApp(wxPanda.App):
     wx_main = None
     show_base = None
@@ -21,25 +20,22 @@ class MyApp(wxPanda.App):
     def init(self):
         constants.object_manager.add_object("P3dApp", self)
 
-        # self.obs = Observable()
         self.wx_main = WxFrame(parent=None, title="PandaEditor (Default Project)", size=(800, 600))
         self.show_base = ShowBase(self.wx_main.ed_viewport_panel)
 
-        self.wx_main.Show()
-        self.ReplaceEventLoop()
-
+        self.replace_event_loop()
         constants.wx.CallAfter(self.finish_init)
 
     def finish_init(self):
         constants.p3d_app = self
         globals.p3d_app = self
-
         self.show_base.finish_init()
-        self.level_editor = LevelEditor(self)
         self.command_manager = CommandManager()
+        self.level_editor = LevelEditor(self)
         self.globals = globals.Globals()
         self.level_editor.start()
         self.set_mouse_mode("Confined")
+        self.wx_main.do_after()
 
     MOUSE_MODE_MAP = {"Absolute": WindowProperties.M_absolute,
                       "Relative": WindowProperties.M_relative,

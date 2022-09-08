@@ -32,10 +32,6 @@ class Game:
         self.scenes = []        # all scenes in this game
         self.active_scene = None
 
-    def clear_active_3d_display_region(self):
-        self.display_region.setActive(False)
-        self.display_region.setCamera(p3d_core.NodePath())
-
     def create_new_scene(self, name: str):
         """creates a new scene, the active should be first cleared by the level editor"""
         scene = Scene(self, name)
@@ -43,10 +39,13 @@ class Game:
         self.scenes.append(scene)
         return scene
 
+    def clear_active_3d_display_region(self):
+        self.display_region.setActive(False)
+        self.display_region.setCamera(p3d_core.NodePath())
+
     def get_module(self, module_name):
         if self.game_modules.__contains__(module_name):
-            if not self.game_modules[module_name].class_instance._error:
-                return self.game_modules[module_name].class_instance
+            return self.game_modules[module_name].class_instance
         return None
 
     def start(self):
@@ -56,7 +55,7 @@ class Game:
         for key in self.game_modules:
             mod = self.game_modules[key]
 
-            sort_value = mod.class_instance._sort
+            sort_value = mod.class_instance.sort
 
             if mod_exec_order.__contains__(sort_value):
                 mod_exec_order[sort_value].append(mod)

@@ -1,10 +1,8 @@
 import wx
-import wx.lib.agw.gradientbutton as gbtn
 import wx.lib.colourchooser.pycolourchooser as colorSelector
 import editor.edPreferences as edPreferences
-
 from panda3d.core import Vec3, Vec2, LColor
-from editor.constants import obs, object_manager, LevelEditorEventHandler
+from editor.constants import obs, object_manager, ICONS_PATH
 
 # IDs
 ID_TEXT_CHANGE = wx.NewId()
@@ -71,11 +69,11 @@ class WxCustomProperty(wx.Window):
         self.ed_property_labels.SetForegroundColour(self.font_colour)
 
         self.SetSize((-1, 22))
+        self.SetMinSize((-1, 22))
         self.SetMaxSize((-1, 22))
 
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer.AddSpacer(Control_Margin_Left)
-        # self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND, border=0)
 
         self.SetSizer(self.sizer)
         self.Layout()
@@ -102,7 +100,7 @@ class WxCustomProperty(wx.Window):
     def set_value(self, val):
         self.value = val
         property_value = self.property.set_value(val)
-        obs.trigger("PropertyModified")
+        obs.trigger("PropertyModified", self)
         return property_value
 
     def get_value(self):
@@ -121,7 +119,8 @@ class WxCustomProperty(wx.Window):
 class EmptySpace(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
-        self.Hide()
+        self.SetSize((-1, self.get_y()))
+        self.SetMinSize((-1, self.get_y()))
 
     def create_control(self):
         pass
@@ -320,10 +319,12 @@ class BoolProperty(WxCustomProperty):
 
         # initial value
         self.toggle.SetValue(self.get_value())
-
         # add to sizer
-        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
-        self.sizer.Add(self.toggle, 0, wx.TOP, border=4)
+        if self.label == "":
+            self.ed_property_labels.Destroy()
+        else:
+            self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
+        self.sizer.Add(self.toggle, 0, wx.TOP, border=3)
         self.sizer.AddSpacer(Control_Margin_Right)
 
         self.bind_events()
@@ -498,12 +499,12 @@ class Vector2Property(WxCustomProperty):
     def create_control(self):
         super(Vector2Property, self).create_control()
 
-        label_x = wx.StaticText(self, label="x")
+        label_x = wx.StaticText(self, label=" x ")
         label_x.SetFont(self.control_label_font)
         label_x.SetForegroundColour(self.font_colour)
         self.text_ctrl_x = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
-        label_y = wx.StaticText(self, label="y")
+        label_y = wx.StaticText(self, label=" y ")
         label_y.SetFont(self.control_label_font)
         label_y.SetForegroundColour(self.font_colour)
         self.text_ctrl_y = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
@@ -518,9 +519,9 @@ class Vector2Property(WxCustomProperty):
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=Label_Top_Offset)
 
         self.sizer.Add(label_x, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP | wx.LEFT | wx.RIGHT, border=2)
+        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP, border=0)
         self.sizer.Add(label_y, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP | wx.LEFT | wx.RIGHT, border=2)
+        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP, border=0)
 
         self.sizer.AddSpacer(Control_Margin_Right)
 
@@ -554,6 +555,14 @@ class Vector2Property(WxCustomProperty):
         if is_valid_h and is_valid_p:
             h = float(self.text_ctrl_x.GetValue())
             p = float(self.text_ctrl_y.GetValue())
+
+            # apply value limit
+            if self.property.value_limit is not None:
+                if h < self.property.value_limit.x:
+                    h = self.property.value_limit.x
+
+                if p < self.property.value_limit.x:
+                    p = self.property.value_limit.x
 
             self.set_value(Vec2(h, p))
             self.old_value = Vec2(h, p)
@@ -601,17 +610,17 @@ class Vector3Property(WxCustomProperty):
         # label = wx.StaticText(self, label=self.label)
         super(Vector3Property, self).create_control()
 
-        label_x = wx.StaticText(self, label="x")
+        label_x = wx.StaticText(self, label="x ")
         label_x.SetFont(self.control_label_font)
         label_x.SetForegroundColour(self.font_colour)
         self.text_ctrl_x = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
-        label_y = wx.StaticText(self, label="y")
+        label_y = wx.StaticText(self, label=" y ")
         label_y.SetFont(self.control_label_font)
         label_y.SetForegroundColour(self.font_colour)
         self.text_ctrl_y = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
 
-        label_z = wx.StaticText(self, label="z")
+        label_z = wx.StaticText(self, label=" z ")
         label_z.SetFont(self.control_label_font)
         label_z.SetForegroundColour(self.font_colour)
         self.text_ctrl_z = wx.TextCtrl(self, size=(0, 18), style=wx.BORDER_DOUBLE, id=ID_TEXT_CHANGE)
@@ -632,13 +641,13 @@ class Vector3Property(WxCustomProperty):
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=Label_Top_Offset)
 
         self.sizer.Add(label_x, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP | wx.LEFT | wx.RIGHT, border=2)
+        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP, border=0)
 
         self.sizer.Add(label_y, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP | wx.LEFT | wx.RIGHT, border=2)
+        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP, border=0)
 
         self.sizer.Add(label_z, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_z, 1, wx.TOP | wx.LEFT | wx.RIGHT, border=2)
+        self.sizer.Add(self.text_ctrl_z, 1, wx.TOP, border=0)
 
         self.sizer.AddSpacer(Control_Margin_Right)
 
@@ -819,9 +828,8 @@ class ButtonProperty(WxCustomProperty):
 
         self.btn = wx.Button(self, label=self.property.get_name())
         self.btn.SetBackgroundColour(edPreferences.Colors.Panel_Light)
-        self.btn.SetMaxSize((-1, self.GetSize().y-2))
-        self.sizer.Add(self.btn, 1, wx.LEFT | wx.RIGHT)
-        self.sizer.AddSpacer(10)
+        self.btn.SetMaxSize((-1, self.GetSize().y))
+        self.sizer.Add(self.btn, 1)
         self.bind_events()
 
     def on_evt_btn(self, evt):
@@ -845,10 +853,117 @@ class HorizontalLayoutGroup(WxCustomProperty):
         del self.ed_property_labels
         self.sizer.Clear(True)
 
-        for prop in self.properties:
+        for i in range(len(self.properties)):
+            prop = self.properties[i]
             prop.SetSize((-1, -1))
             prop.SetMinSize((-1, -1))
-            self.sizer.Add(prop, 1, wx.EXPAND)
+
+            border = prop.property.kwargs.pop("border", 0)
+            flag = prop.property.kwargs.pop("flag", wx.EXPAND)
+
+            self.sizer.Add(prop, border=border, flag=flag)
+
+
+FOLD_OPEN_ICON = ICONS_PATH + "\\" + "foldOpen_16.png"
+FOLD_CLOSE_ICON = ICONS_PATH + "\\" + "foldClose_16.png"
+
+
+class FoldoutGroup(WxCustomProperty):
+    def __init__(self, parent, property_, *args, **kwargs):
+        super().__init__(parent, property_)
+
+        self.fd_open_icon = None
+        self.fd_close_icon = None
+        self.fd_button = None
+        self.is_open = True
+        self.properties = []
+        self.scrolled_panel = kwargs.pop("ScrolledPanel", None)
+
+        del self.sizer
+
+        # delete default sizer
+        self.h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # create a vertical sizer to layout wx-properties in this foldout
+        self.v_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.v_sizer)
+
+    def create_control(self):
+        super(FoldoutGroup, self).create_control()
+        self.create_foldout_buttons()
+        self.add_properties()
+        # default
+        self.on_click(None)
+
+    def create_foldout_buttons(self):
+        self.v_sizer.Clear()
+        self.h_sizer.Clear()
+
+        # load foldout open and close icons
+        self.fd_open_icon = wx.Image(FOLD_OPEN_ICON, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+        self.fd_close_icon = wx.Image(FOLD_CLOSE_ICON, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+
+        # create the foldout button
+        self.fd_button = wx.StaticBitmap(self, -1, self.fd_open_icon, (0, 0), size=wx.Size(10, 10))
+        self.fd_button.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+
+        # add them to sizers
+        self.h_sizer.AddSpacer(Control_Margin_Left)
+        self.h_sizer.Add(self.fd_button, 0, wx.TOP, border=5)
+        self.h_sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP | wx.LEFT, border=Label_Top_Offset)
+        self.v_sizer.Add(self.h_sizer, 0, wx.EXPAND)
+
+    def add_properties(self):
+        for prop in self.properties:
+            prop.Hide()
+            self.v_sizer.Add(prop, 0, wx.EXPAND | wx.LEFT, border=10)
+
+    def on_click(self, evt=None):
+        self.is_open = not self.is_open
+
+        if self.is_open:
+            self.open()
+        else:
+            self.close()
+
+        if evt:
+            evt.Skip()
+
+    def open(self):
+        min_size = 22
+        for prop in self.properties:
+            min_size += 22
+            prop.Show()
+
+        self.SetSize((-1, min_size))
+        self.SetMaxSize((-1, min_size))
+        self.SetMinSize((-1, min_size))
+
+        self.fd_button.SetBitmap(self.fd_open_icon)
+
+        self.v_sizer.Layout()
+
+        if self.scrolled_panel:
+            self.scrolled_panel.PostSizeEvent()
+        else:
+            self.parent.PostSizeEvent()
+
+    def close(self):
+        for prop in self.properties:
+            prop.Hide()
+
+        self.SetSize((-1, 22))
+        self.SetMinSize((-1, 22))
+        self.SetMaxSize((-1, 22))
+
+        self.fd_button.SetBitmap(self.fd_close_icon)
+
+        self.v_sizer.Layout()
+
+        if self.scrolled_panel:
+            self.scrolled_panel.PostSizeEvent()
+        else:
+            self.parent.PostSizeEvent()
 
 
 class InfoBox(WxCustomProperty):

@@ -35,7 +35,7 @@ class DirEventProcessor(FileSystemEventHandler):
                 interested_events.append(file_name)
 
         if len(interested_events) > 0:
-            constants.obs.trigger("DirectoryEvent", interested_events)
+            constants.obs.trigger("EditorReload", interested_events)
 
         self.received_events = []
 

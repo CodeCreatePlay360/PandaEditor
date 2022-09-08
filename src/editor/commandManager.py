@@ -22,7 +22,7 @@ class Command(ABC):
 
 
 class CommandManager(object):
-    def __init__(self, max_commands=10):
+    def __init__(self, max_commands=30):
         """count = max number of commands to save"""
 
         self.undo_commands = []
@@ -32,14 +32,17 @@ class CommandManager(object):
     def push_undo_command(self, command):
         """Push the given command to the undo command stack."""
         self.undo_commands.append(command)
+
+        # --------------------------------------------------
         if len(self.undo_commands) > self.max_commands:
             cmd = self.undo_commands[0]
-
-            # --------------------------------------------------
             # see constants.CleanUnusedLoadedNPs for explanation
             try:
                 cmd.RemoveNPsCmd
-                constants.obs.trigger("CleanUnusedLoadedNPs", cmd.nps)
+                nps_ = []
+                for np, parent in cmd.saved:
+                    nps_.append(np)
+                constants.obs.trigger("CleanUnusedLoadedNPs", nps_)
             except AttributeError:
                 pass
             # ---------------------------------------------------
@@ -104,3 +107,7 @@ class CommandManager(object):
             if command:
                 if safe_execute(command):
                     self.push_undo_command(command)
+
+    def clear(self):
+        self.undo_commands.clear()
+        self.redo_commands.clear()

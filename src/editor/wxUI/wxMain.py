@@ -2,15 +2,9 @@ import wx
 import wx.lib.agw.aui as aui
 
 from editor.wxUI.wxMenuBar import WxMenuBar
-from editor.wxUI.resourceBrowser import ResourceBrowser
-from editor.wxUI.sceneBrowser import SceneBrowserPanel
-from editor.wxUI.inspectorPanel import InspectorPanel
-from editor.wxUI.logPanel import LogPanel
-from editor.wxUI.auxiliaryPanel import AuxiliaryPanel
+from editor.wxUI.panels import *
 from editor.wxUI.wxDialogs import DialogManager
-from editor.p3d import wxPanda
 from editor.constants import object_manager, obs, ICONS_PATH
-from thirdparty.wxCustom.auiManager import AuiManager
 
 # scene events
 Evt_Open_Project = wx.NewId()
@@ -19,6 +13,8 @@ Evt_Open_Scene = wx.NewId()
 Evt_Save_Scene = wx.NewId()
 Evt_Save_Scene_As = wx.NewId()
 Evt_Append_Library = wx.NewId()
+
+Evt_Refresh = wx.NewId()
 
 Evt_Ed_Viewport_style = wx.NewId()
 Evt_Play = wx.NewId()
@@ -32,6 +28,8 @@ Event_Map = {
     Evt_Save_Scene: ("SaveSession", None),
     Evt_Save_Scene_As: ("SaveSessionAs", None),
     Evt_Append_Library: ("AppendLibrary", None),
+
+    Evt_Refresh: ("ReloadEditor", None),
 
     Evt_Ed_Viewport_style: ("SwitchEdViewportStyle", None),
     Evt_Play: ("SwitchEdState", None),
@@ -51,6 +49,8 @@ IMPORT_LIBRARY_ICON = ICONS_PATH + "\\" + "importLib_32.png"
 IMPORT_PACKAGE_ICON = ICONS_PATH + "\\" + "add_package.png"
 OPEN_STORE_ICON = ICONS_PATH + "\\" + "shop_network.png"
 
+ED_REFRESH_ICON = ICONS_PATH + "\\" + "Refresh_Icon_32.png."
+
 ED_MODE_ICON = ICONS_PATH + "\\" + "game_mode.png."
 PLAY_ICON = ICONS_PATH + "\\" + "playIcon_32x.png"
 STOP_ICON = ICONS_PATH + "\\" + "stopIcon_32.png"
@@ -62,176 +62,122 @@ NO_SOUND_ICON = ICONS_PATH + "\\" + "noSoundIcon.png"
 
 DISABLED_ICON = ICONS_PATH + "\\" + "disabled_icon.png"
 
+SELECT_ICON = ICONS_PATH + "\\" + "hand_point_090.png"
+
+xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4" \
+     "|panel631603e60000001c00000006=+2|panel631603ec0000002200000006=+3@layout2|name=dummy;caption=;state" \
+     "=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=180;besth=180;minw=180;minh=180;maxw=-1;maxh=-1" \
+     ";floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name" \
+     "=panel631603ca0000000000000002;caption=;state=67372028;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=0" \
+     ";besth=0;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1" \
+     ";transparent=255|name=panel631603d60000000c00000003;caption=;state=67372028;dir=2;layer=0;row=1;pos=0" \
+     ";prop=100000;bestw=392;besth=237;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath" \
+     "=-1;notebookid=-1;transparent=255|name=panel631603de0000001400000004;caption=;state=67372028;dir=4" \
+     ";layer=0;row=1;pos=0;prop=100000;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty" \
+     "=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=panel631603e60000001c00000006;caption=;state" \
+     "=67372028;dir=3;layer=0;row=1;pos=0;prop=70984;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1" \
+     ";floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name" \
+     "=panel631603ec0000002200000006;caption=;state=67372028;dir=3;layer=0;row=1;pos=1;prop=129015;bestw=180" \
+     ";besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1" \
+     ";transparent=255|dock_size(5,0,0)=10|dock_size(2,0,1)=332|dock_size(4,0,1)=182|dock_size(3,0,1)=228|"
+
+
+class AUINotebook(aui.AuiNotebook):
+    """
+    AUI Notebook class
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, parent):
+        """Constructor"""
+        aui.AuiNotebook.__init__(self, parent=parent)
+        self.default_style = aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TAB_EXTERNAL_MOVE | wx.NO_BORDER
+        self.SetWindowStyleFlag(self.default_style)
+
+    def add_pages(self, pages):
+        for page, name in pages:
+            self.AddPage(page, name, False)
+
 
 class WxFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
 
-        self.panda_app = wx.GetApp()
         object_manager.add_object("WxMain", self)
 
-        self.load_resources()
-
-        # TODO change this to use resource globals
+        # set the application icon
         icon_file = ICON_FILE
         icon = wx.Icon(icon_file, wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
+
+        self.panda_app = wx.GetApp()
+        self.freeze()
+        self.load_resources()
 
         # set menu bar
         self.menu_bar = WxMenuBar(self)
         self.SetMenuBar(self.menu_bar)
 
-        # set status bar
+        # create a status bar
         self.status_bar = self.CreateStatusBar()
         self.status_bar.SetStatusText("Welcome to PandaEditor")
 
-        # setup aui manager
-        self.aui_manager = AuiManager(self)
+        # create the notebook
+        self.notebook = AUINotebook(self)
+        self.saved_layouts = {}  # saved perspectives for aui notebook
 
-        # wx aui toolbars
-        self.tb_panes = []  # names of all aui toolbars
+        # create aui toolbars
         self.build_file_menu_tb()
         self.build_proj_menus_tb()
         self.build_scene_ctrls_tb()
+        self.build_ed_ctrls_tb()
         self.build_play_ctrls_tb()
 
         self.dialogue_manager = DialogManager()
 
-        self.ed_viewport_panel = wxPanda.Viewport(self, style=wx.BORDER_SUNKEN)
+        self.ed_viewport_panel = Viewport(self)
         self.inspector_panel = InspectorPanel(self)
-        self.log_panel = LogPanel(self)
+        self.log_panel = LogPanel(self.notebook)
         self.resource_browser = ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
 
-        # default panel definitions
-        self.panel_defs = {
-            "SceneBrowserPanel": (self.scene_graph_panel,
-                                  True,
-                                  aui.AuiPaneInfo().
-                                  Name("SceneGraphPanel").
-                                  Caption("Scene Graph").
-                                  CloseButton(True).
-                                  MaximizeButton(False).
-                                  Direction(4).Layer(0).Row(0).Position(0)),
+        self.pages = [(self.ed_viewport_panel, "ViewPort"),
+                      (self.inspector_panel, "Inspector"),
+                      (self.log_panel, "LogPanel"),
+                      (self.resource_browser, "ResourceBrowser"),
+                      (self.scene_graph_panel, "SceneGraph")]
 
-            # dir=4;layer=0;row=0;pos=0
-            "EditorViewportPanel": (self.ed_viewport_panel,
-                                    True,
-                                    aui.AuiPaneInfo().
-                                    Name("EditorViewportPanel").
-                                    Caption("Editor Viewport").
-                                    CloseButton(False).
-                                    MaximizeButton(True).
-                                    Direction(4).Layer(0).Row(2).Position(0)),
+        # add panels to notebook
+        self.notebook.add_pages(self.pages)
 
-            # dir=4;layer=0;row=2;pos=0
-            "ObjectInspectorPanel": (self.inspector_panel,
-                                     True,
-                                     aui.AuiPaneInfo().
-                                     Name("ObjectInspectorPanel").
-                                     Caption("Inspector Panel").
-                                     CloseButton(True).
-                                     MaximizeButton(False).
-                                     Direction(4).Layer(0).Row(3).Position(0)),
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(self.main_sizer)
 
-            # dir=3;layer=1;row=0;pos=0
-            "ResourceBrowserPanel": (self.resource_browser,
-                                     True,
-                                     aui.AuiPaneInfo().
-                                     Name("ResourceBrowserPanel").
-                                     Caption("Resource Browser").
-                                     CloseButton(True).
-                                     MaximizeButton(False).
-                                     Direction(3).Layer(1).Row(0).Position(1)),
+        self.toolbar_sizer.Add(self.file_menu_tb, 0)
+        self.toolbar_sizer.Add(self.proj_meuns_tb, 0)
+        self.toolbar_sizer.Add(self.scene_ctrls_tb, 0)
+        self.toolbar_sizer.Add(self.ed_ctrls_tb, 0)
+        self.toolbar_sizer.Add(self.playctrls_tb, 0)
 
-            # dir=3;layer=1;row=0;pos=1
-            "ConsolePanel": (self.log_panel,
-                             True,
-                             aui.AuiPaneInfo().
-                             Name("ConsolePanel").
-                             Caption("Console").
-                             CloseButton(True).
-                             MaximizeButton(False).
-                             Direction(3).Layer(1).Row(0).Position(0)),
-        }
+        self.main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
+        self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
 
-        # user defined panel definitions for editor plugins
-        self.user_panel_definitions = {}
-
-        self.SetMinSize((800, 600))
+        self.notebook.LoadPerspective(xx)
+        perspective = self.notebook.SavePerspective()
+        self.saved_layouts["Default"] = perspective
+        self.menu_bar.add_layout_menu("Default")
         self.Maximize(True)
-        self.Layout()
-        self.Center()
 
-        self.create_default_layout()
-        self.aui_manager.Update()
-
-        # some cleanup
-        for pane_def in self.panel_defs.values():
-            pane_def[2].MinSize(wx.Size(0, 0))
-
-        # bind events
-        for panel_def in self.panel_defs.values():
-            panel_def[0].Bind(wx.EVT_SIZE, self.resize_event)
-
+        self.Bind(wx.EVT_SIZE, self.on_evt_resize)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
 
-        # finally, save the current layout
-        self.save_current_layout("Default")
-
-    def create_default_layout(self):
-        size = self.GetSize()
-
-        # create a default layout
-        for pane_def in self.panel_defs.values():
-
-            if pane_def[2].name == "AuxiliaryPanel":
-                continue
-
-            self.aui_manager.AddPane(pane_def[0], pane_def[2])
-
-            if pane_def[2].name == "SceneGraphPanel":
-                proportion_x = (15 / 100) * size.x
-                proportion_y = (60 / 100) * size.y
-                pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
-
-            if pane_def[2].name == "EditorViewportPanel":
-                proportion_x = (55 / 100) * size.x
-                proportion_y = (60 / 100) * size.y
-                pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
-
-            if pane_def[2].name == "ObjectInspectorPanel":
-                proportion_x = (30 / 100) * size.x
-                proportion_y = (60 / 100) * size.y
-                pane_def[2].MinSize1(wx.Size(proportion_x, proportion_y))
-                pane_def[2].dock_proportion = 100
-
-            if pane_def[2].name == "ResourceBrowserPanel":
-                proportion_y = (30 / 100) * size.y
-                pane_def[2].MinSize1(wx.Size(1, proportion_y))
-                pane_def[2].dock_proportion = 65
-
-            if pane_def[2].name == "ConsolePanel":
-                proportion_y = (30 / 100) * size.y
-                pane_def[2].MinSize1(wx.Size(1, proportion_y))
-                pane_def[2].dock_proportion = 35
-
-    def save_current_layout(self, name=None):
-        def save_layout(layout_name):
-            if layout_name == "":
-                return
-
-            if self.aui_manager.save_current_layout(layout_name):
-                self.menu_bar.add_layout_menu(layout_name)
-
-        if name:
-            save_layout(name)
-        else:
-            # get a name for this layout from user
-            dm = self.dialogue_manager
-            dm.create_dialog("TextEntryDialog", "NewEditorLayout", dm,
-                             descriptor_text="Enter new layout name", ok_call=save_layout)
+    def do_after(self):
+        for panel, name in self.pages:
+            panel.Bind(wx.EVT_SIZE, self.on_evt_resize)
+        self.Show()
+        self.thaw()
 
     def load_resources(self):
         self.new_session_icon = wx.Bitmap(NEW_SESSION_ICON)
@@ -244,6 +190,8 @@ class WxFrame(wx.Frame):
         self.import_package_icon = wx.Bitmap(IMPORT_PACKAGE_ICON)
         self.open_store_icon = wx.Bitmap(OPEN_STORE_ICON)
 
+        self.ed_refresh_icon = wx.Bitmap(ED_REFRESH_ICON)
+
         self.ed_mode_icon = wx.Bitmap(ED_MODE_ICON)
         self.play_icon = wx.Bitmap(PLAY_ICON)
         self.stop_icon = wx.Bitmap(STOP_ICON)
@@ -252,6 +200,8 @@ class WxFrame(wx.Frame):
         self.lights_off_icon = wx.Bitmap(ALL_LIGHTS_OFF_ICON)
         self.sound_icon = wx.Bitmap(SOUND_ICON)
         self.no_sound_icon = wx.Bitmap(NO_SOUND_ICON)
+
+        self.select_icon = wx.Cursor(wx.Image(SELECT_ICON))
 
     def build_file_menu_tb(self):
         self.file_menu_tb = aui.AuiToolBar(self)
@@ -277,15 +227,12 @@ class WxFrame(wx.Frame):
                                                 kind=wx.ITEM_NORMAL,
                                                 short_help_string="SaveSceneAs")
 
-        # add to aui
-        self.aui_manager.AddPane(self.file_menu_tb, aui.AuiPaneInfo().Name("FileMenuToolBar").
-                                 Caption("Toolbar").ToolbarPane().Top())
-        self.tb_panes.append("FileMenuToolBar")
+        self.file_menu_tb.Realize()
+        self.file_menu_tb.SetCursor(wx.Cursor(wx.CURSOR_HAND))
 
-        # events
-        self.Bind(wx.EVT_TOOL, self.on_event, new_btn)
-        self.Bind(wx.EVT_TOOL, self.on_event, save_btn)
-        self.Bind(wx.EVT_TOOL, self.on_event, save_as_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, new_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, save_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, save_as_btn)
 
     def build_proj_menus_tb(self):
         self.proj_meuns_tb = aui.AuiToolBar(self)
@@ -318,38 +265,42 @@ class WxFrame(wx.Frame):
                                                     kind=wx.ITEM_NORMAL,
                                                     short_help_string="PandaStore")
 
-        # add to aui
-        self.aui_manager.AddPane(self.proj_meuns_tb, aui.AuiPaneInfo().Name("ProjectMenuToolbar").
-                                 Caption("Toolbar").ToolbarPane().Top())
-        self.tb_panes.append("ProjectMenuToolbar")
-
-        self.Bind(wx.EVT_TOOL, self.on_event, open_proj_btn)
-        self.Bind(wx.EVT_TOOL, self.on_event, import_lib_btn)
+        self.proj_meuns_tb.Realize()
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, open_proj_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, import_lib_btn)
 
     def build_scene_ctrls_tb(self):
         self.scene_ctrls_tb = aui.AuiToolBar(self)
 
-        self.lights_toggle_btn = self.scene_ctrls_tb.AddTool(Evt_Toggle_Scene_Lights,
-                                                             "",
-                                                             bitmap=self.lights_off_icon,
-                                                             disabled_bitmap=self.lights_off_icon,
-                                                             kind=wx.ITEM_NORMAL,
-                                                             short_help_string="ToggleSceneLights")
+        self.lights_toggle_btn = self.scene_ctrls_tb.AddToggleTool(Evt_Toggle_Scene_Lights,
+                                                                   bitmap=self.lights_off_icon,
+                                                                   disabled_bitmap=self.lights_off_icon,
+                                                                   short_help_string="ToggleSceneLights",
+                                                                   toggle=True)
 
         self.sounds_on = True
-        self.sound_toggle_btn = self.scene_ctrls_tb.AddTool(Evt_Toggle_Sounds,
-                                                            "",
-                                                            bitmap=self.sound_icon,
-                                                            disabled_bitmap=self.sound_icon,
-                                                            kind=wx.ITEM_NORMAL,
-                                                            short_help_string="ToggleSound")
+        self.sound_toggle_btn = self.scene_ctrls_tb.AddToggleTool(Evt_Toggle_Sounds,
+                                                                  bitmap=self.sound_icon,
+                                                                  disabled_bitmap=self.sound_icon,
+                                                                  short_help_string="ToggleSound",
+                                                                  toggle=True)
 
-        self.aui_manager.AddPane(self.scene_ctrls_tb, aui.AuiPaneInfo().Name("SceneControlsToolbar").
-                                 Caption("Toolbar").ToolbarPane().Top())
-        self.tb_panes.append("SceneControlsToolbar")
+        self.scene_ctrls_tb.Realize()
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.sound_toggle_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.lights_toggle_btn)
 
-        self.Bind(wx.EVT_TOOL, self.on_event, self.sound_toggle_btn)
-        self.Bind(wx.EVT_TOOL, self.on_event, self.lights_toggle_btn)
+    def build_ed_ctrls_tb(self):
+        self.ed_ctrls_tb = aui.AuiToolBar(self)
+
+        self.refresh_btn = self.ed_ctrls_tb.AddTool(Evt_Refresh,
+                                                    "",
+                                                    bitmap=self.ed_refresh_icon,
+                                                    disabled_bitmap=self.ed_refresh_icon,
+                                                    kind=wx.ITEM_NORMAL,
+                                                    short_help_string="RefreshIcon")
+
+        self.ed_ctrls_tb.Realize()
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.refresh_btn)
 
     def build_play_ctrls_tb(self):
         self.playctrls_tb = aui.AuiToolBar(self)
@@ -360,88 +311,40 @@ class WxFrame(wx.Frame):
                                                                     short_help_string="MaximizeGameViewPortOnPlay",
                                                                     toggle=True)
 
-        self.ply_btn = self.playctrls_tb.AddTool(Evt_Play,
-                                                 "",
-                                                 bitmap=self.play_icon,
-                                                 disabled_bitmap=self.play_icon,
-                                                 kind=wx.ITEM_NORMAL,
-                                                 short_help_string="StartGame")
+        self.ply_btn = self.playctrls_tb.AddToggleTool(Evt_Play,
+                                                       bitmap=self.play_icon,
+                                                       disabled_bitmap=self.play_icon,
+                                                       short_help_string="StartGame",
+                                                       toggle=True)
 
-        # add to aui
-        self.aui_manager.AddPane(self.playctrls_tb, aui.AuiPaneInfo().Name("PlayControlsToolbar").
-                                 Caption("Toolbar").ToolbarPane().Top())
-        self.tb_panes.append("PlayControlsToolbar")
+        self.playctrls_tb.Realize()
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ed_viewport_mode_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ply_btn)
 
-        # events
-        self.Bind(wx.EVT_TOOL, self.on_event, self.ed_viewport_mode_btn)
-        self.Bind(wx.EVT_TOOL, self.on_event, self.ply_btn)
+    def save_current_layout(self, name=None):
+        dial = wx.TextEntryDialog(None, "Enter layout name", "Layout", "")
+        if dial.ShowModal() and dial.GetValue() != "" and dial.GetValue() not in self.saved_layouts.keys():
+            name = dial.GetValue()
+            self.saved_layouts[name] = self.notebook.SavePerspective()
+            self.menu_bar.add_layout_menu(name)
 
-    def add_panel_def(self, name: str):
-        if name in self.user_panel_definitions.keys():
-            return self.user_panel_definitions[name][0]
-        else:
-            # add a new entry
-            panel = AuxiliaryPanel(self)
-            panel_def = (panel, True,
-                         aui.AuiPaneInfo().
-                         Name(name).
-                         Caption(name).
-                         CloseButton(True).
-                         MaximizeButton(False))
+    def load_layout(self, layout):
+        # check if layout exists
+        # close all notebook pages
+        # finally, load the layout
+        pass
 
-            self.user_panel_definitions[name] = panel_def
-            return panel_def[0]
+    def add_page(self, page):
+        print(page)
 
-    def add_panel(self, panel):
-        if panel in self.user_panel_definitions.keys():
-            panel_def = self.user_panel_definitions[panel]
-
-        elif panel in self.panel_defs.keys():
-            panel_def = self.panel_defs[panel]
-
-        else:
-            print("[WxMain] Unable to add panel {0}, Panel not found in panel_definitions.".format(panel))
-            return
-
-        self.aui_manager.AddPane(panel_def[0], panel_def[2])
-        self.aui_manager.ShowPane(panel_def[0], True)
-        self.aui_manager.Update()
-
-    def clear_panel_contents(self, panel_name):
-        if panel_name in self.user_panel_definitions.keys():
-            pass
-
-    def on_pane_close(self, pane):
-        self.aui_manager.Update()
-
-    def delete_panel(self, panel):
-        """permanently deletes a panel from aui manager's managed panels list, only user created panel definitions
-        can be deleted"""
-
-        if panel in self.user_panel_definitions.keys():
-            panel_def = self.user_panel_definitions[panel]
-
-            # tell aui manager to remove and detach the panel_def from managed panes
-            self.aui_manager.ClosePane(panel_def[2])
-            self.aui_manager.DetachPane(panel_def[0])
-
-            # now destroy the wx panel itself
-            panel_def[0].Destroy()
-
-            # finally remove from panel_defs repo
-            del self.user_panel_definitions[panel]
-            # print("[WxMain] Panel {0} deleted".format(panel_def[0]))
-
-            # sometimes aui manager crashes during Update when window is minimized or if it is not in focus
-            try:
-                self.aui_manager.Update()
-            except:
-                pass
+    def delete_page(self, page):
+        """permanently deletes a panel and removes it from notebook"""
+        pass
 
     def set_status_bar_text(self, txt: str):
         self.status_bar.SetStatusText(txt)
 
-    def on_event(self, evt):
+    def on_evt_toolbar(self, evt):
         if evt.GetId() in Event_Map:
             evt_name = Event_Map[evt.GetId()][0]
             obs.trigger(evt_name)
@@ -450,10 +353,21 @@ class WxFrame(wx.Frame):
     def on_evt_left_down(self, evt):
         evt.Skip()
 
-    def resize_event(self, event):
+    def on_evt_resize(self, event):
         obs.trigger("ResizeEvent")
         event.Skip()
+
+    def on_evt_page_close(self, page):
+        pass
 
     def on_event_close(self, event):
         obs.trigger("CloseApp", close_wx=False)
         event.Skip()
+
+    def freeze(self):
+        if not self.IsFrozen():
+            self.Freeze()
+
+    def thaw(self):
+        if self.IsFrozen():
+            self.Thaw()

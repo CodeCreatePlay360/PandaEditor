@@ -1,19 +1,30 @@
-from panda3d.core import PerspectiveLens, OrthographicLens, Vec2, Camera, NodePath
+import editor.constants as constants
+from panda3d.core import PerspectiveLens, OrthographicLens, Camera, NodePath
 from editor.nodes.baseNodePath import BaseNodePath
 from editor.utils import EdProperty
-from editor.constants import obs
 
 
 class CameraNodePath(BaseNodePath):
-    def __init__(self, uid=None, *args, **kwargs):
+    def __init__(self, np, uid=None, *args, **kwargs):
 
-        cam = NodePath(Camera("PlayerCamera"))
-        BaseNodePath.__init__(self, cam, uid, *args, **kwargs)
+        if np is None:
+            np = NodePath(Camera("CameraNodePath"))
+        BaseNodePath.__init__(self, np, uid, *args, **kwargs)
 
-        self.lens_type_map = 0  # [Lens type] 0: Perspective, 1: Ortho
+        self._id = "__CameraNodePath__"
+        # self.lens_type = 0  # [Lens type] 0: Perspective, 1: Ortho
         self.current_lens_type = -1
-        self.lens_properties = []  # properties for a particular lens type
-        self.set_perspective_lens()
+        self.lens_properties = []  # properties for particular lens type
+
+        copy_data = kwargs.pop("copy", False)
+        if copy_data and np.hasPythonTag("PICKABLE"):
+            obj = np.getPythonTag("PICKABLE")
+            if obj.get_lens_type() == 0:
+                self.set_perspective_lens(obj.node().getLens())
+            elif obj.get_lens_type() == 1:
+                self.set_ortho_lens(obj.node().getLens())
+        else:
+            self.set_perspective_lens()
 
     def create_properties(self):
         super(CameraNodePath, self).create_properties()
@@ -35,100 +46,60 @@ class CameraNodePath(BaseNodePath):
         self.properties.append(lens_prop_label)
         self.properties.append(lens_prop)
 
-    def create_save_data(self):
-        super(CameraNodePath, self).create_save_data()
-        del self._save_data_info["Color"]
-
     def set_lens(self, lens_type: int):
         if lens_type == 0:
             self.set_perspective_lens()
-
         if lens_type == 1:
             self.set_ortho_lens()
 
     def get_lens_type(self):
         return self.current_lens_type
 
-    def get_near_far(self):
-        lens = self.node().getLens()
-        near_far = Vec2(0, 0)
-        near_far.x = lens.get_near()
-        near_far.y = lens.get_far()
-        return near_far
-
-    def ed_get_fov(self):
-        return self.node().getLens().getHfov()
-
-    def set_perspective_lens(self):
+    def set_perspective_lens(self, lens=None):
         # make sure to not redo same thing
         if self.current_lens_type == 0:
             return
 
-        lens = PerspectiveLens()
-        lens.set_fov(60)
-        self.node().setLens(lens)
-        self.create_perspective_lens_properties()
-        self.current_lens_type = 0
-        obs.trigger("ResizeEvent")
+        if lens:
+            pass
+        else:
+            lens = PerspectiveLens()
 
-    def set_ortho_lens(self):
+        self.node().setLens(lens)
+        self.create_perspective_lens_properties(lens)
+        self.current_lens_type = 0
+        constants.obs.trigger("ResizeEvent")
+
+    def set_ortho_lens(self, lens=None):
         # make sure to not redo same thing
         if self.current_lens_type == 1:
             return
 
-        lens = OrthographicLens()
-        lens.setFilmSize(100)
+        if lens:
+            pass
+        else:
+            lens = OrthographicLens()
+
         self.node().setLens(lens)
-        self.create_ortho_lens_properties()
+        self.create_ortho_lens_properties(lens)
         self.current_lens_type = 1
-        obs.trigger("ResizeEvent")
 
-    def set_near_far(self, val):
-        self.node().getLens().setNearFar(val.x, val.y)
-
-    def ed_set_fov(self, val):
-        self.node().getLens().setFov(val)
-
-    def create_perspective_lens_properties(self):
+    def create_perspective_lens_properties(self, lens):
         # clear existing lens properties
         for prop in self.lens_properties:
             self.properties.remove(prop)
             continue
         self.lens_properties.clear()
 
-        near_far = EdProperty.FuncProperty(name="Near-Far",
-                                           value=self.get_near_far(),
-                                           setter=self.set_near_far,
-                                           getter=self.get_near_far)
-
-        fov = EdProperty.FuncProperty(name="Field Of View",
-                                      value=self.ed_get_fov(),
-                                      setter=self.ed_set_fov,
-                                      getter=self.ed_get_fov)
-
-        self.lens_properties.append(near_far)
-        self.lens_properties.append(fov)
-
+        self.lens_properties.extend(EdProperty.Utils.get_properties_for_lens(lens))
         self.properties.extend(self.lens_properties)
 
-    def create_ortho_lens_properties(self):
+    def create_ortho_lens_properties(self, lens):
         # clear existing lens properties
         for prop in self.lens_properties:
             self.properties.remove(prop)
             continue
         self.lens_properties.clear()
 
-        near_far = EdProperty.FuncProperty(name="Near-Far",
-                                           value=self.get_near_far(),
-                                           setter=self.set_near_far,
-                                           getter=self.get_near_far)
-
-        film_size = EdProperty.FuncProperty(name="FilmSize",
-                                            value=self.node().getLens().getFilmSize(),
-                                            setter=self.node().getLens().setFilmSize,
-                                            getter=self.node().getLens().getFilmSize)
-
-        self.lens_properties.append(near_far)
-        self.lens_properties.append(film_size)
-
+        self.lens_properties.extend(EdProperty.Utils.get_properties_for_lens(lens))
         self.properties.extend(self.lens_properties)

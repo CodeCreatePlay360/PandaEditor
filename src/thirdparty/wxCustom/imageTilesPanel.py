@@ -5,9 +5,11 @@ import editor.constants as constants
 import editor.edPreferences as edPreferences
 import editor.wxUI.globals as wxGlobals
 import editor.commands as commands
+
 from editor.utils import PathUtils
 from wx.lib.scrolledpanel import ScrolledPanel
-from editor.wxUI.baseInspectorPanel import SelectionGrid, SelectionButton
+from editor.wxUI.custom import ControlGroup, SelectionButton
+from editor.wxUI.custom import SearchBox
 
 
 # event ids for different event types
@@ -82,6 +84,10 @@ class ImageTile(wx.Panel):
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
+
+        self.sizer.Add(self.image_ctrl, 1, wx.EXPAND)
+        self.sizer.Add(self.text_ctrl, 0, wx.EXPAND)
+
         self.Layout()
 
         self.event_map = {
@@ -94,6 +100,7 @@ class ImageTile(wx.Panel):
         }
 
         self.image_ctrl.Bind(wx.EVT_LEFT_DOWN, self.on_select)
+        self.image_ctrl.Bind(wx.EVT_LEFT_UP, self.on_mouse_1_up)
         self.image_ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down)
         self.Bind(wx.EVT_MENU, self.on_select_context)
 
@@ -110,13 +117,6 @@ class ImageTile(wx.Panel):
         self.update()
 
     def update(self):
-        self.image_ctrl.SetSize((self.GetSize().x - 10, self.GetSize().y - 10))
-        self.image_ctrl.SetPosition((self.GetSize().x / 12, 0))
-
-        size_y = self.GetSize().y - self.image_ctrl.GetSize().y + 3
-        self.text_ctrl.SetSize((self.GetSize().x, size_y))
-        self.text_ctrl.SetPosition((0, self.GetSize().y - self.text_ctrl.GetSize().y))
-
         if self.image is None:
             return
         else:
@@ -127,9 +127,9 @@ class ImageTile(wx.Panel):
         height = self.image.GetHeight()
 
         if width > height:
-            self.max_image_size = self.image_ctrl.GetSize().x
+            self.max_image_size = 40
         else:
-            self.max_image_size = self.image_ctrl.GetSize().y
+            self.max_image_size = 40
 
         if width > height:
             new_width = self.max_image_size
@@ -137,9 +137,6 @@ class ImageTile(wx.Panel):
         else:
             new_height = self.max_image_size
             new_width = self.max_image_size * (width / height)
-
-        new_height /= 1.2
-        new_width /= 1.2
 
         if new_height < 1:
             new_height = 1
@@ -160,10 +157,13 @@ class ImageTile(wx.Panel):
         self.text_ctrl.SetBackgroundColour(edPreferences.Colors.Image_Tile_Selected)
         self.Refresh()
 
-        constants.obs.trigger("OnResourceTileSelected", self.label)
+        constants.obs.trigger("OnResourceTileSelected", self.data)
 
         if evt:
             evt.Skip()
+
+    def on_mouse_1_up(self, evt):
+        evt.Skip()
 
     def on_deselect(self):
         self.is_selected = False
@@ -233,9 +233,9 @@ class ImageTile(wx.Panel):
 
 class ImageTilesPanel(ScrolledPanel):
     class State:
-        def __init__(self, selected_tile_index):
+        def __init__(self, selected_tiles: list):
             """Class representing state of ImageTilesPanel"""
-            self.selected_tile_index = selected_tile_index
+            self.selected_tiles = selected_tiles
 
     class Options(wx.Window):
         """Class containing various settings and options for image_tiles_panel"""
@@ -249,27 +249,19 @@ class ImageTilesPanel(ScrolledPanel):
             self.sizer = wx.BoxSizer(wx.HORIZONTAL)
             self.SetSizer(self.v_sizer)
 
-            # create a search control
-            font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
-            bmp_1 = wx.Bitmap(constants.MAGNIFYING_GLASS_ICON, wx.BITMAP_TYPE_ANY)
-            bmp_2 = wx.Bitmap(constants.SEARCH_CANCEL_ICON, wx.BITMAP_TYPE_ANY)
-
-            self.search_control = wx.SearchCtrl(self)
-            self.search_control.SetWindowStyleFlag(wx.BORDER_NONE)
-            self.search_control.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
-            self.search_control.SetForegroundColour(wx.Colour(225, 225, 225, 255))
-            self.search_control.SetFont(font)
-            self.search_control.SetSearchBitmap(bmp_1)
-            self.search_control.SetCancelBitmap(bmp_2)
+            self.search_control = SearchBox(self)
 
             # create filter selection buttons
-            self.filter_buttons_grid = SelectionGrid(self, self.on_filter_btn_pressed)
+            self.filter_buttons_grid = ControlGroup(self)
 
-            inspector_panel_btn = SelectionButton(self.filter_buttons_grid, 0, Model_icon, "Models")
-            world_settings_btn = SelectionButton(self.filter_buttons_grid, 1, Texture_icon, "Textures",
-                                                 image_scale=13, image_pos=(3, 2), text_pos=(21, 2))
-            ed_settings_btn = SelectionButton(self.filter_buttons_grid, 2, Sound_icon, "Sounds")
-            plugins_panel_btn = SelectionButton(self.filter_buttons_grid, 3, Script_icon, "Scripts")
+            inspector_panel_btn = SelectionButton(self.filter_buttons_grid, 0, "Models", image_path=Model_icon)
+            world_settings_btn = SelectionButton(self.filter_buttons_grid, 1, "Textures",
+                                                 text_pos=(21, 2),
+                                                 image_path=Texture_icon,
+                                                 image_pos=(3, 2),
+                                                 image_scale=13)
+            ed_settings_btn = SelectionButton(self.filter_buttons_grid, 2, "Sounds", image_path=Sound_icon)
+            plugins_panel_btn = SelectionButton(self.filter_buttons_grid, 3, "Scripts", image_path=Script_icon)
 
             self.filter_buttons_grid.add_button(inspector_panel_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
             self.filter_buttons_grid.add_button(world_settings_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
@@ -289,9 +281,10 @@ class ImageTilesPanel(ScrolledPanel):
             self.item_info_ctrl.SetForegroundColour(edPreferences.Colors.Panel_Light)
             font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD)
             self.item_info_ctrl.SetFont(font)
-            sizer.Add(self.item_info_ctrl, 1, wx.EXPAND | wx.TOP, border=1)
+            sizer.Add(self.item_info_ctrl, 1, wx.EXPAND | wx.TOP|wx.LEFT, border=2)
+            # -------------------------------------------------------------
 
-            self.sizer.Add(self.search_control, 1, wx.EXPAND, border=0)
+            self.sizer.Add(self.search_control, 1, wx.EXPAND | wx.LEFT, border=1)
             self.sizer.Add(self.filter_buttons_grid, 1, wx.EXPAND | wx.LEFT, border=1)
             self.v_sizer.Add(self.sizer, 1, wx.EXPAND)
             self.v_sizer.Add(self.panel, 1, wx.EXPAND | wx.TOP, border=1)
@@ -311,14 +304,25 @@ class ImageTilesPanel(ScrolledPanel):
     def __init__(self, parent, resource_tree=None):
         ScrolledPanel.__init__(self, parent)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
+        # self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
         constants.object_manager.add_object("ResourceTilesPanel", self)
 
-        self.options = self.Options(self)
+        self.options = self.Options(parent)
+        self.options.SetMaxSize((-1, 36))
+
         self.resource_tree = resource_tree
         self.parent = parent
         self.image_tiles = []
+        self.tiles = []
         self.saved_state = None
+
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.gridSizer = None
+        self.SetSizer(self.sizer)
+        # self.sizer.Add(self.options, 1, wx.EXPAND)
+
+        self.mouse_1_down = False
+        self.is_dragging = False
 
         self.icon_and_extension = {
             "generic": UnknownFile_icon,
@@ -351,8 +355,20 @@ class ImageTilesPanel(ScrolledPanel):
         }
 
         self.Bind(wx.EVT_SIZE, self.on_evt_resize)
+        self.Bind(wx.EVT_MOTION, self.on_evt_motion)
 
-    def add_tile(self, image, label, extension, data):
+    def on_evt_resize(self, evt):
+        if self.gridSizer:
+            self.gridSizer.Clear()
+        self.update_tiles()
+        evt.Skip()
+
+    def on_evt_motion(self, evt):
+        if self.SELECTED_TILE and self.mouse_1_down:
+            self.is_dragging = True
+        evt.Skip()
+
+    def create_tile(self, image, label, extension, data):
         tile = ImageTile(parent=self,
                          label=label,
                          extension=extension,
@@ -364,6 +380,10 @@ class ImageTilesPanel(ScrolledPanel):
 
         self.image_tiles.append(tile)
         tile.set_image(image)
+        tile.Hide()
+
+        # this is important otherwise, not all mouse events will be captured
+        tile.image_ctrl.Bind(wx.EVT_MOTION, self.on_evt_motion)
 
     def set_from_selections(self, selections):
         self.remove_all_tiles()
@@ -389,15 +409,22 @@ class ImageTilesPanel(ScrolledPanel):
                     image = self.icon_and_extension[extension]
                     selections_organized[extension].append((image, file_name, extension, file_path))
                 else:
-                    image = self.icon_and_extension[extension]
+                    image = self.icon_and_extension["generic"]
                     selections_organized["generic"].append((image, file_name, extension, file_path))
 
         for item in selections_organized.keys():
             value = selections_organized[item]
             for _item in value:
-                self.add_tile(_item[0], _item[1], _item[2], _item[3])
+                self.create_tile(_item[0], _item[1], _item[2], _item[3])
 
         self.update_tiles()
+
+    def select_tiles(self, tiles):
+        self.deselect_all()
+        for i in range(len(tiles)):
+            if tiles[i] in self.image_tiles:
+                tiles[i].on_select()
+                ImageTilesPanel.SELECTED_TILE = tiles[i]
 
     def deselect_all(self):
         for tile in self.image_tiles:
@@ -409,13 +436,15 @@ class ImageTilesPanel(ScrolledPanel):
         if self.GetSize().x <= 1:
             return
 
-        num_tiles = len(self.image_tiles)  #
-        tiles_per_row = math.floor(self.GetSize().x / self.TILE_SIZE)  # num tiles per row
-
-        if tiles_per_row <= 1:
+        num_tiles = len(self.image_tiles)
+        if num_tiles == 0:
             return
 
+        tiles_per_row = math.floor(self.GetSize().x / self.TILE_SIZE)  # num tiles per row
         num_rows = math.ceil(num_tiles / tiles_per_row)
+
+        self.gridSizer = wx.GridSizer(num_rows, tiles_per_row, 1, 0)
+        self.sizer.Add(self.gridSizer, 1, wx.EXPAND)
 
         tile_index = 0
         for i in range(num_rows):
@@ -426,44 +455,58 @@ class ImageTilesPanel(ScrolledPanel):
                 except IndexError:
                     break
 
-                tile.SetSize((self.TILE_SIZE, self.TILE_SIZE))
-
-                tile_pos_x = (self.TILE_SIZE * j * 1.02) + self.Tile_offset_x
-                tile_pos_y = (self.TILE_SIZE * i) + self.Tile_offset_y
-                tile.SetPosition((tile_pos_x, tile_pos_y))
+                tile.SetMinSize((self.TILE_SIZE, self.TILE_SIZE))
                 tile.update()
                 tile_index += 1
+
+                self.gridSizer.Add(tile, 0)
+                tile.Show()
+
+        self.gridSizer.Layout()
+        self.sizer.Layout()
+        self.SetupScrolling(scroll_x=True)
 
     def remove_all_tiles(self):
         for tile in self.image_tiles:
             tile.Destroy()
         self.image_tiles = []
         ImageTilesPanel.SELECTED_TILE = None
+        if self.gridSizer:
+            self.gridSizer.Clear()
         self.update_tiles()
 
-    def get_selected_tile(self, name=False):
+    def get_selected_tiles(self, paths=False):
+        selected = []
         if self.SELECTED_TILE is not None:
-            if name:
-                return ImageTilesPanel.SELECTED_TILE.image_path
+            if paths:
+                selected.append(self.SELECTED_TILE.data)
             else:
-                return ImageTilesPanel.SELECTED_TILE
+                selected.append(self.SELECTED_TILE)
+        return selected
 
-    def on_evt_resize(self, evt):
-        self.options.SetSize((self.GetSize().x, 36))
-        self.options.SetPosition((0, 0))
-        self.update_tiles()
-        evt.Skip()
+    def get_tiles(self, paths=False):
+        tiles = []
+        for i in range(len(self.image_tiles)):
+            if paths:
+                tiles.append(self.image_tiles[i].data)
+            else:
+                tiles.append(self.image_tiles[i].data)
+        return tiles
+
+    def get_tile_by_path(self, path):
+        for i in range(len(self.image_tiles)):
+            if self.image_tiles[i].data == path:
+                return self.image_tiles[i]
+        return None
 
     def save_state(self):
-        for i in range(len(self.image_tiles)):
-            if self.SELECTED_TILE == self.image_tiles[i]:
-                self.saved_state = ImageTilesPanel.State(i)
+        self.saved_state = ImageTilesPanel.State(self.get_selected_tiles(paths=True))
 
     def reload_state(self):
-        if self.saved_state:
-            self.deselect_all()
-            for i in range(len(self.image_tiles)):
-                if self.saved_state.selected_tile_index == i:
-                    self.image_tiles[i].on_select()
-                    self.SELECTED_TILE = self.image_tiles[i]
-                    break
+        all_tiles = self.get_tiles(paths=True)
+        found_tiles = []
+        for i in range(len(self.saved_state.selected_tiles)):
+            if self.saved_state.selected_tiles[i] in all_tiles:
+                tile = self.get_tile_by_path(self.saved_state.selected_tiles[i])
+                found_tiles.append(tile)
+        self.select_tiles(found_tiles)

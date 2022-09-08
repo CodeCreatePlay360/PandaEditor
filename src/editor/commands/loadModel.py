@@ -11,9 +11,9 @@ class LoadModel(Command):
 
     def do(self, *args, **kwargs):
         if self.is_actor:
-            self.model = self.app.level_editor.add_actor(self.path, select=kwargs.pop("select", True))
+            self.model = self.app.level_editor.add_actor(self.path)
         else:
-            self.model = self.app.level_editor.load_model(self.path, select=kwargs.pop("select", True))
+            self.model = self.app.level_editor.load_model(self.path)
 
     def undo(self):
         self.app.level_editor.remove_nps([self.model])

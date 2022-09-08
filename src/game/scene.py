@@ -1,5 +1,4 @@
 import panda3d.core as p3d_core
-from editor.utils import EdProperty
 
 
 class Scene:
@@ -22,15 +21,8 @@ class Scene:
         self.setup_2d_render()
 
         # -----------------------------------------
-        self.scene_lights = []   # all scene lights in one repository
-        self.scene_cameras = []  # all scene camera in one repository
-
-        # --------------------------------------------
-        # properties
-        self.skybox_path = ""
-        self.shadows = False
-
-        self._properties = []  # publicly editable properties for this scene, these should be removed from final build.
+        self.__scene_lights = []   # all scene lights in one repository
+        self.__scene_cameras = []    # all scene camera in one repository
 
     def setup_2d_render(self):
         """setup a 2d rendering"""
@@ -57,15 +49,34 @@ class Scene:
     def setup_3d_render(self):
         pass
 
-    def get_properties(self):
-        self._properties.clear()
-        prop = EdProperty.ObjProperty(name="skybox_path", value=self.skybox_path, _type=type(self.skybox_path),
-                                      obj=self)
-        self._properties.append(prop)
-        return self._properties
+    @property
+    def scene_lights(self):
+        def get_all_scene_lights(np):
+            for np_ in np.getChildren():
+                obj = np_.getPythonTag("PICKABLE")
+                if obj and obj.id in ["__PointLight__", "__SpotLight__", "__DirectionalLight__", "__AmbientLight__"]:
+                    lights.append(obj)
 
-    def has_ed_property(self, property_label):
-        for prop in self._properties:
-            if prop.name == property_label:
-                return True
-        return False
+                get_all_scene_lights(np_)
+
+        lights = []
+        get_all_scene_lights(self.render)
+        self.__scene_lights = lights
+
+        return self.__scene_lights
+
+    @property
+    def cameras(self):
+        def get_all_scene_cameras(np):
+            for np_ in np.getChildren():
+                obj = np_.getPythonTag("PICKABLE")
+                if obj and obj.id == "CameraNodePath":
+                    cameras.append(obj)
+
+                get_all_scene_cameras(np_)
+
+        cameras = []
+        get_all_scene_cameras(self.render)
+        self.__scene_cameras = cameras
+
+        return self.__scene_cameras

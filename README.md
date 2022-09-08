@@ -11,7 +11,7 @@ It has all the basic features of a level editor including
 * Project based approach
 * Scene graph
 * Resources browser
-* To extend the editor, there is also a complete support for **editor plugins**, the developers can create ( or maybe even sell ) their tools.
+* To extend the editor, there is a complete support for **editor plugins**, the developers can create ( or maybe even sell ) their tools.
 
 > If you found PandaEditor useful in any way, than consider giving it a star on GitHub.
 

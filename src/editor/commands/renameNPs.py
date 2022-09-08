@@ -12,8 +12,15 @@ class RenameNPs(Command):
 
     def do(self, *args, **kwargs):
         self.np.set_name(self.new_name)
-        constants.obs.trigger("OnRenameNPs", self.np, self.new_name)
+
+        inspector = constants.object_manager.get("InspectorPanel")
+        inspector.set_object(self.np, self.np.get_name(), self.np.get_properties())
 
     def undo(self):
         self.np.set_name(self.old_name)
-        constants.obs.trigger("OnRenameNPs", self.np, self.old_name)
+        scene_graph = constants.object_manager.get("SceneGraph")
+        inspector = constants.object_manager.get("InspectorPanel")
+
+        scene_graph.rename_item(self.np, self.np.get_name())
+        inspector.layout_object_properties(self.np, self.np.get_name(), self.np.get_properties())
+

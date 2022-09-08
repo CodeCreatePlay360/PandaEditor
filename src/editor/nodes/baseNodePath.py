@@ -1,23 +1,26 @@
 import editor.utils as ed_utils
+import uuid
 from panda3d.core import NodePath
 from panda3d.core import Vec3, LColor
 
 
 class BaseNodePath(NodePath):
-    def __init__(self, np, uid, *args, **kwargs):
+    def __init__(self, np, uid=None, copy=False, *args, **kwargs):
         NodePath.__init__(self, np)
 
-        self.uid = uid
-        self.path = kwargs.pop("path", None)  # path this resource is loaded from
+        self._id = "__NodePath__"
+        self.__tag = "default"
 
+        self.path = kwargs.pop("path", None)  # path this resource is loaded from
+        create_properties = kwargs.pop("create_properties", True)
+
+        self.__uuid = uid if uid is not None else uuid.uuid4().__str__()
         self.properties = []
         self._save_data_info = {}
         self._save_data = []
 
-        self.create_properties()
-        self.create_save_data()
-
-        self.setPythonTag("PICKABLE", self)
+        if create_properties:
+            self.create_properties()
 
     def create_properties(self):
         label = ed_utils.EdProperty.Label(name="Transform", is_bold=True)
@@ -51,30 +54,6 @@ class BaseNodePath(NodePath):
         self.properties.append(space)
         self.properties.append(label)
         self.properties.append(color)
-
-    def create_save_data(self):
-        # format = save_data["variable"] = [value or getter, setter]
-        self._save_data_info["Pos"] = [self.getPos, self.setPos]
-        self._save_data_info["Rot"] = [self.getHpr, self.setHpr]
-        self._save_data_info["Scale"] = [self.getScale, self.setScale]
-        self._save_data_info["Parent"] = [self.get_parent, self.reparent_to]
-        self._save_data_info["Color"] = [self.get_ed_colour, self.set_ed_colour]
-
-    def save_data(self):
-        self._save_data.clear()
-
-        for key in self._save_data_info.keys():
-            prop = ed_utils.EdProperty.FuncProperty(name=key,
-                                                    value=self._save_data_info[key][0](),
-                                                    setter=self._save_data_info[key][1])
-            self._save_data.append(prop)
-
-    def restore_data(self):
-        for prop in self._save_data:
-            setter = prop.setter
-            setter(prop.val)
-
-        self.update_properties()
 
     def get_properties(self):
         return self.properties
@@ -116,11 +95,24 @@ class BaseNodePath(NodePath):
         color = LColor(r, g, b, a)
         return color
 
-    def on_remove(self):
-        pass
-
     def has_ed_property(self, name: str):
         for prop in self.properties:
             if prop.name == name:
                 return True
         return False
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def tag(self):
+        return self.__tag
+
+    @property
+    def uid(self):
+        return self.__uuid
+
+    @tag.setter
+    def tag(self, value):
+        self.__tag = value

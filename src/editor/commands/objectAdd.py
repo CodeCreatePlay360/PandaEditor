@@ -1,4 +1,5 @@
 from editor.commandManager import Command
+from editor.constants import obs
 
 
 class ObjectAdd(Command):
@@ -11,7 +12,9 @@ class ObjectAdd(Command):
         self.object = None
 
     def do(self, *args, **kwargs):
-        self.object = self.app.level_editor.add_object(self.path, select=kwargs.pop("select", True))
+        self.object = self.app.level_editor.add_object(self.path)
+        obs.trigger("OnAddNPs", [self.object])
 
     def undo(self):
         self.app.level_editor.remove_nps([self.object])
+        obs.trigger("OnRemoveNPs", [self.object])

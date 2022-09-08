@@ -1,21 +1,24 @@
-from panda3d.core import Vec3, Vec2
+from panda3d.core import Vec3, Vec2, LVecBase2f, PerspectiveLens, OrthographicLens
 from editor.utils.exceptionHandler import try_execute, try_execute_1
 
 
 class Property:
-    def __init__(self, name, value, value_limit=None, _type=None):
+    def __init__(self, name, value, value_limit=None, _type=None, *args, **kwargs):
         self.name = name
         self.val = value
         self._type = _type
+        self.value_limit = value_limit
+        self.kwargs = kwargs
 
         self.is_valid = False
-        self.value_limit = value_limit
-        self.acceptable_value_limit_types = [int, float, Vec2, Vec3]
+        self.error_message = ""
 
         if _type is None:
             self._type = type(value)
         else:
             self._type = _type
+
+        self.acceptable_value_limit_types = [int, float, Vec2, Vec3]
 
     def get_name(self):
         return self.name
@@ -50,8 +53,8 @@ class Property:
 
 
 class ObjProperty(Property):
-    def __init__(self, name, value, obj, _type=None, value_limit=None):
-        super().__init__(name=name, value=value, _type=_type, value_limit=value_limit)
+    def __init__(self, name, value, obj, _type=None, value_limit=None, **kwargs):
+        super().__init__(name=name, value=value, _type=_type, value_limit=value_limit, **kwargs)
 
         self.obj = obj
 
@@ -71,8 +74,8 @@ class ObjProperty(Property):
 
 
 class FuncProperty(Property):
-    def __init__(self, name, value, value_limit=None, _type=None, setter=None, getter=None):
-        super().__init__(name=name, value=value, _type=_type, value_limit=value_limit)
+    def __init__(self, name, value, value_limit=None, _type=None, setter=None, getter=None, **kwargs):
+        super().__init__(name=name, value=value, _type=_type, value_limit=value_limit, **kwargs)
 
         self.setter = setter
         self.getter = getter
@@ -94,8 +97,8 @@ class FuncProperty(Property):
 
 
 class EmptySpace(Property):
-    def __init__(self, x, y):
-        super().__init__(name="", value=None, _type="space")
+    def __init__(self, x, y, **kwargs):
+        super().__init__(name="", value=None, _type="space", **kwargs)
 
         self.space_x = x  # horizontal spacing
         self.space_y = y  # vertical spacing
@@ -110,8 +113,8 @@ class EmptySpace(Property):
 
 
 class Label(Property):
-    def __init__(self, name, is_bold=False, text_color=None):
-        super().__init__(name=name, value=None, _type="label")
+    def __init__(self, name, is_bold=False, text_color=None, **kwargs):
+        super().__init__(name=name, value=None, _type="label", **kwargs)
 
         self.is_bold = is_bold
         self.text_color = text_color
@@ -126,10 +129,10 @@ class Label(Property):
 
 
 class ButtonProperty(Property):
-    def __init__(self, name, func):
+    def __init__(self, name, func, **kwargs):
         self.func = func
 
-        super().__init__(name=name, value=None, _type="button")
+        super().__init__(name=name, value=None, _type="button", **kwargs)
 
     def validate(self):
         if self.func is None:
@@ -146,9 +149,9 @@ class ButtonProperty(Property):
 
 
 class ChoiceProperty(FuncProperty):
-    def __init__(self, name, choices, value=None, setter=None, getter=None):
+    def __init__(self, name, choices, value=None, setter=None, getter=None, **kwargs):
         self.choices = choices
-        super().__init__(name=name, value=value, _type="choice", setter=setter, getter=getter)
+        super().__init__(name=name, value=value, _type="choice", setter=setter, getter=getter, **kwargs)
 
     def validate(self):
         # choices must be greater than 1
@@ -197,8 +200,8 @@ class ChoiceProperty(FuncProperty):
 
 
 class Slider(FuncProperty):
-    def __init__(self, name, value, min_value, max_value, setter, getter):
-        FuncProperty.__init__(self, name=name, value=value, _type="slider", setter=setter, getter=getter)
+    def __init__(self, name, value, min_value, max_value, setter, getter, **kwargs):
+        FuncProperty.__init__(self, name=name, value=value, _type="slider", setter=setter, getter=getter, **kwargs)
 
         self._type = "slider"
 
@@ -230,8 +233,8 @@ class Slider(FuncProperty):
 
 
 class HorizontalLayoutGroup(Property):
-    def __init__(self,  properties=None, name="HorizontalLayoutGroup"):
-        Property.__init__(self, name=name, value=None, _type="horizontal_layout_group")
+    def __init__(self, properties=None, name="HorizontalLayoutGroup", *args, **kwargs):
+        Property.__init__(self, name=name, value=None, _type="horizontal_layout_group", **kwargs)
         if properties is None:
             properties = []
         self.properties = properties
@@ -242,10 +245,37 @@ class HorizontalLayoutGroup(Property):
             return
 
         for prop in self.properties:
-            prop.validate()
-            if not prop.is_valid:
-                self.is_valid = False
-                return
+            if isinstance(prop, Property):
+                prop.validate()
+                if not prop.is_valid:
+                    self.is_valid = False
+                    return
+            else:
+                print("HorizontalLayoutGroup: property {0} validation failed "
+                      "property must be instance of edUtils.Property object".format(prop))
+                self.properties.remove(prop)
+                continue
+
+        super().validate()
+
+
+class FoldoutGroup(Property):
+    def __init__(self, properties, name="Foldout", *args, **kwargs):
+        Property.__init__(self, name=name, value=None, _type="foldout_group", *args, **kwargs)
+        self.properties = properties
+
+    def validate(self):
+        for prop in self.properties:
+            if isinstance(prop, Property):
+                prop.validate()
+                if not prop.is_valid:
+                    self.is_valid = False
+                    return
+            else:
+                print("FoldoutGroup: property {0} validation failed "
+                      "property must be instance of edUtils.Property object".format(prop))
+                self.properties.remove(prop)
+                continue
 
         super().validate()
 
@@ -267,3 +297,35 @@ class InfoBox(Property):
 
     def get_text(self):
         return self.val
+
+
+class Utils:
+    @staticmethod
+    def get_properties_for_lens(lens):
+        if isinstance(lens, PerspectiveLens):
+            near_far = FuncProperty(name="Near-Far",
+                                    value=LVecBase2f(lens.get_near(), lens.get_far()),
+                                    setter=lambda val: lens.setNearFar(val.x, val.y),
+                                    getter=lambda: LVecBase2f(lens.get_near(), lens.get_far()))
+
+            fov = FuncProperty(name="Field Of View",
+                               value=lens.get_fov(),
+                               value_limit=Vec2(0.01, 0.01),
+                               setter=lens.set_fov,
+                               getter=lens.get_fov)
+
+            return [near_far, fov]
+
+        elif isinstance(lens, OrthographicLens):
+            near_far = FuncProperty(name="Near-Far",
+                                    value=LVecBase2f(lens.get_near(), lens.get_far()),
+                                    setter=lambda val: lens.setNearFar(val.x, val.y),
+                                    getter=lambda: LVecBase2f(lens.get_near(), lens.get_far()))
+
+            film_size = FuncProperty(name="FilmSize",
+                                     value=lens.getFilmSize(),
+                                     value_limit=Vec2(0.01, 0.01),
+                                     setter=lens.setFilmSize,
+                                     getter=lens.getFilmSize)
+
+            return [near_far, film_size]

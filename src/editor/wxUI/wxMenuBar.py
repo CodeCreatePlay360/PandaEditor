@@ -54,10 +54,10 @@ EVENT_MAP = {
     Evt_Add_Plane: ("AddObject", constants.PLANE_PATH),
     Evt_Add_Cube: ("AddObject", constants.CUBE_PATH),
 
-    Evt_Add_Sun_Light: ("AddLight", "DirectionalLight"),
-    Evt_Add_Point_Light: ("AddLight", "PointLight"),
-    Evt_Add_Spot_Light: ("AddLight", "SpotLight"),
-    Evt_Add_Ambient_Light: ("AddLight", "AmbientLight"),
+    Evt_Add_Sun_Light: ("AddLight", "__DirectionalLight__"),
+    Evt_Add_Point_Light: ("AddLight", "__PointLight__"),
+    Evt_Add_Spot_Light: ("AddLight", "__SpotLight__"),
+    Evt_Add_Ambient_Light: ("AddLight", "__AmbientLight__"),
 
     Evt_Add_Camera: ("AddCamera", None),
 
@@ -69,6 +69,8 @@ EVENT_MAP = {
     Evt_Save_UI_Layout: ("SaveUILayout", None),
     Evt_Load_UI_Layout: ("LoadUILayout", None),
 
+    Evt_Reload_Editor: ("EditorReload", None),
+
     Evt_Open_Discord: ("OpenSocialMediaLink", "Discord"),
     Evt_Open_Discourse: ("OpenSocialMediaLink", "Discourse"),
     Evt_Open_Patreon: ("OpenSocialMediaLink", "Patreon"),
@@ -76,11 +78,8 @@ EVENT_MAP = {
     Evt_Close_App: ("CloseApp", None)
 }
 
-
-
 UI_LAYOUT_EVENTS = {
-    Evt_Save_UI_Layout: "SaveUILayout"
-}
+    Evt_Save_UI_Layout: "SaveUILayout"}
 
 
 class WxMenuBar(wx.MenuBar):
@@ -88,7 +87,7 @@ class WxMenuBar(wx.MenuBar):
         wx.MenuBar.__init__(self)
         self.wx_main = wx_main
         self.user_layout_menus = {}
-        self.ed_plugins_menus = {}
+        self.plugin_menu_lst = {}
 
         self.build()
 
@@ -186,8 +185,8 @@ class WxMenuBar(wx.MenuBar):
         build_menu_bar(ed_menu, menu_items)
 
         # editor plugins menus
-        self.ed_plugin_menus = wx.Menu()
-        self.Append(self.ed_plugin_menus, "Plugins")
+        self.plugin_menu = wx.Menu()
+        self.Append(self.plugin_menu, "Plugins")
 
         # custom user command menus
         self.user_command_menus = wx.Menu()
@@ -210,19 +209,23 @@ class WxMenuBar(wx.MenuBar):
             self.user_layout_menus[_id] = name
 
     def add_plugin_menu(self, menu_name: str):
-        if menu_name not in self.ed_plugins_menus.values():
+        if menu_name not in self.plugin_menu_lst.values():
             _id = wx.NewId()
-            menu_item = wx.MenuItem(self.ed_plugin_menus, _id, menu_name)
-            self.ed_plugin_menus.Append(menu_item)
-            self.ed_plugins_menus[_id] = menu_name
+            menu_item = wx.MenuItem(self.plugin_menu, _id, menu_name)
+            self.plugin_menu.Append(menu_item)
+            self.plugin_menu_lst[_id] = menu_name
 
     def add_user_command_menu(self, menu_name: str):
         pass
 
-    def clear_plugin_menus(self):
-        pass
+    def clear_plugins_menu(self):
+        for menu in self.plugin_menu_lst.values():
+            pos = self.plugin_menu.FindItem(menu)
+            if pos >= 0:
+                self.plugin_menu.Remove(pos)
+        self.plugin_menu_lst.clear()
 
-    def clear_command_menus(self):
+    def clear_user_command_meun(self):
         pass
 
     def on_event(self, evt):
@@ -231,20 +234,24 @@ class WxMenuBar(wx.MenuBar):
             args = EVENT_MAP[evt.GetId()][1]
 
             if evt_name == "AddObject":
-                constants.command_manager.do(commands.ObjectAdd(constants.p3d_app, args))
+                constants.p3d_app.command_manager.do(commands.ObjectAdd(constants.p3d_app, args))
             elif evt_name == "AddLight":
-                constants.command_manager.do(commands.AddLight(constants.p3d_app, args))
+                constants.p3d_app.command_manager.do(commands.AddLight(constants.p3d_app, args))
             elif evt_name == "AddCamera":
-                constants.command_manager.do(commands.AddCamera(constants.p3d_app))
+                constants.p3d_app.command_manager.do(commands.AddCamera(constants.p3d_app))
+
+            elif evt_name == "SaveUILayout":
+                self.wx_main.save_current_layout()
+
             elif evt_name == "AddPanel":
-                constants.obs.trigger("LoadPanel", args)
+                self.wx_main.add_page(args)
             else:
                 constants.obs.trigger(evt_name, args)
 
-        elif evt.GetId() in self.ed_plugins_menus.keys():
-            constants.obs.trigger("OnPluginMenuEntrySelected", self.ed_plugins_menus[evt.GetId()])
-
         elif evt.GetId() in self.user_layout_menus.keys():
-            constants.obs.trigger("LoadUserLayout", self.user_layout_menus[evt.GetId()])
+            # load layout
+            self.wx_main.load_layout(self.user_layout_menus[evt.GetId()])
+        elif evt.GetId() in self.plugin_menu_lst.keys():
+            constants.obs.trigger("OnPluginMenuEntrySelected", self.plugin_menu_lst[evt.GetId()])
 
         evt.Skip()

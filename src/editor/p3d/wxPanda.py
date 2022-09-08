@@ -7,75 +7,26 @@ from direct.showbase.ShowBase import taskMgr
 from editor.constants import object_manager
 
 
-keyCodes = {
-    wx.WXK_SPACE: 'space',
-    wx.WXK_DELETE: 'del',
-    wx.WXK_ESCAPE: 'escape',
-    wx.WXK_BACK: 'backspace',
-    wx.WXK_CONTROL: 'control',
-    wx.WXK_ALT: 'alt',
-    wx.WXK_UP: 'arrow_up',
-    wx.WXK_DOWN: 'arrow_down',
-    wx.WXK_LEFT: 'arrow_left',
-    wx.WXK_RIGHT: 'arrow_right'
-}
-
-
-def on_key(evt, action=''):
-    """
-    Bind this method to a wx.EVT_KEY_XXX event coming from a wx panel or other
-    widget, and it will re_schedule wx 'eating' the event and passing it to Panda's
-    base class instead.
-    """
-    keyCode = evt.GetKeyCode()
-    if keyCode in keyCodes:
-        messenger.send(keyCodes[keyCode] + action)
-    elif keyCode in range(256):
-        # Test for any other modifiers. Add these in the order shift, control,
-        # alt
-        mod = ''
-        if evt.ShiftDown():
-            mod += 'shift-'
-        if evt.ControlDown():
-            mod += 'control-'
-        if evt.AltDown():
-            mod += 'alt-'
-        char = chr(keyCode).lower()
-        messenger.send(mod + char + action)
-
-
-def on_key_map(evt):
-    on_key(evt, '-up')
-
-
-def on_key_down(evt):
-    on_key(evt)
-
-
-def on_left_up(evt):
-    messenger.send('mouse1-up')
-
-
 class Viewport(wx.Panel):
     def __init__(self, *args, **kwargs):
         """
         Initialise the wx panel. You must complete the other part of the
-        init process by calling Initialize() once the wx-window has been
+        init process by calling Initialise() once the wx-window has been
         built.
         """
         wx.Panel.__init__(self, *args, **kwargs)
 
         self.wx_main = args[0]
         self._win = None
-        self.SetBackgroundColour("blue")
+        # self.SetBackgroundColour("blue")
 
-    def GetWindow(self):
+    def get_window(self):
         return self._win
 
-    def SetWindow(self, win):
+    def set_window(self, win):
         self._win = win
 
-    def Initialize(self, useMainWin=True):
+    def initialize(self, use_main_win=True):
         """
         The panda3d window must be put into the wx-window after it has been
         shown, or it will not size correctly.
@@ -90,98 +41,48 @@ class Viewport(wx.Panel):
         wp.setParentWindow(self.GetHandle())
 
         if self._win is None:
-            if useMainWin:
+            if use_main_win:
                 base.openDefaultWindow(props=wp, gsg=None)
                 self._win = base.win
             else:
                 self._win = base.openWindow(props=wp, makeCamera=0)
 
-        # list of all resource browser items(assets or models) being dragged in drag 
-        # operation
-        self.models = [] 
+        self.Bind(wx.EVT_SIZE, self.on_resize)
+        self.Bind(wx.EVT_CHAR, self.on_event)
 
-        self.Bind(wx.EVT_SIZE, self.OnResize)
-        self.Bind(wx.EVT_CHAR, self.OnEvent)
-
-    def OnOpen(self):
+    def on_open(self):
         wp = WindowProperties()
         wp.setOpen(True)
-        self.GetWindow().requestProperties(wp)
+        self.get_window().requestProperties(wp)
 
-    def OnClose(self):
+    def on_close(self):
         wp = WindowProperties()
         wp.setOpen(False)
-        self.GetWindow().requestProperties(wp)
+        self.get_window().requestProperties(wp)
 
-    def OnResize(self, event):
+    def on_resize(self, event):
         """When the wx-panel is resized, fit the panda3d window into it."""
-        frame_size = event.GetSize()
         wp = WindowProperties()
         wp.setOrigin(0, 0)
         size = self.GetSize()
         wp.setSize(size.x, size.y)
-        # wp.setSize(800, 600)
         self._win.requestProperties(wp)
         event.Skip()
         
-    def OnEvent(self, evt):
+    def on_event(self, evt):
         evt.Skip()
 
-    def OnMouseEnter(self):
-        le = self.wx_main.app.level_editor
+    def on_mouse1_up(self):
+        """this method is called from showbase, see showbase.finish_init"""
+        le = None
         resource_browser = object_manager.get("ProjectBrowser")
+        print("mouse enter")
 
-        if not resource_browser.mouse_left_down or not self.wx_main.app.on_mouse1_down:
-            return
-
-        '''
-        asset_paths = resource_browser.GetSelections()
-        self.models.clear()
-        # load paths from Resource_Handler
-        for path in asset_paths:
-            path = resource_browser.GetItemText(path)
-            if path in AssetsHandler.ASSETS_3D.keys():
-                model = AssetsHandler.ASSETS_3D[path]
-
-                # model.reparent_to(le.level_editor_render)
-                model = le.duplicate_object([model])[0]
-                model.setScale(7)
-                
-                self.models.append(model)
-        '''
-
-    def OnMouseLeave(self):
-        if len(self.models) > 0:
-            object_manager.get("ProjectBrowser").end_drag()
-
-    def OnMouseHover(self, x, y):
-        cam = self.wx_main.app.level_editor.app.show_base.ed_camera
-        mousePointer = self.wx_main.app.show_base.ed_mouse_watcher_node
-
-        for model in self.models:
-
-            # first check collision detection using mouse picker
-
-            # else
-            hoverX = mousePointer.getMouseX() * 20
-            hoverY = mousePointer.getMouseY() * 20
-            model.setPos(cam, Vec3(hoverX, 35, hoverY))
-
-    def OnMouseOneDown(self):
+    def on_hover(self, x, y):
+        """this method is called every frame from showbase.on_hover,
+        x = mouse pos x in screen coordinates and ranges from -1 to 1,
+        y = mouse pos y in screen coordinates and ranges from -1 to 1"""
         pass
-
-    def OnMouseOneUp(self):
-        self.models.clear()
-        # object_manager.get("ProjectBrowser").end_drag()
-        
-    def ScreenToViewport(self, x, y):
-        x = (x / float(self.GetSize()[0]) - 0.5) * 2
-        y = (y / float(self.GetSize()[1]) - 0.5) * -2
-        return x, y
-
-    def GetDroppedObject(self, x, y):
-        x, y = self.ScreenToViewport(x, y)
-        return self.app.selection.GetNodePathAtPosition(x, y)
 
 
 class App(wx.App, DirectObject):
@@ -189,19 +90,21 @@ class App(wx.App, DirectObject):
     Don't forget to bind your frame's wx.EVT_CLOSE event to the app's
     self.Quit method, or the application will not close properly.
     """
+    event_loop = None
+    old_loop = None
 
-    def ReplaceEventLoop(self):
-        self.evtLoop = wx.GUIEventLoop()
-        self.oldLoop = wx.EventLoop.GetActive()
-        wx.EventLoop.SetActive(self.evtLoop)
-        taskMgr.add(self.WxStep, 'evtLoopTask')
+    def replace_event_loop(self):
+        self.event_loop = wx.GUIEventLoop()
+        self.old_loop = wx.EventLoop.GetActive()
+        wx.EventLoop.SetActive(self.event_loop)
+        taskMgr.add(self.wx_step, 'evtLoopTask')
 
-    def OnDestroy(self, event=None):
-        self.WxStep()
-        wx.EventLoop.SetActive(self.oldLoop)
+    def on_destroy(self, event=None):
+        self.wx_step()
+        wx.EventLoop.SetActive(self.old_loop)
 
-    def Quit(self, event=None):
-        self.OnDestroy(event)
+    def quit(self, event=None):
+        self.on_destroy(event)
         try:
             base
         except NameError:
@@ -210,12 +113,12 @@ class App(wx.App, DirectObject):
 
     def start(self):
         while True:
-            self.WxStep()
+            self.wx_step()
 
-    def WxStep(self, task=None):
-        while self.evtLoop.Pending():
-            self.evtLoop.Dispatch()
-            self.evtLoop.ProcessIdle()
+    def wx_step(self, task=None):
+        while self.event_loop.Pending():
+            self.event_loop.Dispatch()
+            self.event_loop.ProcessIdle()
 
         if task is not None:
             return task.cont
