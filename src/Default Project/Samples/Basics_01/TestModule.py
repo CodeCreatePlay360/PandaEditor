@@ -1,6 +1,6 @@
 import math
 import panda3d.core as p3dCore
-from editor.core.runtimeModule import RuntimeModule
+from editor.core import RuntimeModule
 
 
 class TestModule(RuntimeModule):

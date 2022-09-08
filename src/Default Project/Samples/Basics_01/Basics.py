@@ -1,12 +1,12 @@
 import panda3d.core as p3dCore
 import direct.gui.DirectGui as gui
-from editor.core.runtimeModule import RuntimeModule
+from editor.core import RuntimeModule
 from editor.utils import EdProperty
 
 
 class Basics(RuntimeModule):
     def __init__(self, *args, **kwargs):
-        """__init__ should not be used for anything but variable declaration"""
+        """__init__ should not be used for anything except for variable declaration"""
 
         RuntimeModule.__init__(self, *args, **kwargs)
 
@@ -21,7 +21,7 @@ class Basics(RuntimeModule):
 
         # Custom properties --------------------------------------------------------------------
         # add some empty space
-        self.add_property(EdProperty.EmptySpace(0, 10))
+        self.add_property(EdProperty.EmptySpace(0, 55))
 
         # label property
         self.add_property(EdProperty.Label(name="Custom Properties", is_bold=True))
@@ -49,6 +49,39 @@ class Basics(RuntimeModule):
                                                     setter=self.set_choice,
                                                     getter=self.get_choice))
 
+        self.bool_a = True
+        properties = [EdProperty.ObjProperty("bool_a", self.bool_a, self)]
+        horizontal_layout_group = EdProperty.HorizontalLayoutGroup(properties)
+        self.add_property(horizontal_layout_group)
+
+        self.bool_b = False
+        properties = [EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
+                      ]
+        foldout_group = EdProperty.FoldoutGroup(properties)
+        self.add_property(foldout_group)
+
+        self.bool_c = False
+        properties = [EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
+                      ]
+        foldout_group = EdProperty.FoldoutGroup(properties)
+        self.add_property(foldout_group)
+
         # --------------------------------------------------------------------
         # attributes defined in Runtime module, they act as bridge between PandaEditor and Panda3d engine
         # self._win                : the window we are rendering into currently
@@ -60,11 +93,11 @@ class Basics(RuntimeModule):
         """on_start method is called only once"""
 
         # basic scene graph operations
-        np = self._render.find("**/cube.fbx")
-        camera_np = self._render.find("**/Camera")
+        np = self.render.find("**/cube.fbx")
+        camera_np = self.render.find("**/Camera")
 
         # get a reference to other runtime modules
-        test_module = self._game.get_module("TestModule")
+        test_module = self.game.get_module("TestModule")
         if test_module is not None:
             # foo is a method defined TestModule
             test_module.foo()
@@ -80,7 +113,7 @@ class Basics(RuntimeModule):
         b = gui.DirectButton(text=("OK", "click!", "rolling over", "disabled"), scale=.2,
                              command=self.on_direct_gui_btn_press)
         b.setPos((0, 0, 0))
-        b.reparent_to(self._aspect2d)
+        b.reparent_to(self.aspect2d)
 
     def on_update(self):
         """update method is called every frame"""
