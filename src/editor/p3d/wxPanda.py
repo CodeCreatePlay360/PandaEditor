@@ -2,9 +2,8 @@ import sys
 import wx
 
 from direct.showbase.DirectObject import DirectObject
-from panda3d.core import WindowProperties, Point3, Vec3
+from panda3d.core import WindowProperties
 from direct.showbase.ShowBase import taskMgr
-from editor.constants import object_manager
 
 
 class Viewport(wx.Panel):
@@ -71,12 +70,6 @@ class Viewport(wx.Panel):
         
     def on_event(self, evt):
         evt.Skip()
-
-    def on_mouse1_up(self):
-        """this method is called from showbase, see showbase.finish_init"""
-        le = None
-        resource_browser = object_manager.get("ProjectBrowser")
-        print("mouse enter")
 
     def on_hover(self, x, y):
         """this method is called every frame from showbase.on_hover,

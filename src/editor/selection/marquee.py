@@ -1,5 +1,5 @@
 from panda3d.core import NodePath, CardMaker, LineSegs, Point2
-from editor.p3d import SingleTask
+from editor.utils import SingleTask
 
 TOLERANCE = 1e-3
 

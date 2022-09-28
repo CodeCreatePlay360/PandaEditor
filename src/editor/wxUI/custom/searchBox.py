@@ -3,6 +3,9 @@ import editor.constants as constants
 
 
 TextBox_Cursor = constants.ICONS_PATH + "//" + "text_box_cursor.png"
+REFRESH_ICON = constants.ICONS_PATH + "//" + "arrow_refresh.png"
+MAGNIFYING_GLASS_ICON = constants.ICONS_PATH + "//" + "magnifyingGlassIcon.png"
+SEARCH_CANCEL_ICON = constants.ICONS_PATH + "//" + "cancel.png"
 
 
 class SearchBox(wx.Panel):
@@ -24,7 +27,7 @@ class SearchBox(wx.Panel):
         # bind events
 
     def create(self):
-        image = wx.Image(constants.MAGNIFYING_GLASS_ICON, type=wx.BITMAP_TYPE_ANY)
+        image = wx.Image(MAGNIFYING_GLASS_ICON, type=wx.BITMAP_TYPE_ANY)
         self.image_ctrl = wx.StaticBitmap(self, wx.ID_ANY, wx.Image.ConvertToBitmap(image))
         self.image_ctrl.SetBackgroundColour(wx.Colour(127, 127, 127, 255))
 

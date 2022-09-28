@@ -4,7 +4,8 @@ import wx.lib.agw.aui as aui
 from editor.wxUI.wxMenuBar import WxMenuBar
 from editor.wxUI.panels import *
 from editor.wxUI.wxDialogs import DialogManager
-from editor.constants import object_manager, obs, ICONS_PATH
+from editor.constants import ICONS_PATH
+from editor.globals import editor
 
 # scene events
 Evt_Open_Project = wx.NewId()
@@ -14,12 +15,17 @@ Evt_Save_Scene = wx.NewId()
 Evt_Save_Scene_As = wx.NewId()
 Evt_Append_Library = wx.NewId()
 
+# editor events
 Evt_Refresh = wx.NewId()
 
+# toolbar events
 Evt_Ed_Viewport_style = wx.NewId()
 Evt_Play = wx.NewId()
 Evt_Toggle_Scene_Lights = wx.NewId()
 Evt_Toggle_Sounds = wx.NewId()
+
+# auiNotebook events
+EVT_CLOSE_PAGE = wx.NewId()
 
 Event_Map = {
     Evt_Open_Project: ("OpenProject", None),
@@ -64,6 +70,7 @@ DISABLED_ICON = ICONS_PATH + "\\" + "disabled_icon.png"
 
 SELECT_ICON = ICONS_PATH + "\\" + "hand_point_090.png"
 
+# default layout for notebook tabs
 xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4" \
      "|panel631603e60000001c00000006=+2|panel631603ec0000002200000006=+3@layout2|name=dummy;caption=;state" \
      "=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=180;besth=180;minw=180;minh=180;maxw=-1;maxh=-1" \
@@ -83,27 +90,50 @@ xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631
 
 
 class AUINotebook(aui.AuiNotebook):
-    """
-    AUI Notebook class
-    """
-
-    # ----------------------------------------------------------------------
     def __init__(self, parent):
-        """Constructor"""
         aui.AuiNotebook.__init__(self, parent=parent)
-        self.default_style = aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TAB_EXTERNAL_MOVE | wx.NO_BORDER
-        self.SetWindowStyleFlag(self.default_style)
+        self.__active_pages = []  # keep track of all active pages
+
+    def AddPage(self, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap, control=None,
+                tooltip=""):
+        super().AddPage(page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap, control=None,
+                        tooltip="")
+
+    def InsertPage(self, page_idx, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap,
+                   control=None, tooltip=""):
+        self.__active_pages.append(caption)
+        super().InsertPage(page_idx, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap,
+                           control=None, tooltip="")
+
+    def DeletePage(self, page_idx):
+        self.RemovePage(page_idx)
+
+    def RemovePage(self, page_idx):
+        try:
+            self.__active_pages.remove(self.GetPageText(page_idx))
+        except ValueError:
+            # print("Unable to remove page {0} at index {1}".format(self.GetPageText(page_idx), page_idx))
+            pass
+        super().RemovePage(page_idx)
 
     def add_pages(self, pages):
         for page, name in pages:
-            self.AddPage(page, name, False)
+            self.AddPage(page, name, True)
+
+    def is_page_active(self, name):
+        return self.__active_pages.__contains__(name)
+
+
+class IndexAndPage:
+    def __init__(self, idx, page, label):
+        self.idx = idx
+        self.page = page
+        self.label = label
 
 
 class WxFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
-
-        object_manager.add_object("WxMain", self)
 
         # set the application icon
         icon_file = ICON_FILE
@@ -135,20 +165,19 @@ class WxFrame(wx.Frame):
 
         self.dialogue_manager = DialogManager()
 
-        self.ed_viewport_panel = Viewport(self)
-        self.inspector_panel = InspectorPanel(self)
-        self.log_panel = LogPanel(self.notebook)
-        self.resource_browser = ResourceBrowser(self)
-        self.scene_graph_panel = SceneBrowserPanel(self)
+        self.ed_viewport_panel = Viewport(self.notebook)
+        self.inspector_panel = InspectorPanel(self.notebook)
+        self.console_panel = LogPanel(self.notebook)
+        self.resource_browser = ResourceBrowser(self.notebook)
+        self.scene_graph_panel = SceneBrowserPanel(self.notebook)
 
         self.pages = [(self.ed_viewport_panel, "ViewPort"),
                       (self.inspector_panel, "Inspector"),
-                      (self.log_panel, "LogPanel"),
+                      (self.console_panel, "LogPanel"),
                       (self.resource_browser, "ResourceBrowser"),
                       (self.scene_graph_panel, "SceneGraph")]
 
-        # add panels to notebook
-        self.notebook.add_pages(self.pages)
+        self.notebook.add_pages(self.pages)  # add panels to notebook
 
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -164,18 +193,16 @@ class WxFrame(wx.Frame):
         self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
 
         self.notebook.LoadPerspective(xx)
-        perspective = self.notebook.SavePerspective()
-        self.saved_layouts["Default"] = perspective
-        self.menu_bar.add_layout_menu("Default")
+        self.save_layout("Default")
         self.Maximize(True)
 
-        self.Bind(wx.EVT_SIZE, self.on_evt_resize)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
+        # self.Bind(wx.EVT_SIZE, self.on_evt_resize)
+        # self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
+        # self.notebook.Bind(wx.EVT_MOVE, self.on_move)
+        # self.notebook.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_UP, self.on_evt_nb_right_up)
 
     def do_after(self):
-        for panel, name in self.pages:
-            panel.Bind(wx.EVT_SIZE, self.on_evt_resize)
         self.Show()
         self.thaw()
 
@@ -321,25 +348,46 @@ class WxFrame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ed_viewport_mode_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ply_btn)
 
-    def save_current_layout(self, name=None):
+    def on_save_current_layout(self):
         dial = wx.TextEntryDialog(None, "Enter layout name", "Layout", "")
         if dial.ShowModal() and dial.GetValue() != "" and dial.GetValue() not in self.saved_layouts.keys():
             name = dial.GetValue()
-            self.saved_layouts[name] = self.notebook.SavePerspective()
-            self.menu_bar.add_layout_menu(name)
+            self.save_layout(name)
+
+    def save_layout(self, name):
+        data = []
+        for i in range(self.notebook.GetPageCount()):
+            save_obj = IndexAndPage(idx=i, page=self.notebook.GetPage(i), label=self.notebook.GetPageText(i))
+            data.append(save_obj)
+
+        self.saved_layouts[name] = (data, self.notebook.SavePerspective())
+        self.menu_bar.add_ui_layout_menu(name)
+        self.saved_layouts.keys()
 
     def load_layout(self, layout):
         # check if layout exists
-        # close all notebook pages
-        # finally, load the layout
-        pass
+        self.freeze()
+        if self.saved_layouts.__contains__(layout):
+            for i in range(len(self.pages)):
+                self.notebook.RemovePage(0)
 
-    def add_page(self, page):
-        print(page)
+            saved_data = self.saved_layouts[layout][0]
+            for i in range(len(saved_data)):
+                self.notebook.InsertPage(saved_data[i].idx, saved_data[i].page, saved_data[i].label)
 
-    def delete_page(self, page):
-        """permanently deletes a panel and removes it from notebook"""
-        pass
+            self.notebook.LoadPerspective(self.saved_layouts[layout][1])  # finally, load perspective
+            self.notebook.Refresh()
+            self.notebook.Update()
+            self.save_layout(layout)  # update the layout
+        self.thaw()
+
+    def add_page(self, page: str):
+        for item in self.pages:
+            if item[1] == page:
+                if not self.notebook.is_page_active(item[1]):
+                    self.notebook.AddPage(item[0], item[1], False)
+                else:
+                    print("Page {0} already exists".format(item[1]))
 
     def set_status_bar_text(self, txt: str):
         self.status_bar.SetStatusText(txt)
@@ -347,21 +395,14 @@ class WxFrame(wx.Frame):
     def on_evt_toolbar(self, evt):
         if evt.GetId() in Event_Map:
             evt_name = Event_Map[evt.GetId()][0]
-            obs.trigger(evt_name)
+            editor.observer.trigger(evt_name)
         evt.Skip()
 
     def on_evt_left_down(self, evt):
         evt.Skip()
 
-    def on_evt_resize(self, event):
-        obs.trigger("ResizeEvent")
-        event.Skip()
-
-    def on_evt_page_close(self, page):
-        pass
-
     def on_event_close(self, event):
-        obs.trigger("CloseApp", close_wx=False)
+        editor.observer.trigger("CloseApp", close_wx=False)
         event.Skip()
 
     def freeze(self):

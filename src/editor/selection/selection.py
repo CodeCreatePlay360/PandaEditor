@@ -1,19 +1,17 @@
 import panda3d.core as pm
 
-from editor.p3d.object import Object
-from editor.p3d.marquee import Marquee
-from editor.p3d.mousePicker import MousePicker
+from editor.selection.marquee import Marquee
+from editor.selection.mousePicker import MousePicker
 from editor.constants import TAG_PICKABLE
 
 
-class Selection(Object):
-    def __init__(self, active_scene=None, *args, **kwargs):
-        Object.__init__(self, *args, **kwargs)
+class Selection:
+    def __init__(self, active_scene, *args, **kwargs):
 
         self.active_scene = active_scene
         self.append = False
-        self.selected_nps = []
-        self.previous_matrices = {}  # [np] = matrix
+        self.__selected_nps = []
+        self.previous_matrices = {}
 
         # Create a marquee
         self.marquee = Marquee('marquee', *args, **kwargs)
@@ -32,15 +30,15 @@ class Selection(Object):
             self.deselect_all()
 
         for np in nps:
-            self.selected_nps.append(np)
+            self.__selected_nps.append(np)
 
-        for np in self.selected_nps:
+        for np in self.__selected_nps:
             np.showTightBounds()
 
     def deselect_all(self):
-        for np in self.selected_nps:
+        for np in self.__selected_nps:
             np.hideBounds()
-        self.selected_nps.clear()
+        self.__selected_nps.clear()
 
     def start_drag_select(self, append=False):
         """
@@ -62,12 +60,12 @@ class Selection(Object):
         new_selections = []
 
         if self.append:
-            for np in self.selected_nps:
+            for np in self.__selected_nps:
                 new_selections.append(np)
         else:
             self.deselect_all()
 
-        for pick_np in self.rootNp.findAllMatches('**'):
+        for pick_np in self.active_scene.render.findAllMatches('**'):
             if pick_np is not None:
                 if self.marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_PICKABLE):
                     np = pick_np.getNetPythonTag("PICKABLE")
@@ -102,10 +100,17 @@ class Selection(Object):
 
     def get_top_np(self, np):
         top_np = np.get_parent()
-        if top_np == self.active_scene:
+        if top_np == self.active_scene.render:
             self.top_np = np.getPythonTag("PICKABLE")
             return
 
         top_np = top_np.getPythonTag("PICKABLE")
-        if top_np != self.active_scene and top_np is not None:
+        if top_np != self.active_scene.render and top_np is not None:
             self.get_top_np(top_np)
+
+    @property
+    def selected_nps(self):
+        selected = []
+        for np in self.__selected_nps:
+            selected.append(np)
+        return selected

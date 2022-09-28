@@ -6,19 +6,36 @@ from editor.utils import try_execute as safe_execute
 class Command(ABC):
     """Base abstract Command class"""
 
-    def __init__(self, app):
-        """app = panda3d app, throw_location = object calling this command,
-         execute_once = if False undo redo operation is supported"""
-
-        self.app = app
+    def __init__(self, *args, **kwargs):
+        pass
 
     @abstractmethod
     def do(self, *args, **kwargs):
         return
 
     @abstractmethod
-    def undo(self):
+    def undo(self, *args, **kwargs):
         return
+
+
+class EdCommand(Command):
+    """Base abstract Command class"""
+
+    def __init__(self, app):
+        """
+        app = panda3d app,
+        execute_once = if False undo redo operation is supported
+        """
+        Command.__init__(self)
+        self.app = app
+
+    @abstractmethod
+    def do(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def undo(self):
+        pass
 
 
 class CommandManager(object):
@@ -79,9 +96,7 @@ class CommandManager(object):
 
         if safe_execute(command.do, *args, **kwargs):
             self.push_undo_command(command)
-
-            # clear the redo stack when a new command was executed
-            self.redo_commands[:] = []
+            self.redo_commands[:] = []  # clear the redo stack when a new command was executed
 
     def undo(self, n=1):
         """Undo the last n commands. The default is to undo only the last

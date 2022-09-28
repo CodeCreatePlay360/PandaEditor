@@ -1,5 +1,5 @@
 from panda3d.core import Point3, Vec3, Plane, NodePath
-from editor.p3d.singleTask import SingleTask
+from editor.utils import SingleTask
 from editor.p3d import commonUtils as utils
 from editor.gizmos.constants import *
 

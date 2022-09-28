@@ -1,6 +1,6 @@
 from pandac.PandaModules import DirectionalLight
-from editor.p3d.object import Object
-from editor.p3d.mousePicker import MousePicker
+from editor.utils import Object
+from editor.selection.mousePicker import MousePicker
 
 
 class Manager(Object):

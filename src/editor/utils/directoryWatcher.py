@@ -1,7 +1,7 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import editor.constants as constants
 from direct.showbase.ShowBase import taskMgr
+from editor.globals import editor
 
 
 class DirEventProcessor(FileSystemEventHandler):
@@ -35,15 +35,15 @@ class DirEventProcessor(FileSystemEventHandler):
                 interested_events.append(file_name)
 
         if len(interested_events) > 0:
-            constants.obs.trigger("EditorReload", interested_events)
+            editor.observer.trigger("EditorReload", interested_events)
 
         self.received_events = []
 
 
 class DirWatcher:
     def __init__(self, *args, **kwargs):
-        self.observer = Observer()
-        self.observer.setDaemon(daemonic=True)
+        self.__observer = Observer()
+        self.__observer.setDaemon(daemonic=True)
         self.event_handler = DirEventProcessor()
         
         # an observer watch object is returned by self.observer.schedule method,
@@ -53,18 +53,18 @@ class DirWatcher:
         self.run()
 
     def run(self):
-        # self.observer.schedule(self.event_handler, self.project_path, recursive=True)
-        self.observer.start()
+        # print("Directory watcher initialized")
+        self.__observer.start()
         # self.observer.join()
 
     def schedule(self, path, append=True):
         if not append:
-            self.observer.unschedule_all()
+            self.__observer.unschedule_all()
 
-        observer_object = self.observer.schedule(self.event_handler, path, recursive=True)
+        observer_object = self.__observer.schedule(self.event_handler, path, recursive=True)
         self.observer_paths[path] = observer_object
         
     def unschedule(self, path):
         observer_object = self.observer_paths[path]
-        self.observer.unschedule(observer_object)
+        self.__observer.unschedule(observer_object)
         del self.observer_paths[path]

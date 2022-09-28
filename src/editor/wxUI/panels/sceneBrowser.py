@@ -6,6 +6,7 @@ import editor.edPreferences as edPreferences
 from panda3d.core import NodePath
 from editor.wxUI.custom import SearchBox
 from editor.commands import ReparentNPs, SelectObjects, RemoveObjects, RenameNPs
+from editor.globals import editor
 
 EVT_RENAME_ITEM = wx.NewId()
 EVT_REMOVE_ITEM = wx.NewId()
@@ -37,7 +38,6 @@ class SceneBrowser(customtree.CustomTreeCtrl):
     def __init__(self, parent, wx_main, *args, **kwargs):
         customtree.CustomTreeCtrl.__init__(self, parent, *args, **kwargs)
         self.wx_main = wx_main
-        constants.object_manager.add_object("SceneGraph", self)
         self.organize_tree = True  # organize a tree based on file_extensions
 
         # ---------------------------------------------------------------------------- #
@@ -126,9 +126,9 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         if len(selections) == 0:
             return
 
-        app = constants.object_manager.get("P3dApp")
-        le = constants.object_manager.get("LevelEditor")
-        app.command_manager.do(SelectObjects(app, selections, [np for np in le.selection.selected_nps], from_le=False))
+        app = editor.p3d_app
+        le = editor.level_editor
+        editor.command_mgr.do(SelectObjects(app, selections, [np for np in le.selection.selected_nps], from_le=False))
         evt.Skip()
 
     def on_begin_drag(self, evt):
@@ -201,8 +201,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         pass
 
     def remove_item(self):
-        app = constants.object_manager.get("P3dApp")
-        app.command_manager.do(RemoveObjects(app, self.get_selected_nps()))
+        editor.command_mgr.do(RemoveObjects(editor.p3d_app, self.get_selected_nps()))
         self.Refresh()
 
     def on_remove(self, nps):
@@ -287,8 +286,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
                     self.SetItemText(tree_item, new_name)
 
                     # finally, create the rename command
-                    app = constants.object_manager.get("P3dApp")
-                    app.command_manager.do(RenameNPs(app, np, old_name, new_name))
+                    editor.command_mgr.do(RenameNPs(editor.p3d_app, np, old_name, new_name))
 
         self.Refresh()
 
@@ -410,7 +408,6 @@ class TestDropTarget(wx.PyDropTarget):
         if not self.tree.can_drag_drop:
             return wx.DragError
         else:
-            app = constants.object_manager.get("P3dApp")
-            app.command_manager.do(ReparentNPs(app, nps, target_np))
+            editor.command_mgr.do(ReparentNPs(editor.p3d_app, nps, target_np))
 
         return d

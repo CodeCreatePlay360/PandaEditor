@@ -1,8 +1,8 @@
-from editor.commandManager import Command
-from editor.constants import obs
+from editor.commandManager import EdCommand
+from editor.globals import editor
 
 
-class AddCamera(Command):
+class AddCamera(EdCommand):
     def __init__(self, app, *args, **kwargs):
         super(AddCamera, self).__init__(app)
 
@@ -10,8 +10,8 @@ class AddCamera(Command):
 
     def do(self, *args, **kwargs):
         self.camera_np = self.app.level_editor.add_camera()
-        obs.trigger("OnAddNPs", [self.camera_np])
+        editor.observer.trigger("OnAddNPs", [self.camera_np])
 
     def undo(self):
         self.app.level_editor.remove_nps([self.camera_np])
-        obs.trigger("OnRemoveNPs", [self.camera_np])
+        editor.observer.trigger("OnRemoveNPs", [self.camera_np])

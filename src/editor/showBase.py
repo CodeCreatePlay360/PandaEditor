@@ -4,7 +4,7 @@ import editor.constants as constants
 from direct.showbase import ShowBase as sb
 from panda3d.core import NodePath, Camera, OrthographicLens, PGTop
 from editor.core import EditorCamera
-from direct.showbase.ShowBase import taskMgr
+from editor.globals import editor
 
 
 class ShowBase(sb.ShowBase):
@@ -19,14 +19,11 @@ class ShowBase(sb.ShowBase):
         self.ed_camera = None
         self.ed_camera_2d = None
 
-        self.player_camera = None
-
         self.dr = None
         self.dr2d = None
         self.edDr = None
         self.edDr2d = None
-        self.ed_aspect2d = None
-        self.game_dr = None
+        self.__ed_aspect2d = None
 
         self.ed_mouse_watcher = None
         self.ed_mouse_watcher_node = None
@@ -43,7 +40,7 @@ class ShowBase(sb.ShowBase):
 
         # Add the editor window, camera and pixel 2d to the list of forced
         # aspect windows so aspect is fixed when the window is resized.
-        self.forcedAspectWins.append((self.main_win, self.ed_camera, self.ed_aspect2d))
+        self.forcedAspectWins.append((self.main_win, self.ed_camera, self.__ed_aspect2d))
 
         # turn on per pixel lightning
         self.edRender.setShaderAuto()
@@ -98,8 +95,8 @@ class ShowBase(sb.ShowBase):
         self.edDr2d.setCamera(self.ed_camera_2d)
 
         # create an aspect corrected 2d scene graph
-        self.ed_aspect2d = self.edRender2d.attachNewNode(PGTop('EdAspect2d'))
-        self.ed_aspect2d.node().setMouseWatcher(self.ed_mouse_watcher_node_2d)
+        self.__ed_aspect2d = self.edRender2d.attachNewNode(PGTop('EdAspect2d'))
+        self.__ed_aspect2d.node().setMouseWatcher(self.ed_mouse_watcher_node_2d)
 
         # ------------------ 3d rendering setup ------------------ #
         # create editor root node behind render node, so we can keep editor only
@@ -124,7 +121,7 @@ class ShowBase(sb.ShowBase):
         self.ed_camera = EditorCamera(
             win=self.main_win,
             mouse_watcher_node=self.ed_mouse_watcher_node,
-            render2d=self.ed_aspect2d,
+            render2d=self.__ed_aspect2d,
             default_pos=(300, 150 + 300, 100 + 300),
         )
         self.ed_camera.reparentTo(self.edRender)
@@ -132,11 +129,6 @@ class ShowBase(sb.ShowBase):
         self.ed_camera.start()
 
         self.edDr.setCamera(self.ed_camera)
-
-        # create a game display region
-        self.game_dr = self.main_win.makeDisplayRegion(0, 0.4, 0, 0.4)
-        self.game_dr.setClearColorActive(True)
-        self.game_dr.setClearColor((0.8, 0.8, 0.8, 1.0))
 
     def clear_ed_aspect_2d(self):
         for np in self.aspect2d.getChildren():
@@ -148,14 +140,9 @@ class ShowBase(sb.ShowBase):
     def update_aspect_ratio(self):
         aspect_ratio = self.getAspectRatio(self.main_win)
 
-        try:
-            self.player_camera.node().getLens().setAspectRatio(aspect_ratio)
-        except:
-            self.player_camera = None
-
         # maintain aspect ratio pixel2d
-        if self.ed_aspect2d is not None:
-            self.ed_aspect2d.setScale(1.0 / aspect_ratio, 1.0, 1.0)
+        if self.__ed_aspect2d is not None:
+            self.__ed_aspect2d.setScale(1.0 / aspect_ratio, 1.0, 1.0)
 
         if self.ed_camera is not None:
             self.ed_camera.node().getLens().setAspectRatio(aspect_ratio)
@@ -166,4 +153,8 @@ class ShowBase(sb.ShowBase):
         editor pixel2d."""
         super(ShowBase, self).windowEvent(*args, **kwargs)
         self.update_aspect_ratio()
-        constants.obs.trigger("ResizeEvent")
+        editor.observer.trigger("ShowBaseResize")
+
+    @property
+    def ed_aspect2d(self):
+        return self.__ed_aspect2d

@@ -1,6 +1,6 @@
 from panda3d.core import CollisionTraverser, CollisionHandlerQueue, BitMask32
-from panda3d.core import CollisionNode, CollisionRay, NodePath
-from editor.p3d import SingleTask
+from panda3d.core import CollisionNode, CollisionRay
+from editor.utils import SingleTask
 
 
 class MousePicker(SingleTask):

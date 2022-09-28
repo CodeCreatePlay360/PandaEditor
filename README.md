@@ -9,48 +9,52 @@ It has all the basic features of a level editor including
 * Object Inspection
 * Console panel
 * Project based approach
-* Scene graph
+* Scene graph browser
 * Resources browser
-* To extend the editor, there is a complete support for **editor plugins**, the developers can create ( or maybe even sell ) their tools.
+* Scripting support
+* Custom components support 
+* To extend the editor, there is a complete support for editor plugins, the developers can create ( or maybe even sell ) their tools.
 
-> If you found PandaEditor useful in any way, than consider giving it a star on GitHub.
+> **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-#### Attributions
-PandaEditor is using the Gizmos package and InfoPanel from another open source project [link](https://github.com/Derfies/panda3d-editor).
-
-## Support
-**Maintaining PandaEditor and keeping it bug free takes a lot of time and effort, not to mention writing documentation and creating sample programs, so if you found PandaEditor useful in any way than consider supporting it on [Patreon](https://www.patreon.com/PandaEditor_?fan_landing=true) page.**
-
-#### Dependencies
+## Dependencies
 1. Panda3d
 2. WxPython
 3. Python WatchDog
+4. TypeEnforce
 
-#### Install
-1. Clone / download this repository
+## Install
+**Installiation process is fairly simple, first your need to install all dependencies**
+1. Panda3d
+2. pip install WxPython
+3. pip install watchdog
+4. pip install type_enforced  
+**Finally, to install PandaEditor**
+1. Download this repository and
 2. Run main.py
 
 ## Manual
 * [Starting a new project](https://github.com/barbarian77/PandaEditor#starting-a-new-project "")
-* [Assets management](https://github.com/barbarian77/PandaEditor#assets-management)
 * [Object manipulation](https://github.com/barbarian77/PandaEditor#object-manipulation)
-* [Runtime modules](https://github.com/barbarian77/PandaEditor#runtime-user-modules)
-* [Editor plugins](https://github.com/barbarian77/PandaEditor#editor-plugins)
-* [Other](https://github.com/barbarian77/PandaEditor#other)
+* Editor modes
+* [Editor resources](https://github.com/barbarian77/PandaEditor#assets-management)
+  * [Runtime modules](https://github.com/barbarian77/PandaEditor#runtime-user-modules)
+  * [Editor plugins](https://github.com/barbarian77/PandaEditor#editor-plugins)
+  * Text files
+  * Nodepath Component
+* [User commands]
+* [Scripting]
 * [Known issues](https://github.com/barbarian77/PandaEditor#known-issues)
+* [Roadmap]
 * [Getting started](https://github.com/barbarian77/PandaEditor#getting-started)
 * [Tutorials](https://github.com/barbarian77/PandaEditor#tutorials)
 
-### Starting a new project
+## Starting a new project
 PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is setup for you.
-Its located in current working directory and should not be deleted. You can use default project for any purpose, to create a new project
+It's located in current working directory and should not be deleted. You can use default project for any purpose, to create a new project
 **Menubar > Project > Start New Project** and choose a valid name and path.
 
-### Resource management
-* To import resources ( models, textures, shaders etc. ) in your project go to **Resource browser > ( select any folder) > Import Resources**.
-* You can also append a folder outside of your current working project, **Menubar > Project > AppendLibrary ( and select the folder containing resources you want to append for your project )**, editor will start monitoring changes to any appended directory, the appended resources exists in you project like any other imported resources.
-
-### Hot keys 
+## Object manipulation
 * **alt + right mouse button** to rotate
 * **alt + middle mouse** to dolly
 * **alt + left mouse button drag** to zoom
@@ -58,19 +62,29 @@ Its located in current working directory and should not be deleted. You can use 
 * **X** to remove / delete selected objects
 * **control + z** to undo
 
-### Runtime modules
+## Editor modes
+PandaEditor has two modes **EditorMode** and **GameMode**, at any given time editor can only be in one of two modes.  
+The **EditorMode** is your scene creation state, this is where you would set up your 2D or 3D scenes, program the game logic using **RuntimeModules** and define object behaviors by using  or nodepath **Components**.  
+The game logic and object behaviors defined during editor mode are executed in game mode, the game mode is also what you would expect as final game view.  
+
+## Editor resources
+In PandaEditor a resource is defined as the **"building blocks of your project, every editor resource is a file located on your computer"** commonly they include files such as images, audio, 3d model files or python scripts etc.  
+Some resources can be created from right inside the editor for example **editor plugins, runtime modules or NodePath Components**, other resources like audio or 3d models can be imported into your project.
+
+* To import resources ( models, textures, shaders etc. ) in your project go to **Resource browser > (select any folder, right click open context menu) > Import Resources**.
+* You can also append an external folder containing resources, **Menubar > Project > AppendLibrary (and select the folder containing resources you want to append for your project)**, editor will start monitoring changes to any appended directory, the appended folder / resources exists in you project like regular editor resources, however they are not directly imported in the project folder.
+* Some resources can be created from right inside the editor, **Resource browser > (select any folder, right click open context menu) > Add**.
+
+## Runtime modules
 
 ![Image](images//02.png)
 
-PandaEditor has two states **EditorState** and **GameState**.  
-The **EditorState** is your scene creation state, this is where you would set up your 2D or 3D scenes, write **runtime modules** and define object behaviors.  
-The object behaviors defined using **runtime modules** during editor state are executed in **GameState**, the game state is also what you would expect as final game view.  
-**Runtime modules** are simple python scripts, they are automatically loaded as resources, however for editor to consider any python script as a **runtime module**,
+One of the ways to program in PandaEditor is by using **RuntimeModules**, these are simple python scripts and are automatically loaded as an editor resource, however for editor to consider any python script as a **RuntimeModules**,
 
 * The class name should be exactly same as that of python file.
 * Class should inherit from **RuntimeModule** base class.
 
-Basic syntax of a **PandaEditor's runtime module**.
+Basic syntax of a **PandaEditor's RuntimeModule**.
 
 ```
 from editor.core.runtimeModule import RuntimeModule
@@ -119,11 +133,12 @@ class CharacterController(RuntimeModule):
 
 To get a complete listing of all base methods and attributes see **Basics.py** in sample programs included with default project.  
 To create a new user module **Resource Browser > Add > RuntimeModule**.  
-To see some example usages of user modules, see samples programs also included with the default project.  
+To see some example usages of user modules, see samples programs also included with the default project.
 
-### Editor plugins
-To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **runtime modules** editor plugins are executed only in **EditorState**.
-Same as with **runtime modules**, **the editor plugins** are python scripts and for the editor to consider any python script as an **editor plugin**,
+## Editor plugins
+
+To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **RuntimeModules** editor plugins are executed only in **EditorMode**.
+Same as with **RuntimeModules**, **the EditorPlugins** are python scripts and for the editor to consider any python script as an **EditorPlugin**,
 
 * The class name should be exactly same as that of python file.
 * Class should inherit from **EditorPlugin** base class.
@@ -147,7 +162,7 @@ class EdPlugin(EditorPlugin):
         pass
 ```
  
-And just like **runtime modules** the **EditorPlugin** base class also defines some base attributes and methods and act as a link between **PandaEditor**, **wxPython** and the **Panda3D engine**. 
+And just like **RuntimeModule** base class, the **EditorPlugin** base class also defines some base attributes and methods which act as a link between **PandaEditor**, **wxPython (the PandaEditor's UI framework)** and the **Panda3D engine**. 
 
 ```
 from editor.core.editorPlugin import EditorPlugin
@@ -165,17 +180,93 @@ class EdPlugin(EditorPlugin):
         le = self._le  # level editor
 ```
 
-To see an example usage of **editor plugins**, see **SampleEdPlugin.py** included with sample programs.
+To see an example usage of **EditorPlugins**, see **SamplePlugin.py** included with sample programs.
 
-### Other
-1. PandaEditor can also load plain text files as a resource, just import or create a new **.txt** file in your project like any other resource.  
-Click on any **.txt** files to display their contents in the **InspectorTab**. 
-  ![Image](images//03.png)
+## Text files
+PandaEditor also loads plain text files as a resource and the text can be viewed in inspector panel, you can use them to create short notes or simple instructions for other users.
 
-### Known issues
+![Image](images//03.png)
 
-### Getting started
+## Nodepath component
+A **Component** is another way to program in PandaEditor and provide similar functionality to that of a **RuntimeModule**, however they are not automatically executed, instead they must be attached to a NodePath in the scene graph and just like a **RuntimeModule** they are executed only in **GameMode**.  
+The Component has one neat property though, is that it provides a direct reference to the NodePath it is attached to which makes it better suited for defining per object behaviors, for example a character controller.  
+For PandaEditor to consider a python script as a **Component** 
+* The class name should be exactly same as that of python file.
+* Class should inherit from **Component** base class.
+
+Basic syntax of a component,
+```
+from editor.core.component import Component
+
+
+class EdPlugin(Component):
+    def __init__(self, *args, **kwargs):
+        Component.__init__(self, *args, **kwargs)
+
+    # on_start method is called once
+    def on_start(self):
+        self.set_pos(5, 0, 0)  # offset this nodepath by 5 units along x
+```
+
+* To attach a component to a NodePath, select the NodePath in the scene and simply drag the component script from file browser to the InspectorPanel.
+* You can have multiple components attached to a NodePath as well.  
+
+## User Commands
+The PandaEditor provide a way to automate repeated tasks through the **CommandManager** interface.  
+Each command is wrapped in a **Command** abstract class, added to commands stack using the base method **add_command** of an **EditorPlugin** and provide undo redo functionality as well.  
+To user commands are added under the **Command** menu of the menu-bar.  
+To create a new command
+1. First import the Command object and create a new command, actual command execution should be carried out in **do** method,
+
+```
+from editor.commandManager import Command
+
+
+class MyCommand(Command):
+    def __init__(self, *args, **kwargs):
+        Command.__init__(self, *args, **kwargs)
+
+    def do(self):
+        print("do something")
+
+    def undo(self):
+        print("undo something")
+```
+
+2. Finally, from the **__ init __** method of your editor plugin, create an instance of your command and add the command.
+
+```
+        command = MyCommand()
+        self.add_command("DoSomething", command)
+```
+
+You can also nest and group together similar commands for example,
+
+```
+        self.add_command("Math/Vector/Add", add)
+        self.add_command("Math/Vector/Multiply", multiply)
+        self.add_command("Math/Vector/Dot", dot)
+```
+
+Here is an sample code for a simple command that randomly offsets position of a NodePath.
+
+```
+```
+
+## Known issues
+1. Due to a known bug undo / redo cache has to be cleared as soon as GameMode is enabled, this is something that will be fixed as soon as possible.
+
+## Roadmap
+**(For version 1.0)**
+1. Add system to save and reload project and individual scenes.
+2. Object manipulation Gizmos need overhauling.
+
+## Getting started
 To get started, there are samples included with the default project, for a more step by step instructions go to tutorials section. 
 
 *****
 ## Tutorials
+1. [Hello world]()
+2. [Scripting basics]()
+
+****

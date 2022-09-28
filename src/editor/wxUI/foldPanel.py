@@ -1,7 +1,8 @@
 import wx
 import editor.edPreferences as edPreferences
 import editor.wxUI.custom as wx_custom
-from editor.constants import ICONS_PATH, obs
+from editor.constants import ICONS_PATH
+from editor.globals import editor
 
 Panel_Fold_size = 23.0
 
@@ -47,9 +48,9 @@ class FoldPanel(wx.Panel):
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)
         self.h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.static_line = wx.StaticLine(self, style=wx.SL_HORIZONTAL)
-        self.static_line.SetForegroundColour(edPreferences.Colors.Panel_Dark)
-        self.v_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=0)
+        # self.static_line = wx.StaticLine(self, style=wx.SL_HORIZONTAL)
+        # self.static_line.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+        # self.v_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=0)
         self.v_sizer.Add(self.h_sizer, 0, wx.EXPAND)
 
         self.SetSizer(self.v_sizer)
@@ -71,7 +72,8 @@ class FoldPanel(wx.Panel):
         self.wx_properties.append(_property)
 
     def set_controls(self, controls: list):
-        self.wx_properties.clear()
+        for prop in self.wx_properties:
+            prop.Destroy()
         self.wx_properties.extend(controls)
 
     def create_buttons(self):
@@ -190,7 +192,7 @@ class FoldPanel(wx.Panel):
         evt.Skip()
 
     def on_evt_left_up(self, evt):
-        obs.trigger("OnMouse1up", self)
+        editor.observer.trigger("OnMouse1up", self)
         evt.Skip()
 
     def on_evt_size(self, evt):

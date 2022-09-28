@@ -1,4 +1,4 @@
-import editor.utils as ed_utils
+from editor.utils import ObjectData, EdProperty
 from editor.core.resource import Resource
 
 
@@ -12,12 +12,15 @@ class UserModule(Resource):
         self.saved_data = None
 
     def save_data(self):
-        obj_data = ed_utils.ObjectData(self.class_instance.name)
+        obj_data = ObjectData(self.class_instance.name)
 
         # get all attributes of module and add them to object data
         for name, val in self.class_instance.get_savable_atts():
-            prop = ed_utils.EdProperty.Property(name, val)
-            obj_data.add_property(prop)
+            try:
+                prop = EdProperty.Property(name, val)
+                obj_data.add_property(prop)
+            except Exception:
+                pass
 
         self.saved_data = obj_data
 

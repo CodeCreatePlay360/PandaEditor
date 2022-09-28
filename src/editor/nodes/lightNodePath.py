@@ -16,8 +16,8 @@ class LightNp(BaseNodePath):
         copy = kwargs.pop("copy", False)
         if copy and np.hasPythonTag("PICKABLE"):
             np = np.getPythonTag("PICKABLE")
-            self.__intensity = np.get_intensity()
-            self.__ed_light_colour = np.get_color(normalized=False)
+            self.__intensity = np.intensity
+            self.__ed_light_colour = np.get_color()
             self.toggle_active(np.get_active_status())
 
     def create_properties(self):
@@ -27,14 +27,14 @@ class LightNp(BaseNodePath):
         label = ed_utils.EdProperty.Label(name="Light Properties", is_bold=True)
 
         colour = ed_utils.EdProperty.FuncProperty(name="Light Color",
-                                                  value=self.get_color(),
+                                                  value=self.__ed_light_colour,
                                                   setter=self.set_color,
-                                                  getter=self.get_color)
+                                                  getter=lambda: self.__ed_light_colour)
 
         intensity = ed_utils.EdProperty.FuncProperty(name="Color intensity",
-                                                     value=self.get_intensity(),
+                                                     value=self.__intensity,
                                                      setter=self.set_intensity,
-                                                     getter=self.get_intensity)
+                                                     getter=lambda: self.__intensity)
 
         is_active = ed_utils.EdProperty.FuncProperty(name="Is Active",
                                                      value=self.get_active_status(),
@@ -56,27 +56,16 @@ class LightNp(BaseNodePath):
         r = self.__ed_light_colour.x * self.__intensity
         g = self.__ed_light_colour.y * self.__intensity
         b = self.__ed_light_colour.z * self.__intensity
-
         color = LColor(r, g, b, 1)
         self.node().setColor(color)
 
-    def set_color(self, val, normalize=True):
-        # convert to panda3d colour range
-        if normalize:
-            r = ed_utils.common_maths.map_to_range(0, 255, 0, 1, val.x)
-            g = ed_utils.common_maths.map_to_range(0, 255, 0, 1, val.y)
-            b = ed_utils.common_maths.map_to_range(0, 255, 0, 1, val.z)
-        else:
-            r = val.x
-            g = val.y
-            b = val.z
+    def set_color(self, val):
+        self.setColor(LColor(val.x, val.y, val.z, 1))
+        self.__ed_light_colour = LColor(val.x, val.y, val.z, 1)
 
-        self.setColor(LColor(r, g, b, 1))
-        self.__ed_light_colour = LColor(r, g, b, 1)
-
-        r = r * self.__intensity
-        g = g * self.__intensity
-        b = b * self.__intensity
+        r = val.x * self.__intensity
+        g = val.y * self.__intensity
+        b = val.z * self.__intensity
         self.node().setColor(LColor(r, g, b, 1))
 
     def toggle_active(self, val):
@@ -84,20 +73,12 @@ class LightNp(BaseNodePath):
         if not self.__is_active:
             self.set_intensity(0.0)
 
-    def get_intensity(self):
-        return self.__intensity
-
-    def get_color(self, normalized=True):
-        if normalized:
-            r = ed_utils.common_maths.map_to_range(0, 1, 0, 255, self.__ed_light_colour.x)
-            g = ed_utils.common_maths.map_to_range(0, 1, 0, 255, self.__ed_light_colour.y)
-            b = ed_utils.common_maths.map_to_range(0, 1, 0, 255, self.__ed_light_colour.z)
-            return LColor(r, g, b, 255)
-        else:
-            return LColor(self.__ed_light_colour.x, self.__ed_light_colour.y, self.__ed_light_colour.z, 255)
-
     def get_active_status(self):
         return self.__is_active
+
+    @property
+    def intensity(self):
+        return self.__intensity
 
 
 class EdDirectionalLight(LightNp):
@@ -141,6 +122,7 @@ class EdPointLight(LightNp):
         super(EdPointLight, self).create_properties()
 
         attenuation = ed_utils.EdProperty.ChoiceProperty(name="Attenuation",
+                                                         value=self.get_attenuation(),
                                                          setter=self.set_attenuation,
                                                          getter=self.get_attenuation,
                                                          choices=['constant', 'linear', 'quadratic',
@@ -184,6 +166,7 @@ class EdSpotLight(LightNp):
         super(EdSpotLight, self).create_properties()
 
         attenuation = ed_utils.EdProperty.ChoiceProperty(name="Attenuation",
+                                                         value=self.get_attenuation(),
                                                          setter=self.set_attenuation,
                                                          getter=self.get_attenuation,
                                                          choices=['constant', 'linear', 'quadratic',

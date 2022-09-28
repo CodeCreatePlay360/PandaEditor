@@ -10,6 +10,7 @@ from editor.utils import PathUtils
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.custom import ControlGroup, SelectionButton
 from editor.wxUI.custom import SearchBox
+from editor.globals import editor
 
 
 # event ids for different event types
@@ -100,7 +101,6 @@ class ImageTile(wx.Panel):
         }
 
         self.image_ctrl.Bind(wx.EVT_LEFT_DOWN, self.on_select)
-        self.image_ctrl.Bind(wx.EVT_LEFT_UP, self.on_mouse_1_up)
         self.image_ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down)
         self.Bind(wx.EVT_MENU, self.on_select_context)
 
@@ -147,27 +147,21 @@ class ImageTile(wx.Panel):
         self.image_ctrl.SetBitmap(wx.Bitmap(self.image))
 
     def on_select(self, evt=None):
-        if self.parent.SELECTED_TILE:
-            self.parent.SELECTED_TILE.on_deselect()
-
-        self.parent.SELECTED_TILE = self
-        self.parent.options.set_item_info_text(self.data)
+        self.parent.deselect_all()
+        self.parent.select_tiles([self], False)
+        # self.parent.options.set_item_info_text(self.data)
 
         self.is_selected = True
         self.text_ctrl.SetBackgroundColour(edPreferences.Colors.Image_Tile_Selected)
         self.Refresh()
 
-        constants.obs.trigger("OnResourceTileSelected", self.data)
+        editor.observer.trigger("OnResourceTileSelected", self.data)
 
         if evt:
             evt.Skip()
 
-    def on_mouse_1_up(self, evt):
-        evt.Skip()
-
     def on_deselect(self):
         self.is_selected = False
-        self.parent.SELECTED_TILE = None
         self.text_ctrl.SetBackgroundColour(edPreferences.Colors.Image_Tile_BG)
         self.Refresh()
 
@@ -196,39 +190,33 @@ class ImageTile(wx.Panel):
         evt.Skip()
 
     def rename_item(self):
-        def on_ok(new_label):
+        def rename(new_label):
             if new_label != self.label:
                 PathUtils.rename(self.data, new_label, self.extension)
 
-        dm = constants.p3d_app.wx_main.dialogue_manager
-        dm.create_dialog("TextEntryDialog",
-                         "Rename Item",
-                         dm,
-                         descriptor_text="Rename Selection",
-                         ok_call=on_ok,
-                         initial_text=self.label)
+        dial = wx.TextEntryDialog(None, "Rename resource item", "Rename", self.label)
+        if dial.ShowModal():
+            rename(dial.GetValue())
 
     def duplicate_item(self):
         pass
 
     def delete_item(self):
-        def on_ok():
+        def remove():
             PathUtils.delete(self.data)
 
-        dm = constants.p3d_app.wx_main.dialogue_manager
-        dm.create_dialog("YesNoDialog",
-                         "Delete Item",
-                         dm,
-                         descriptor_text="Confirm remove selection(s) ?",
-                         ok_call=on_ok)
+        dial = wx.MessageDialog(None, "Confirm remove item ?", "Remove item",
+                                style=wx.YES_NO | wx.ICON_QUESTION).ShowModal()
+        if dial == wx.ID_YES:
+            remove()
 
     def load_model(self):
         path = self.data
-        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=False))
+        editor.command_mgr.do(commands.LoadModel(editor.p3d_app, path=path, is_actor=False))
 
     def load_actor(self):
         path = self.data
-        constants.command_manager.do(commands.LoadModel(constants.p3d_app, path=path, is_actor=True))
+        editor.command_mgr.do(commands.LoadModel(editor.p3d_app, path=path, is_actor=True))
 
 
 class ImageTilesPanel(ScrolledPanel):
@@ -295,7 +283,6 @@ class ImageTilesPanel(ScrolledPanel):
         def set_item_info_text(self, txt: str):
             self.item_info_ctrl.SetLabel(txt)
 
-    SELECTED_TILE = None
     TILES_PER_ROW = 5
     Tile_offset_x = 12
     Tile_offset_y = 42
@@ -304,25 +291,19 @@ class ImageTilesPanel(ScrolledPanel):
     def __init__(self, parent, resource_tree=None):
         ScrolledPanel.__init__(self, parent)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        # self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
-        constants.object_manager.add_object("ResourceTilesPanel", self)
 
         self.options = self.Options(parent)
         self.options.SetMaxSize((-1, 36))
 
         self.resource_tree = resource_tree
         self.parent = parent
-        self.image_tiles = []
-        self.tiles = []
-        self.saved_state = None
+        self.__tiles = []
+        self.__selected_tiles = []
+        self.__saved_state = None
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.gridSizer = None
         self.SetSizer(self.sizer)
-        # self.sizer.Add(self.options, 1, wx.EXPAND)
-
-        self.mouse_1_down = False
-        self.is_dragging = False
 
         self.icon_and_extension = {
             "generic": UnknownFile_icon,
@@ -355,17 +336,11 @@ class ImageTilesPanel(ScrolledPanel):
         }
 
         self.Bind(wx.EVT_SIZE, self.on_evt_resize)
-        self.Bind(wx.EVT_MOTION, self.on_evt_motion)
 
     def on_evt_resize(self, evt):
         if self.gridSizer:
             self.gridSizer.Clear()
         self.update_tiles()
-        evt.Skip()
-
-    def on_evt_motion(self, evt):
-        if self.SELECTED_TILE and self.mouse_1_down:
-            self.is_dragging = True
         evt.Skip()
 
     def create_tile(self, image, label, extension, data):
@@ -378,12 +353,9 @@ class ImageTilesPanel(ScrolledPanel):
                          position=(0, 0),
                          data=data)
 
-        self.image_tiles.append(tile)
+        self.__tiles.append(tile)
         tile.set_image(image)
         tile.Hide()
-
-        # this is important otherwise, not all mouse events will be captured
-        tile.image_ctrl.Bind(wx.EVT_MOTION, self.on_evt_motion)
 
     def set_from_selections(self, selections):
         self.remove_all_tiles()
@@ -419,28 +391,52 @@ class ImageTilesPanel(ScrolledPanel):
 
         self.update_tiles()
 
-    def select_tiles(self, tiles):
-        self.deselect_all()
-        for i in range(len(tiles)):
-            if tiles[i] in self.image_tiles:
-                tiles[i].on_select()
-                ImageTilesPanel.SELECTED_TILE = tiles[i]
+    def select_tiles(self, tiles, select=True):
+        if len(tiles) > 0:
+
+            self.deselect_all()
+
+            for i in range(len(tiles)):
+                if tiles[i] in self.__tiles:
+                    if select:
+                        tiles[i].on_select()
+                    self.__selected_tiles.append(tiles[i])
+
+            self.options.set_item_info_text(tiles[0].data)
+
+    def select_tiles_from_paths(self, paths, select=True):
+        if len(paths) > 0:
+
+            self.deselect_all()
+
+            for i in range(len(paths)):
+                if not os.path.exists(paths[i]):
+                    continue
+                tile = self.get_tile_from_path(paths[i])
+                if tile and tile in self.__tiles:
+                    if select:
+                        tile.on_select()
+                    self.__selected_tiles.append(tile)
+
+                self.options.set_item_info_text(tile.data)
 
     def deselect_all(self):
-        for tile in self.image_tiles:
+        for tile in self.__tiles:
             tile.on_deselect()
         self.options.set_item_info_text("No item selected.")
-        self.SELECTED_TILE = None
+        self.__selected_tiles.clear()
 
     def update_tiles(self):
         if self.GetSize().x <= 1:
             return
 
-        num_tiles = len(self.image_tiles)
+        num_tiles = len(self.__tiles)
         if num_tiles == 0:
             return
 
         tiles_per_row = math.floor(self.GetSize().x / self.TILE_SIZE)  # num tiles per row
+        if tiles_per_row == 0:
+            return
         num_rows = math.ceil(num_tiles / tiles_per_row)
 
         self.gridSizer = wx.GridSizer(num_rows, tiles_per_row, 1, 0)
@@ -451,7 +447,7 @@ class ImageTilesPanel(ScrolledPanel):
             for j in range(tiles_per_row):
 
                 try:
-                    tile = self.image_tiles[tile_index]
+                    tile = self.__tiles[tile_index]
                 except IndexError:
                     break
 
@@ -467,46 +463,36 @@ class ImageTilesPanel(ScrolledPanel):
         self.SetupScrolling(scroll_x=True)
 
     def remove_all_tiles(self):
-        for tile in self.image_tiles:
+        for tile in self.__tiles:
             tile.Destroy()
-        self.image_tiles = []
-        ImageTilesPanel.SELECTED_TILE = None
+        self.__tiles = []
+        self.__selected_tiles.clear()
         if self.gridSizer:
             self.gridSizer.Clear()
         self.update_tiles()
 
     def get_selected_tiles(self, paths=False):
         selected = []
-        if self.SELECTED_TILE is not None:
+        if len(self.__selected_tiles) > 0:
             if paths:
-                selected.append(self.SELECTED_TILE.data)
+                for tile in self.__selected_tiles:
+                    selected.append(tile.data)
             else:
-                selected.append(self.SELECTED_TILE)
+                for tile in self.__selected_tiles:
+                    selected.append(tile)
         return selected
 
     def get_tiles(self, paths=False):
         tiles = []
-        for i in range(len(self.image_tiles)):
+        for i in range(len(self.__tiles)):
             if paths:
-                tiles.append(self.image_tiles[i].data)
+                tiles.append(self.__tiles[i].data)
             else:
-                tiles.append(self.image_tiles[i].data)
+                tiles.append(self.__tiles[i].data)
         return tiles
 
-    def get_tile_by_path(self, path):
-        for i in range(len(self.image_tiles)):
-            if self.image_tiles[i].data == path:
-                return self.image_tiles[i]
+    def get_tile_from_path(self, path):
+        for i in range(len(self.__tiles)):
+            if self.__tiles[i].data == path:
+                return self.__tiles[i]
         return None
-
-    def save_state(self):
-        self.saved_state = ImageTilesPanel.State(self.get_selected_tiles(paths=True))
-
-    def reload_state(self):
-        all_tiles = self.get_tiles(paths=True)
-        found_tiles = []
-        for i in range(len(self.saved_state.selected_tiles)):
-            if self.saved_state.selected_tiles[i] in all_tiles:
-                tile = self.get_tile_by_path(self.saved_state.selected_tiles[i])
-                found_tiles.append(tile)
-        self.select_tiles(found_tiles)

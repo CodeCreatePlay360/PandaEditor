@@ -1,8 +1,10 @@
 import wx
 import wx.lib.colourchooser.pycolourchooser as colorSelector
 import editor.edPreferences as edPreferences
-from panda3d.core import Vec3, Vec2, LColor
-from editor.constants import obs, object_manager, ICONS_PATH
+from panda3d.core import LVecBase2f, LPoint2f, LVecBase3f, LPoint3f, LColor
+from editor.constants import ICONS_PATH
+from editor.globals import editor
+from editor.utils import common_maths
 
 # IDs
 ID_TEXT_CHANGE = wx.NewId()
@@ -45,13 +47,9 @@ class WxCustomProperty(wx.Window):
     def __init__(self, parent, prop=None, h_offset=1, *args, **kwargs):
         wx.Window.__init__(self, parent, *args)
         self.SetBackgroundColour(wx.Colour(edPreferences.Colors.Panel_Normal))
-        # self.SetWindowStyleFlag(wx.BORDER_DOUBLE)
         self.parent = parent
 
         self.property = prop
-        self.label = self.property.get_name()
-        self.value = self.property.get_value()
-
         self.trigger_property_modify_event = True
 
         self.h_offset = h_offset
@@ -64,7 +62,7 @@ class WxCustomProperty(wx.Window):
         self.control_label_font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         # ------------------------------------------------------------------------------
 
-        self.ed_property_labels = wx.StaticText(self, label=self.label.capitalize())
+        self.ed_property_labels = wx.StaticText(self, label=self.property.name.capitalize())
         self.ed_property_labels.SetFont(self.ed_property_font)
         self.ed_property_labels.SetForegroundColour(self.font_colour)
 
@@ -98,9 +96,9 @@ class WxCustomProperty(wx.Window):
         pass
 
     def set_value(self, val):
-        self.value = val
+        # self.value = val
         property_value = self.property.set_value(val)
-        obs.trigger("PropertyModified", self)
+        editor.observer.trigger("PropertyModified", self)
         return property_value
 
     def get_value(self):
@@ -126,10 +124,10 @@ class EmptySpace(WxCustomProperty):
         pass
 
     def get_x(self):
-        return self.property.space_x
+        return self.property.x
 
     def get_y(self):
-        return self.property.space_y
+        return self.property.y
 
 
 class LabelProperty(WxCustomProperty):
@@ -144,9 +142,9 @@ class LabelProperty(WxCustomProperty):
         if self.property.is_bold:
             self.font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.BOLD)
         else:
-            self.font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.NORMAL)
+            self.font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
 
-        self.ctrl_label = wx.StaticText(self, label=self.label)
+        self.ctrl_label = wx.StaticText(self, label=self.property.name)
         self.ctrl_label.SetFont(self.font)
         self.ctrl_label.SetForegroundColour(edPreferences.Colors.Bold_Label)
 
@@ -175,7 +173,7 @@ class IntProperty(WxCustomProperty):
 
         # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
-        self.sizer.Add(self.text_ctrl, 1, wx.Top, border=1)
+        self.sizer.Add(self.text_ctrl, 1, wx.TOP, border=1)
         self.sizer.AddSpacer(Control_Margin_Right)
 
         self.bind_events()
@@ -280,7 +278,7 @@ class StringProperty(WxCustomProperty):
 
         # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
-        self.sizer.Add(self.text_ctrl, 1, wx.Top, border=1)
+        self.sizer.Add(self.text_ctrl, 1, wx.TOP, border=1)
         self.sizer.AddSpacer(Control_Margin_Right)
 
         self.bind_events()
@@ -320,7 +318,7 @@ class BoolProperty(WxCustomProperty):
         # initial value
         self.toggle.SetValue(self.get_value())
         # add to sizer
-        if self.label == "":
+        if self.property.name == "":
             self.ed_property_labels.Destroy()
         else:
             self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
@@ -349,10 +347,7 @@ class ColorProperty(WxCustomProperty):
         def __init__(self, color_property, initial_val, *args, **kwargs):
             colorSelector.PyColourChooser.__init__(self, *args, **kwargs)
 
-            # the actual wx color property 
             self.color_property = color_property
-
-            # set the initial color value
             self.SetValue(initial_val)
 
         def onSliderMotion(self, evt):
@@ -381,38 +376,19 @@ class ColorProperty(WxCustomProperty):
             evt.Skip()
 
         def update(self):
-            val = self.GetValue()
-
-            colour = self.GetValue()
-
-            colour = wx.Colour(colour.red, colour.green, colour.blue, colour.alpha)
-            self.color_property.color_panel.SetBackgroundColour(colour)
-
-            # convert to panda3d colour object
-            colour = LColor(colour.red, colour.green, colour.blue, colour.alpha)
-            self.color_property.set_value(colour)
-
+            self.color_property.set_value(ColorProperty.get_panda3d_color_object(self.GetValue()))
             self.color_property.Refresh()
 
     class CustomColorDialog(wx.Dialog):
         def __init__(self, parent, initial_val, title, color_property):
-            super(ColorProperty.CustomColorDialog, self).__init__(parent,
-                                                                  title=title,
-                                                                  style=wx.DEFAULT_DIALOG_STYLE | wx.DIALOG_NO_PARENT
-                                                                        | wx.STAY_ON_TOP)
+            style = wx.DEFAULT_DIALOG_STYLE | wx.DIALOG_NO_PARENT | wx.STAY_ON_TOP
+            super(ColorProperty.CustomColorDialog, self).__init__(parent, title=title, style=style)
 
             self.SetBackgroundColour(wx.Colour(edPreferences.Colors.Panel_Normal))
             self.SetSize((490, 350))
 
             self.panel = wx.Panel(self)  # create a background panel
-
-            # create a py color selector
-            # self.color_selector = colorSelector.PyColourChooser(self.panel, -1)
-            self.color_selector = ColorProperty.CustomColorSelector(
-                color_property,
-                initial_val,
-                self.panel,
-                -1)
+            self.color_selector = ColorProperty.CustomColorSelector(color_property, initial_val, self.panel, -1)
 
             # create a sizer for panel and add color selector to it
             self.panel_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -426,7 +402,6 @@ class ColorProperty(WxCustomProperty):
 
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
-
         self.color_panel = None
 
     def create_control(self):
@@ -434,10 +409,7 @@ class ColorProperty(WxCustomProperty):
         self.color_panel = wx.Panel(self)
         self.color_panel.SetMaxSize((self.GetSize().x - self.ed_property_labels.GetSize().x - 8, 18))
         self.color_panel.SetWindowStyleFlag(wx.BORDER_SIMPLE)
-
-        property_val = self.get_value()
-        colour = wx.Colour(property_val.x, property_val.y, property_val.z, property_val.w)
-        self.color_panel.SetBackgroundColour(colour)
+        self.color_panel.SetBackgroundColour(ColorProperty.get_wx_color_object(self.get_value()))
 
         # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
@@ -447,24 +419,13 @@ class ColorProperty(WxCustomProperty):
         self.bind_events()
 
     def set_control_value(self, val):
-        # convert from panda3d.core.LColor to wx.Colour object
-        colour = wx.Colour(val.x, val.y, val.z, val.w)
-        self.color_panel.SetBackgroundColour(colour)
+        self.color_panel.SetBackgroundColour(ColorProperty.get_wx_color_object(val))
         self.Refresh()
 
     def on_evt_clicked(self, evt):
-        initial_val = self.get_value()
-
-        initial_val = wx.Colour(initial_val.x, initial_val.y,
-                                initial_val.z, alpha=initial_val.w)
-
-        x = ColorProperty.CustomColorDialog(None,
-                                            initial_val,
-                                            "ColorSelectDialog",
-                                            self)
+        value = ColorProperty.get_wx_color_object(self.get_value())
+        x = ColorProperty.CustomColorDialog(None, value, "ColorSelectDialog", self)
         x.Show()
-        # self.Refresh()
-
         evt.Skip()
 
     def on_evt_size(self, evt):
@@ -478,6 +439,28 @@ class ColorProperty(WxCustomProperty):
     def unbind_events(self):
         self.color_panel.Unbind(wx.EVT_LEFT_DOWN)
         self.Unbind(wx.EVT_SIZE)
+
+    @staticmethod
+    def get_wx_color_object(value):
+        """converts to wx colour value range from 0-1 range and return a wx color object"""
+
+        value = LColor(value.x, value.y, value.z, value.w)
+        value.x = common_maths.map_to_range(0, 1, 0, 255, value.x)
+        value.y = common_maths.map_to_range(0, 1, 0, 255, value.y)
+        value.z = common_maths.map_to_range(0, 1, 0, 255, value.z)
+        value.w = common_maths.map_to_range(0, 1, 0, 255, value.w)
+        return wx.Colour(value.x, value.y, value.z, value.w)
+
+    @staticmethod
+    def get_panda3d_color_object(value):
+        """converts to panda3d color value range from 0-255 range and return a panda3d.core.LColor object"""
+
+        value = wx.Colour(value.red, value.green, value.blue, value.alpha)
+        value.x = common_maths.map_to_range(0, 255, 0, 1, value.red)
+        value.y = common_maths.map_to_range(0, 255, 0, 1, value.green)
+        value.z = common_maths.map_to_range(0, 255, 0, 1, value.blue)
+        value.w = common_maths.map_to_range(0, 255, 0, 1, value.alpha)
+        return LColor(value.x, value.y, value.z, value.w)
 
 
 class ColourTemperatureProperty(WxCustomProperty):
@@ -515,13 +498,16 @@ class Vector2Property(WxCustomProperty):
         self.text_ctrl_x.SetValue(str(property_value.x))
         self.text_ctrl_y.SetValue(str(property_value.y))
 
+        # self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
+        # self.sizer.Add(self.text_ctrl, 1, wx.TOP, border=1)
+
         # add to sizer
-        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=Label_Top_Offset)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
 
         self.sizer.Add(label_x, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP, border=0)
+        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP, border=1)
         self.sizer.Add(label_y, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP, border=0)
+        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP, border=1)
 
         self.sizer.AddSpacer(Control_Margin_Right)
 
@@ -564,8 +550,8 @@ class Vector2Property(WxCustomProperty):
                 if p < self.property.value_limit.x:
                     p = self.property.value_limit.x
 
-            self.set_value(Vec2(h, p))
-            self.old_value = Vec2(h, p)
+            self.set_value(LVecBase2f(h, p))
+            self.old_value = LVecBase2f(h, p)
 
         else:
             # temporarily unbind events otherwise this will cause a stack overflow,
@@ -638,16 +624,16 @@ class Vector3Property(WxCustomProperty):
         self.text_ctrl_z.SetValue(str(z))
 
         # add to sizer
-        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=Label_Top_Offset)
+        self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
 
         self.sizer.Add(label_x, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP, border=0)
+        self.sizer.Add(self.text_ctrl_x, 1, wx.TOP, border=1)
 
         self.sizer.Add(label_y, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP, border=0)
+        self.sizer.Add(self.text_ctrl_y, 1, wx.TOP, border=1)
 
         self.sizer.Add(label_z, 0, wx.TOP, 3)
-        self.sizer.Add(self.text_ctrl_z, 1, wx.TOP, border=0)
+        self.sizer.Add(self.text_ctrl_z, 1, wx.TOP, border=1)
 
         self.sizer.AddSpacer(Control_Margin_Right)
 
@@ -701,8 +687,8 @@ class Vector3Property(WxCustomProperty):
                 if r < self.property.value_limit.x:
                     r = self.property.value_limit.x
 
-            self.set_value(Vec3(h, p, r))
-            self.old_value = Vec3(h, p, r)
+            self.set_value(LVecBase3f(h, p, r))
+            self.old_value = LVecBase3f(h, p, r)
 
         else:
             # self.text_ctrl_x.SetValue will call this method, so
@@ -752,7 +738,7 @@ class EnumProperty(WxCustomProperty):
             val = []
 
         self.choice_control = wx.Choice(self, choices=val)
-        self.choice_control.SetSelection(self.value)
+        self.choice_control.SetSelection(self.property.get_value())
 
         # add to sizer
         self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=Label_Top_Offset)
@@ -826,7 +812,7 @@ class ButtonProperty(WxCustomProperty):
         self.ed_property_labels.Destroy()
         del self.ed_property_labels
 
-        self.btn = wx.Button(self, label=self.property.get_name())
+        self.btn = wx.Button(self, label=self.property.name)
         self.btn.SetBackgroundColour(edPreferences.Colors.Panel_Light)
         self.btn.SetMaxSize((-1, self.GetSize().y))
         self.sizer.Add(self.btn, 1)
@@ -848,6 +834,23 @@ class HorizontalLayoutGroup(WxCustomProperty):
         super().__init__(parent, _property, *args, **kwargs)
         self.properties = []
 
+        self.property_styling_args = self.property.kwargs.pop("styling", None)  # input arguments for individual
+        # properties, when adding them to sizer in self.create_control
+
+        # first verify them
+        # arguments must be in form
+        # { property_index: (proportion, border, FLAGS) } see wx.BoxSizer documentation
+        # format_valid = True
+        # if self.property_styling_args:
+        #     if isinstance(self.property_styling_args, dict):
+        #         for key in self.property_styling_args.keys():
+        #             if not isinstance(key, int):
+        #                 format_valid = False
+
+        # if not format_valid:
+        #     print("Incorrect Property styling structure for {0},"
+        #           "must be {1}".format(self.property.label, "{property_index: (proportion, border, FLAGS)}"))
+
     def create_control(self):
         self.ed_property_labels.Destroy()
         del self.ed_property_labels
@@ -855,13 +858,17 @@ class HorizontalLayoutGroup(WxCustomProperty):
 
         for i in range(len(self.properties)):
             prop = self.properties[i]
-            prop.SetSize((-1, -1))
-            prop.SetMinSize((-1, -1))
 
-            border = prop.property.kwargs.pop("border", 0)
-            flag = prop.property.kwargs.pop("flag", wx.EXPAND)
-
-            self.sizer.Add(prop, border=border, flag=flag)
+            if not self.property_styling_args:
+                # -----------------------------------------------------
+                # default arguments to sizer if no styling is specified
+                if type(prop) in [Vector2Property, Vector3Property, IntProperty, FloatProperty, StringProperty]:
+                    self.sizer.Add(prop, 1, wx.EXPAND)
+                else:
+                    self.sizer.Add(prop, 0)
+                # -----------------------------------------------------
+            else:
+                pass
 
 
 FOLD_OPEN_ICON = ICONS_PATH + "\\" + "foldOpen_16.png"
@@ -973,15 +980,31 @@ class InfoBox(WxCustomProperty):
         self.info_text = _property.get_text()
         self.info_panel = None
 
-    def create_control(self):
-        self.ed_property_labels.Destroy()  # destroy the default property label
 
-        self.info_panel = wx.Panel(self)
-        self.info_panel.SetBackgroundColour(wx.YELLOW)
+# maps an editor property object to wx_property object
+# see editor.utils.property and editor.wxUI.wxCustomProperties
+Property_And_Type = {
+    int: IntProperty,
+    float: FloatProperty,
+    str: StringProperty,
+    bool: BoolProperty,
 
-        self.Bind(wx.EVT_SIZE, self.on_evt_size)
+    LVecBase2f: Vector2Property,
+    LPoint2f: Vector2Property,
 
-    def on_evt_size(self, evt):
-        self.info_panel.SetSize((self.GetSize().x - 22, 16))
-        self.info_panel.SetPosition((3, 2))
-        evt.Skip()
+    LVecBase3f: Vector3Property,
+    LPoint3f: Vector3Property,
+
+    LColor: ColorProperty,
+
+    "label": LabelProperty,
+    "choice": EnumProperty,
+    "button": ButtonProperty,
+    "slider": SliderProperty,
+    "space": EmptySpace,
+
+    "info_box": InfoBox,
+
+    "horizontal_layout_group": HorizontalLayoutGroup,
+    "foldout_group": FoldoutGroup,
+}

@@ -12,7 +12,7 @@ from editor.utils.exceptionHandler import try_execute
 from editor.utils import DirWatcher
 from thirdparty.wxCustom.imageTilesPanel import ImageTilesPanel
 from editor.utils import PathUtils
-from wx.lib.scrolledpanel import ScrolledPanel
+from editor.globals import editor
 
 # event ids for different event types
 EVT_NEW_DIR = wx.NewId()
@@ -78,23 +78,22 @@ class ResourceBrowser(wx.Panel):
     class State:
         """class representing a saved state of ResourceBrowser"""
 
-        def __init__(self, selected_items: list, selected_tiles: list):
-            self.selected_items = selected_items
-            self.selected_tiles = selected_tiles
+        def __init__(self, folders: list, tiles: list):
+            self.selected_folders = folders
+            self.selected_tiles = tiles
 
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
-        constants.object_manager.add_object("ResourceBrowser", self)
+        # constants.object_manager.add_object("ResourceBrowser", self)
 
         self.wx_main = args[0]
         self.splitter_win = wx.SplitterWindow(self)
 
-        self.resource_tree = ResourceTree(self.splitter_win, self.wx_main)
         self.tiles = ResourceTiles(self.splitter_win)
-        # self.tiles_panel = ImageTilesPanel(self.splitter_win, self.resource_tree)
+        self.tree = ResourceTree(self.splitter_win, self.wx_main, self.tiles.tiles_panel)
 
-        self.splitter_win.SplitVertically(self.resource_tree, self.tiles)
+        self.splitter_win.SplitVertically(self.tree, self.tiles)
         self.splitter_win.SetMinimumPaneSize(180)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.splitter_win, 1, wx.EXPAND)
@@ -104,14 +103,14 @@ class ResourceBrowser(wx.Panel):
 
 
 class ResourceTree(customtree.CustomTreeCtrl):
-    def __init__(self, parent, wx_main, *args, **kwargs):
+    def __init__(self, parent, wx_main, tiles_panel, *args, **kwargs):
         customtree.CustomTreeCtrl.__init__(self, parent, *args, **kwargs)
 
         self.parent = parent
         self.wx_main = wx_main
         self.organize_tree = True  # should tree be organized based on file extensions ?
 
-        constants.object_manager.add_object("ResourceTree", self)
+        self.tiles_panel = tiles_panel
 
         # ---------------------------------------------------------------------------- #
         self.SetBackgroundColour(edPreferences.Colors.Image_Tile_BG)
@@ -198,7 +197,8 @@ class ResourceTree(customtree.CustomTreeCtrl):
             data = self.GetItemData(item)
             selections.append((name, data))
 
-        constants.obs.trigger("OnResourceItemSelected", selections)
+        # constants.obs.trigger("OnSelectFolder", selections)
+        self.tiles_panel.set_from_selections(selections)
         evt.Skip()
 
     def on_item_activated(self, evt):
@@ -248,10 +248,9 @@ class ResourceTree(customtree.CustomTreeCtrl):
     def create_or_rebuild_tree(self, path, rebuild_event: bool):
         """rebuild a tree from scratch from argument path or rebuild tree from libraries if rebuild_event"""
         if not rebuild_event:
-            # then recreate it from scratch
-            # print("ResourceBrowser --> Building resources")
+            # clear libraries
+            self.remove_all_libs()
 
-            self.libraries.clear()
             self.resources.clear()
             self.name_to_item.clear()
             self.DeleteChildren(self.GetRootItem())
@@ -264,14 +263,14 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 self.resources[ext] = []
 
             # setup a default project library
-            tree_item = self.AppendItem(self.root_node, "Project", data=path, image=1)
-            self.libraries["Project"] = (path, tree_item)
+            # tree_item = self.AppendItem(self.root_node, "Project", data=path, image=1)
+            tree_item = self.append_library("Project", path)
 
             self.create_tree_from_dir(dir_path=path, parent=tree_item)
             self.Expand(tree_item)
+            # self.schedule_dir_watcher()
         else:
             print("[ResourceBrowser] Rebuilding resources")
-
             # TODO unschedule and re-schedule directory watcher
 
             self.resources.clear()
@@ -324,19 +323,29 @@ class ResourceTree(customtree.CustomTreeCtrl):
             path = self.libraries[key][0]
             self.dir_watcher.schedule(path)
 
-    def append_library(self, name, path):
+    def append_library(self, name, path, schedule=False):
         if name not in self.libraries.keys():
             tree_item = self.AppendItem(self.root_node, name, data=path, image=1)
             self.libraries[name] = (path, tree_item)
-            self.dir_watcher.schedule(path)
+            # print("[ResourceTree] AppendedLib name: {0} path: {1}".format(name, path))
+            if schedule:
+                self.dir_watcher.schedule(path)
+            return tree_item
         else:
             print("Library with name {0} already exists".format(name))
 
-    def remove_library(self, name):
+    def remove_library(self, name, remove_key=True):
+        path = self.libraries[name][0]
         tree_item = self.libraries[name][1]
         self.Delete(tree_item)
-        self.dir_watcher.unschedule(self.libraries[name])
-        del self.libraries[name]
+        self.dir_watcher.unschedule(path)
+        if remove_key:
+            del self.libraries[name]
+
+    def remove_all_libs(self):
+        for name in self.libraries.keys():
+            self.remove_library(name, remove_key=False)
+        self.libraries.clear()
 
     # ----------------- file explorer operations ----------------- #
     def on_file_op(self, op, *args, **kwargs):
@@ -406,7 +415,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
     def add_dir(curr_directory):
         """adds a new directory and returns it"""
 
-        def on_ok(_new_dir_name):
+        def create(_new_dir_name):
             if _new_dir_name == "":
                 return
 
@@ -421,12 +430,12 @@ class ResourceTree(customtree.CustomTreeCtrl):
             os.mkdir(new_dir)
             return _new_dir_name
 
-        wx_main = constants.object_manager.get("WxMain")
-        dm = wx_main.dialogue_manager
-        dm.create_dialog("TextEntryDialog", "New Directory", dm, descriptor_text="Enter name", ok_call=on_ok)
+        dial = wx.TextEntryDialog(None, "New Directory", "Enter name", "NewDirectory")
+        if dial.ShowModal():
+            create(dial.GetValue())
 
     def rename_item(self):
-        def on_ok(new_label):
+        def rename(new_label):
             if new_label == "":
                 print("[ResourceBrowser] Invalid item name}")
                 return
@@ -453,18 +462,18 @@ class ResourceTree(customtree.CustomTreeCtrl):
             else:
                 print("[ResourceBrowser]: Failed to rename item")
 
-        dm = self.wx_main.dialogue_manager
-        dm.create_dialog("TextEntryDialog",
-                         "Rename Item",
-                         dm, descriptor_text="Rename Selection",
-                         ok_call=on_ok,
-                         initial_text=self.GetItemText(self.GetSelection()))
+        old_name = self.GetItemText(self.GetSelections()[0])
+        dial = wx.TextEntryDialog(None, "Rename resource item", "Rename", old_name)
+        if dial.ShowModal():
+            new_name = dial.GetValue()
+            if new_name != old_name:
+                rename(new_name)
 
     def duplicate(self, *args):
         pass
 
     def remove_item(self, *args):
-        def on_ok():
+        def remove():
             selections = self.GetSelections()
             for item in selections:
                 item_text = self.GetItemText(item)
@@ -482,21 +491,18 @@ class ResourceTree(customtree.CustomTreeCtrl):
                         success = PathUtils.delete(item_path)
                     except PermissionError:
                         print("PermissionError")
-                        dialogue.Destroy()
                     finally:
                         if success:
                             del self.name_to_item[item_text]  # remove from name_to_items
                             self.Delete(item)
 
-        dm = self.wx_main.dialogue_manager
-        dialogue = dm.create_dialog("YesNoDialog",
-                                    "Delete Item",
-                                    dm,
-                                    descriptor_text="Confirm remove selection(s) ?",
-                                    ok_call=on_ok)
+        dial = wx.MessageDialog(None, "Confirm remove folder ?", "Remove item",
+                                style=wx.YES_NO | wx.ICON_QUESTION).ShowModal()
+        if dial == wx.ID_YES:
+            remove()
 
     def create_asset(self, _type):
-        def on_ok(text):
+        def create(text):
             if text == "":
                 return
 
@@ -507,11 +513,11 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 print("path already exists...!")
                 return
 
-            constants.obs.trigger("CreateAsset", _type, path)
+            editor.observer.trigger("CreateAsset", _type, path)
 
-        wx_main = constants.object_manager.get("WxMain")
-        dm = wx_main.dialogue_manager
-        dm.create_dialog("TextEntryDialog", "CreateNewAsset", dm, descriptor_text="New Asset Name", ok_call=on_ok)
+        dial = wx.TextEntryDialog(None, "Create New Asset", "New Asset Name", "NewAsset")
+        if dial.ShowModal():
+            create(dial.GetValue())
 
     def import_assets(self, *args):
         def create_wild_card(wild_card=""):
@@ -565,23 +571,31 @@ class ResourceTree(customtree.CustomTreeCtrl):
 
     def save_state(self):
         """saves the current state of tree e.g. currently selected tree items"""
-        selected_items = []
+        selected_folders = []
+
         for item in self.GetSelections():
             item_text = self.GetItemText(item)
-            selected_items.append(item_text)
+            path = self.GetItemData(item)
+            if os.path.exists(path):
+                selected_folders.append(item_text)
 
-        tiles_panel = constants.object_manager.get("ResourceTilesPanel")
-        self.saved_state = ResourceBrowser.State(selected_items, tiles_panel.get_selected_tiles())
+        self.saved_state = ResourceBrowser.State(selected_folders, self.tiles_panel.get_selected_tiles(paths=True))
 
     def reload_state(self):
         """reloads saved state"""
-        for item_text in self.saved_state.selected_items:
+
+        success = True
+        for item_text in self.saved_state.selected_folders:
             try:
                 self.SelectItem(self.name_to_item[item_text])
             except KeyError:
-                pass
-                # print("[ResourceTree] Key {0} was not found".format(item_text))
-                # self.SelectItem(self.name_to_item["Project"])
+                print("[ResourceTree] Key {0} was not found".format(item_text))
+                success = False
+                self.UnselectAll()
+                break
+
+        if success:
+            self.tiles_panel.select_tiles_from_paths(self.saved_state.selected_tiles)
 
     def can_do_drag_drop(self, drop_item):
         def is_ok_(item_):
@@ -597,6 +611,17 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 self.can_drag_drop = False
         for item in self.GetSelections():
             is_ok_(item)
+
+    def deselect_all_files(self):
+        self.tiles_panel.deselect_all()
+
+    @property
+    def selected_folders(self):
+        return self.get_selected_paths()
+
+    @property
+    def selected_files(self):
+        return self.tiles_panel.get_selected_tiles(paths=True)
 
 
 class TestDropSource(wx.DropSource):

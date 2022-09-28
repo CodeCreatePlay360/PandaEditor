@@ -1,12 +1,13 @@
 import wx
 import editor.edPreferences as edPreferences
-import editor.wxUI.wxCustomProperties as wxProperty
 import editor.constants as constants
 import editor.wxUI.custom as wx_custom
 from editor.utils import EdProperty as edProperty
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.foldPanel import FoldPanelManager
-from panda3d.core import LVecBase2f, LPoint2f, LVecBase3f, LPoint3f, LColor, PerspectiveLens, OrthographicLens
+from editor.wxUI.wxCustomProperties import Property_And_Type
+from editor.globals import editor
+
 
 # icon paths
 World_settings_icon = constants.ICONS_PATH + "//" + "globe.png"
@@ -14,10 +15,10 @@ Ed_settings_icon = constants.ICONS_PATH + "//" + "gear.png"
 Object_settings_icon = constants.ICONS_PATH + "//" + "box_closed.png"
 Plugin_icon = constants.ICONS_PATH + "//" + "plugin.png"
 
-Object_Inspector = "ObjectInspector"
-World_Inspector = "World"
-EditorSettings_Inspector = "Editor"
-PluginSettings_Inspector = "Plugins"
+Object_Inspector = 0
+World_Inspector = 1
+EditorSettings_Inspector = 2
+PluginSettings_Inspector = 3
 
 
 class TextPanel(wx.Panel):
@@ -43,51 +44,28 @@ class TextPanel(wx.Panel):
         self.Layout()
 
 
-class BaseInspectorPanel(ScrolledPanel):
+class BaseInspectorPanel(wx.Panel):
+    class FoldManagerPanel(ScrolledPanel):
+        """a sub scrolled-panel for adding the FoldManager"""
+        def __init__(self, parent):
+            ScrolledPanel.__init__(self, parent)
+            self.sizer = wx.BoxSizer(wx.VERTICAL)
+            self.SetSizer(self.sizer)
+            self.SetupScrolling(scroll_x=False)
+
     def __init__(self, parent, *args, **kwargs):
-        ScrolledPanel.__init__(self, parent, *args, **kwargs)
+        wx.Panel.__init__(self, parent, *args, **kwargs)
 
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        # self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
-
         self.wxMain = parent
-
-        self.property_and_type = {
-            int: wxProperty.IntProperty,
-            float: wxProperty.FloatProperty,
-            str: wxProperty.StringProperty,
-            bool: wxProperty.BoolProperty,
-
-            LVecBase2f: wxProperty.Vector2Property,
-            LPoint2f: wxProperty.Vector2Property,
-
-            LVecBase3f: wxProperty.Vector3Property,
-            LPoint3f: wxProperty.Vector3Property,
-
-            LColor: wxProperty.ColorProperty,
-
-            "label": wxProperty.LabelProperty,
-            "choice": wxProperty.EnumProperty,
-            "button": wxProperty.ButtonProperty,
-            "slider": wxProperty.SliderProperty,
-            "space": wxProperty.EmptySpace,
-
-            "info_box": wxProperty.InfoBox,
-
-            "horizontal_layout_group": wxProperty.HorizontalLayoutGroup,
-            "foldout_group": wxProperty.FoldoutGroup,
-
-            # "PerspectiveLens": PerspectiveLens,
-            # "OrthographicLens": OrthographicLens,
-        }
 
         self.property_and_name = {}
 
         self.object = None
         self.label = ""
         self.properties = []
-        self.wx_properties = []
 
+        self.fold_manager_panel = BaseInspectorPanel.FoldManagerPanel(self)
         self.fold_manager = None  # a FoldPanelManager for laying out variables of a python module
         self.text_panel = None  # a text_panel for displaying .txt files
 
@@ -98,8 +76,15 @@ class BaseInspectorPanel(ScrolledPanel):
         self.sel_btn_index = -1  # the index of selected button of selection grid.
         self.inspector_type_btns = self.create_selection_buttons()
 
-        self.Bind(wx.EVT_SIZE, self.on_event_size)
-        self.SetupScrolling()
+        self.__is_dirty = False
+
+        self.static_line = wx.StaticLine(self, style=wx.SL_HORIZONTAL)
+        self.static_line.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+        # self.v_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=0)
+
+        self.sizer.Add(self.inspector_type_btns, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border=5)
+        self.sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=1)
+        self.sizer.Add(self.fold_manager_panel, 1, wx.EXPAND)
 
     def create_selection_buttons(self):
         # create selection buttons
@@ -143,7 +128,6 @@ class BaseInspectorPanel(ScrolledPanel):
         self.inspector_type_btns_id_map[ed_settings_btn.button_index] = EditorSettings_Inspector
         self.inspector_type_btns_id_map[plugins_panel_btn.button_index] = PluginSettings_Inspector
 
-        self.sizer.Add(self.inspector_type_btns, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border=5)
         return self.inspector_type_btns
 
     def on_selection_button_select(self, sel_btn_index: int, **kwargs):
@@ -156,16 +140,17 @@ class BaseInspectorPanel(ScrolledPanel):
         is_text = False
         text = ""
 
-        le = constants.object_manager.get("LevelEditor")
-        resource_tiles = constants.object_manager.get("ResourceTilesPanel")
+        le = editor.level_editor
+        resource_tree = editor.resource_browser
+
         if inspector == Object_Inspector:
             if len(le.selection.selected_nps) > 0:
                 obj = le.selection.selected_nps[0]
                 self.object = obj
                 self.label = obj.get_name()
                 self.properties = obj.get_properties()
-            elif resource_tiles.SELECTED_TILE:
-                path = resource_tiles.SELECTED_TILE.data
+            elif len(resource_tree.selected_files) > 0:
+                path = resource_tree.selected_files[0]
                 if le.is_module(path):
                     self.object = le.get_module(path)
                     self.label = self.object.name
@@ -187,7 +172,7 @@ class BaseInspectorPanel(ScrolledPanel):
                 self.set_text(text)
                 return
             else:
-                constants.obs.trigger("DeselectAll")
+                editor.observer.trigger("DeselectAll")
                 txt = "Select an object in scene to view its inspector."
                 self.set_text(txt)
                 return
@@ -210,7 +195,56 @@ class BaseInspectorPanel(ScrolledPanel):
         self.layout(layout_object, name, properties, is_scene_obj)
 
     def set_object(self, obj, name, properties):
+        # TODO check if object is instance of Inspector interface
         self.layout(obj, name, properties)
+
+    def layout_auto(self):
+        """automatically create inspector based on selected inspector and selected scene object"""
+        # get the inspector
+        if self.sel_btn_index == -1:
+            return
+
+        inspector = self.inspector_type_btns_id_map[self.sel_btn_index]
+        if inspector in [World_Inspector, EditorSettings_Inspector, PluginSettings_Inspector]:
+            return
+
+        # get the selected scene object or resource item
+        # reset everything
+        self.object = self.properties = self.label = None
+
+        is_text = False
+        text = ""
+
+        le = editor.level_editor
+        resource_tree = editor.resource_browser
+        if inspector == Object_Inspector:
+            if len(le.selection.selected_nps) > 0:
+                obj = le.selection.selected_nps[0]
+                self.object = obj
+                self.label = obj.get_name()
+                self.properties = obj.get_properties()
+            elif len(resource_tree.selected_files) > 0:
+                path = resource_tree.selected_files[0]
+                if le.is_module(path):
+                    self.object = le.get_module(path)
+                    self.label = self.object.name
+                    self.properties = self.object.get_properties()
+                elif le.is_text_file(path):
+                    text = le.get_text_file(path).text
+                    is_text = True
+
+        layout_object = self.object if self.object else None  # the inspector to layout properties for
+
+        if layout_object:
+            name = self.label if self.label else "Object"  # it's name and
+            properties = self.properties if self.properties else []  # properties
+            self.layout(layout_object, name, properties, True)
+        elif is_text:
+            self.set_text(text)
+        else:
+            editor.observer.trigger("DeselectAll")
+            txt = "Select an object in scene to view its inspector."
+            self.set_text(txt)
 
     def layout(self, obj=None, name=None, properties=None, scene_obj=True):
         """Layout properties for a python class.
@@ -245,10 +279,9 @@ class BaseInspectorPanel(ScrolledPanel):
         self.properties = properties if properties else self.properties
         if self.properties is None:
             self.properties = []
-        self.wx_properties.clear()
 
-        self.fold_manager = FoldPanelManager(self)
-        self.sizer.Add(self.fold_manager, 1, wx.EXPAND, border=0)
+        self.fold_manager = FoldPanelManager(self.fold_manager_panel)
+        self.fold_manager_panel.sizer.Add(self.fold_manager, 1, wx.EXPAND, border=0)
 
         # add a fold panel
         fold_panel = self.fold_manager.add_panel(self.label[0].upper() + self.label[1:],
@@ -257,7 +290,7 @@ class BaseInspectorPanel(ScrolledPanel):
 
         # set toggle property for fold panel if toggle property is not None
         if toggle_property is not None:
-            wx_property = self.get_wx_prop_object(toggle_property, fold_panel, False)  # wrap into wx property object
+            wx_property = self.get_wx_prop_object(toggle_property, fold_panel, False)
 
             wx_property.SetSize((-1, 16))
             wx_property.SetMinSize((-1, 16))
@@ -272,57 +305,9 @@ class BaseInspectorPanel(ScrolledPanel):
         fold_panel.switch_expanded_state(False)
         fold_panel.Show()
 
-        self.SetupScrolling(scroll_x=False)
+        self.fold_manager_panel.SetupScrolling(scroll_x=False)
         self.sizer.Layout()
-
-    def layout_auto(self):
-        """automatically create inspector based on selected inspector and selected scene object"""
-        # get the inspector
-        if self.sel_btn_index == -1:
-            return
-        inspector = self.inspector_type_btns_id_map[self.sel_btn_index]
-
-        # only create layout for ObjectInspector
-        if inspector in [World_Inspector, EditorSettings_Inspector, PluginSettings_Inspector]:
-            return
-
-        # get the selected scene object or resource item
-        # reset everything
-        self.object = self.properties = self.label = None
-
-        is_text = False
-        text = ""
-
-        le = constants.object_manager.get("LevelEditor")
-        resource_tiles = constants.object_manager.get("ResourceTilesPanel")
-        if inspector == Object_Inspector:
-            if len(le.selection.selected_nps) > 0:
-                obj = le.selection.selected_nps[0]
-                self.object = obj
-                self.label = obj.get_name()
-                self.properties = obj.get_properties()
-            elif resource_tiles.SELECTED_TILE:
-                path = resource_tiles.SELECTED_TILE.data
-                if le.is_module(path):
-                    self.object = le.get_module(path)
-                    self.label = self.object.name
-                    self.properties = self.object.get_properties()
-                elif le.is_text_file(path):
-                    text = le.get_text_file(path).text
-                    is_text = True
-
-        layout_object = self.object if self.object else None  # the inspector to layout properties for
-
-        if layout_object:
-            name = self.label if self.label else "Object"  # it's name and
-            properties = self.properties if self.properties else []  # properties
-            self.layout(layout_object, name, properties, True)
-        elif is_text:
-            self.set_text(text)
-        else:
-            constants.obs.trigger("DeselectAll")
-            txt = "Select an object in scene to view its inspector."
-            self.set_text(txt)
+        self.__is_dirty = False
 
     def set_text_from_file(self, text_file):
         """set text from a .txt file"""
@@ -340,10 +325,16 @@ class BaseInspectorPanel(ScrolledPanel):
             self.sizer.Add(self.text_panel, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
             self.Layout()
 
-    def update_properties_panel(self, label=None, force_update_all=False):
+    def update(self, label=None, force_update_all=False):
         """updates the selected object's properties
         label : new label if None then existing label is used
         force_update_all : """
+
+        if self.__is_dirty:
+            editor.wx_main.freeze()
+            self.layout(self.object, self.label, self.properties)
+            editor.wx_main.thaw()
+            return
 
         if label:
             self.fold_manager.panels[0].label = label
@@ -352,17 +343,11 @@ class BaseInspectorPanel(ScrolledPanel):
         for key in self.property_and_name.keys():
             wx_prop = self.property_and_name[key]
 
-            # TODO can cause recursion, should be replaced with error message
-            # if the selected object does not contain this saved property, then layout again.
-            if not self.object.has_ed_property(wx_prop.label):
-                self.layout(self.object, self.label, self.properties)
-                break
-
             # don't update these
-            if wx_prop.property.get_type() in ["button"]:
+            if wx_prop.property.type_ in ["button"]:
                 continue
 
-            if not force_update_all and wx_prop.property.get_type() is "choice":
+            if not force_update_all and wx_prop.property.type_ is "choice":
                 continue
 
             # to avoid triggering on_event_text
@@ -380,9 +365,8 @@ class BaseInspectorPanel(ScrolledPanel):
         if ed_property.is_valid:
             wx_property = self.get_wx_prop_object(ed_property, parent, save)  # get wx object
             return wx_property
-        else:
-            print("{0} editor property validation failed".format(ed_property.name))
-            return False
+
+        return False
 
     def create_wx_properties(self, ed_properties, parent, save=True):
         """creates and returns a list of wx_properties from ed_property objects
@@ -394,14 +378,14 @@ class BaseInspectorPanel(ScrolledPanel):
                 properties.append(wx_property_obj)
         return properties
 
-    def get_wx_prop_object(self, _property, parent, save=True):
+    def get_wx_prop_object(self, property_, parent, save=True):
         wx_property = None
 
-        if self.property_and_type.__contains__(_property.get_type()):
-            wx_property = self.property_and_type[_property.get_type()]
-            wx_property = wx_property(parent, _property, h_offset=6)
+        if Property_And_Type.__contains__(property_.type_):
+            wx_property = Property_And_Type[property_.type_]
+            wx_property = wx_property(parent, property_)
 
-            if wx_property.property.get_type() == "horizontal_layout_group" or wx_property.property.get_type() == \
+            if wx_property.property.type_ == "horizontal_layout_group" or wx_property.property.type_ == \
                     "foldout_group":
                 wx_properties = self.create_wx_properties(wx_property.property.properties, wx_property, False)
                 wx_property.properties = wx_properties
@@ -415,12 +399,15 @@ class BaseInspectorPanel(ScrolledPanel):
             wx_property.on_control_created()
 
             if save:
-                self.property_and_name[_property.get_name()] = wx_property
+                self.property_and_name[property_.name] = wx_property
 
         return wx_property
 
     def has_object(self):
         return self.object is not None
+
+    def mark_dirty(self):
+        self.__is_dirty = True
 
     def reset(self):
         self.object = None
@@ -438,15 +425,5 @@ class BaseInspectorPanel(ScrolledPanel):
             self.fold_manager.Destroy()
             self.fold_manager = None
 
-        self.SetupScrolling(scroll_x=False)
+        self.fold_manager_panel.SetupScrolling(scroll_x=False)
         self.Layout()
-
-    def on_event_size(self, evt):
-        if self.text_panel is not None:
-            offset = wx.Size(self.GetSize().x - 5, -1)
-            self.text_panel.SetMaxSize(offset)
-            self.text_panel.SetMinSize(offset)
-
-        if evt:
-            evt.Skip()
-

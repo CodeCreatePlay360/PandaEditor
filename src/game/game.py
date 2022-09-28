@@ -2,6 +2,10 @@ import panda3d.core as p3d_core
 from game.scene import Scene
 from panda3d.core import WindowProperties
 
+# some static globals constants
+TAG_GAME_OBJECT = "GameObject"  # global tag for all nodepaths in scenegraph
+DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or Component regular UpdateTask
+
 
 class Game:
     """Game is entry point to what will go into your final build"""
@@ -12,7 +16,7 @@ class Game:
 
         self.show_base = kwargs.pop("show_base", None)
         self.win = kwargs.pop("win", None)
-        self.display_region = kwargs.pop("dr", None)  # TODO should be created here
+        self.display_region = None
         self.display_region_2d = None
         self.mouse_watcher_node = None
         self.mouse_watcher_node_2d = None
@@ -20,13 +24,11 @@ class Game:
         self.render = kwargs.pop("render", None)  # top level game render, individual
                                                   # scene renders should be re-parented to this.
 
-        self.setup_2d_display_region()
-        self.set_2d_mouse_watcher()
-        self.mouse_watcher_node_2d.set_display_region(self.display_region_2d)
+        self.setup_dr_2d()
+        self.setup_mouse_watcher_2d()
 
-        self.setup_3d_display_region()
-        self.setup_3d_mouse_watcher()
-        self.mouse_watcher_node.set_display_region(self.display_region)
+        self.setup_dr_3d()
+        self.setup_mouse_watcher_3d()
 
         self.game_modules = {}  # current loaded user modules
         self.scenes = []        # all scenes in this game
@@ -39,7 +41,7 @@ class Game:
         self.scenes.append(scene)
         return scene
 
-    def clear_active_3d_display_region(self):
+    def clear_active_dr_3d(self):
         self.display_region.setActive(False)
         self.display_region.setCamera(p3d_core.NodePath())
 
@@ -84,7 +86,7 @@ class Game:
         lst.sort()
 
         # late updates are to be executed after all updates have been executed
-        # the sort order of all updates should be set in a way, that messenger executes them after updates
+        # the sort order of all updates should be set in a way, that messenger executes them after all updates
         # TODO proper explanation
         start = lst[0]
         stop = lst[len(lst) - 1]
@@ -103,9 +105,18 @@ class Game:
 
             module.class_instance.ignore_all()
             module.class_instance.stop()
-            module.class_instance.clear_ui()
+            # module.class_instance.clear_ui()
             module.reload_data()
             self.hide_cursor(False)
+
+        for np in self.active_scene.render_2d.getChildren():
+            if np.get_name() == "__aspect_2d__" or np.get_name() == "Camera2d":
+                pass
+            else:
+                np.remove_node()
+
+        for np in self.active_scene.aspect_2d.getChildren():
+            np.remove_node()
 
     def hide_cursor(self, value: bool):
         if type(value) is bool:
@@ -116,23 +127,35 @@ class Game:
     def set_mouse_mode(self, mode):
         pass
 
-    def setup_2d_display_region(self):
+    def setup_dr_2d(self):
         self.display_region_2d = self.win.makeDisplayRegion()
         self.display_region_2d.setSort(20)
         self.display_region_2d.setActive(True)
         self.display_region_2d.set_dimensions((0, 0.4, 0, 0.4))
 
-    def set_2d_mouse_watcher(self):
+    def setup_mouse_watcher_2d(self):
         self.mouse_watcher_node_2d = p3d_core.MouseWatcher()
         self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node_2d)
+        self.mouse_watcher_node_2d.set_display_region(self.display_region_2d)
 
-    def setup_3d_display_region(self):
-        pass
+    def setup_dr_3d(self):
+        self.display_region = self.win.makeDisplayRegion(0, 0.4, 0, 0.4)
+        self.display_region.setClearColorActive(True)
+        self.display_region.setClearColor((0.8, 0.8, 0.8, 1.0))
 
-    def setup_3d_mouse_watcher(self):
+    def setup_mouse_watcher_3d(self):
         self.mouse_watcher_node = p3d_core.MouseWatcher()
         self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node)
+        self.mouse_watcher_node.set_display_region(self.display_region)
 
-    def set_3d_display_region_active(self, cam):
+    def set_active_cam(self, cam):
         self.display_region.set_active(True)
         self.display_region.set_camera(cam)
+        cam.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
+
+    def resize_event(self):
+        """should be called after a window has been resized"""
+        if self.active_scene.main_camera:
+            self.active_scene.main_camera.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
+
+        self.active_scene.aspect_2d.set_scale(1.0 / self.show_base.getAspectRatio(self.win), 1.0, 1.0)

@@ -1,6 +1,7 @@
 import wx
 import editor.commands as commands
 import editor.constants as constants
+from editor.globals import editor
 
 Evt_Create_Project = wx.NewId()
 Evt_Open_Project = wx.NewId()
@@ -11,6 +12,7 @@ Evt_Save_Scene_As = wx.NewId()
 Evt_Append_Library = wx.NewId()
 Evt_Build_Project = wx.NewId()
 
+Evt_Add_ViewPort_Panel = wx.NewId()
 Evt_Add_Inspector_Panel = wx.NewId()
 Evt_Add_Resource_Panel = wx.NewId()
 Evt_Add_Scene_Graph_Panel = wx.NewId()
@@ -19,6 +21,7 @@ Evt_Add_Console_Panel = wx.NewId()
 Evt_Save_UI_Layout = wx.NewId()
 Evt_Load_UI_Layout = wx.NewId()
 Evt_Reload_Editor = wx.NewId()
+PrintTaskMgr = wx.NewId()
 
 Evt_Add_Empty_NP = wx.NewId()
 Evt_Add_Camera = wx.NewId()
@@ -61,15 +64,17 @@ EVENT_MAP = {
 
     Evt_Add_Camera: ("AddCamera", None),
 
-    Evt_Add_Inspector_Panel: ("AddPanel", "ObjectInspectorPanel"),
-    Evt_Add_Resource_Panel: ("AddPanel", "ResourceBrowserPanel"),
-    Evt_Add_Scene_Graph_Panel: ("AddPanel", "SceneBrowserPanel"),
-    Evt_Add_Console_Panel: ("AddPanel", "ConsolePanel"),
+    Evt_Add_ViewPort_Panel: ("AddPanel", "ViewPort"),
+    Evt_Add_Inspector_Panel: ("AddPanel", "Inspector"),
+    Evt_Add_Resource_Panel: ("AddPanel", "ResourceBrowser"),
+    Evt_Add_Scene_Graph_Panel: ("AddPanel", "SceneGraph"),
+    Evt_Add_Console_Panel: ("AddPanel", "LogPanel"),
 
     Evt_Save_UI_Layout: ("SaveUILayout", None),
     Evt_Load_UI_Layout: ("LoadUILayout", None),
 
     Evt_Reload_Editor: ("EditorReload", None),
+    PrintTaskMgr: ("PrintTaskMgr", None),
 
     Evt_Open_Discord: ("OpenSocialMediaLink", "Discord"),
     Evt_Open_Discourse: ("OpenSocialMediaLink", "Discourse"),
@@ -86,10 +91,53 @@ class WxMenuBar(wx.MenuBar):
     def __init__(self, wx_main):
         wx.MenuBar.__init__(self)
         self.wx_main = wx_main
-        self.user_layout_menus = {}
-        self.plugin_menu_lst = {}
+        self.ui_layout_menus = {}
+        self.ed_plugin_menus = {}
+
+        self.commands = []
+        self.user_command_menu_items_id_map = {}
+        self.user_command_menus_id_map = {}
 
         self.build()
+
+        # test = wx.Menu()
+        # self.Append(test, "Test")
+        # menu_01 = "Math/AddNum"
+        # menu_02 = "Math/Subtract"
+        # menu_03 = "Math/Vector/Mul"
+        # menu_04 = "Math/Vector/Dot"
+        # menu_05 = "Math/Vector/Scalar/Dot"
+        # menu_06 = "Play/Mode/Level/Player"
+        # test_menus = {}
+
+        # 9/10/2022 took me about 4 hours to figure this out (from 10.30pm to 2.30am),
+        # ObaidUrRehman.
+        # def foo(menu, parent):
+        #     menu_ = menu.split("/")
+        #
+        #     for i in range(len(menu_)):
+        #         if i == len(menu_)-1:
+        #             item_id = parent.FindItem(menu_[(len(menu_)-2)])
+        #             parent_ = test_menus[parent.GetLabel(item_id)]
+        #             menu_item = wx.MenuItem(parent, -1, menu_[i])
+        #             parent_.Append(menu_item)
+        #             test_menus[menu_[i]] = menu_item
+        #         else:
+        #             if menu_[i] in test_menus.keys():
+        #                 continue
+        #             if i > 0 and menu_[i-1] in test_menus.keys():
+        #                 parent = test_menus[menu_[i-1]]
+        #
+        #             menu_item = wx.Menu()
+        #             parent.Append(-1, menu_[i], menu_item)
+        #             test_menus[menu_[i]] = menu_item
+        #
+        # foo(menu_01, parent=test)
+        # foo(menu_02, parent=test)
+        # foo(menu_03, parent=test)
+        # foo(menu_04, parent=test)
+        # foo(menu_05, parent=test)
+        # foo(menu_06, parent=test)
 
         self.Bind(wx.EVT_MENU, self.on_event)
 
@@ -164,10 +212,11 @@ class WxMenuBar(wx.MenuBar):
         panels = wx.Menu()
         self.Append(panels, "Panels")
 
-        menu_items = [(Evt_Add_Inspector_Panel, "Inspector", None),
+        menu_items = [(Evt_Add_ViewPort_Panel, "ViewPort", None),
+                      (Evt_Add_Inspector_Panel, "Inspector", None),
                       (Evt_Add_Resource_Panel, "ResourceBrowser", None),
                       (Evt_Add_Scene_Graph_Panel, "SceneGraph", None),
-                      (Evt_Add_Console_Panel, "ConsolePanel", None)]
+                      (Evt_Add_Console_Panel, "LogPanel", None)]
         build_menu_bar(panels, menu_items)
 
         # editor layout menus
@@ -181,7 +230,8 @@ class WxMenuBar(wx.MenuBar):
         ed_menu = wx.Menu()
         self.Append(ed_menu, "Editor")
 
-        menu_items = [(Evt_Reload_Editor, "Reload", None)]
+        menu_items = [(Evt_Reload_Editor, "Reload", None),
+                      (PrintTaskMgr, "PrintTaskMgr", None)]
         build_menu_bar(ed_menu, menu_items)
 
         # editor plugins menus
@@ -189,8 +239,8 @@ class WxMenuBar(wx.MenuBar):
         self.Append(self.plugin_menu, "Plugins")
 
         # custom user command menus
-        self.user_command_menus = wx.Menu()
-        self.Append(self.user_command_menus, "Commands")
+        self.user_command_menu = wx.Menu()
+        self.Append(self.user_command_menu, "Commands")
 
         # social media links menu
         social_links = wx.Menu()
@@ -201,31 +251,56 @@ class WxMenuBar(wx.MenuBar):
                       (Evt_Open_Patreon, "Patreon", None)]
         build_menu_bar(social_links, menu_items)
 
-    def add_layout_menu(self, name):
-        if name not in self.user_layout_menus.values():
+    def add_ui_layout_menu(self, name):
+        if name not in self.ui_layout_menus.values():
             _id = wx.NewId()
             menu_item = wx.MenuItem(self.ed_layout_menu, _id, name)
             self.ed_layout_menu.Append(menu_item)
-            self.user_layout_menus[_id] = name
+            self.ui_layout_menus[_id] = name
 
-    def add_plugin_menu(self, menu_name: str):
-        if menu_name not in self.plugin_menu_lst.values():
+    def add_ed_plugin_menu(self, menu_name: str):
+        if menu_name not in self.ed_plugin_menus.values():
             _id = wx.NewId()
             menu_item = wx.MenuItem(self.plugin_menu, _id, menu_name)
             self.plugin_menu.Append(menu_item)
-            self.plugin_menu_lst[_id] = menu_name
+            self.ed_plugin_menus[_id] = menu_name
 
-    def add_user_command_menu(self, menu_name: str):
-        pass
+    def add_user_command_menu(self, command_name: str):
+        menu_ = command_name.split("/")
 
-    def clear_plugins_menu(self):
-        for menu in self.plugin_menu_lst.values():
+        for i in range(len(menu_)):
+            if i == len(menu_) - 1:
+                if len(menu_) == 1:
+                    parent_ = self.user_command_menu
+                else:
+                    item_id = self.user_command_menu.FindItem(menu_[(len(menu_) - 2)])
+                    parent_ = self.user_command_menus_id_map[self.user_command_menu.GetLabel(item_id)]
+
+                id_ = wx.NewId()
+                menu_item = wx.MenuItem(self.user_command_menu, id_, menu_[i])
+                parent_.Append(menu_item)
+                # self.user_command_menu_items_id_map[id_] = menu_[i]
+                self.user_command_menu_items_id_map[id_] = command_name
+            else:
+                if menu_[i] in self.user_command_menus_id_map.keys():
+                    continue
+                if i > 0 and menu_[i - 1] in self.user_command_menus_id_map.keys():
+                    parent = self.user_command_menus_id_map[menu_[i - 1]]
+                else:
+                    parent = self.user_command_menu
+
+                menu_item = wx.Menu()
+                parent.Append(-1, menu_[i], menu_item)
+                self.user_command_menus_id_map[menu_[i]] = menu_item
+
+    def clear_ed_plugin_menus(self):
+        for menu in self.ed_plugin_menus.values():
             pos = self.plugin_menu.FindItem(menu)
             if pos >= 0:
                 self.plugin_menu.Remove(pos)
-        self.plugin_menu_lst.clear()
+        self.ed_plugin_menus.clear()
 
-    def clear_user_command_meun(self):
+    def clear_user_command_menus(self):
         pass
 
     def on_event(self, evt):
@@ -234,24 +309,28 @@ class WxMenuBar(wx.MenuBar):
             args = EVENT_MAP[evt.GetId()][1]
 
             if evt_name == "AddObject":
-                constants.p3d_app.command_manager.do(commands.ObjectAdd(constants.p3d_app, args))
+                editor.command_mgr.do(commands.ObjectAdd(editor.p3d_app, args))
             elif evt_name == "AddLight":
-                constants.p3d_app.command_manager.do(commands.AddLight(constants.p3d_app, args))
+                editor.command_mgr.do(commands.AddLight(editor.p3d_app, args))
             elif evt_name == "AddCamera":
-                constants.p3d_app.command_manager.do(commands.AddCamera(constants.p3d_app))
+                editor.command_mgr.do(commands.AddCamera(editor.p3d_app))
 
             elif evt_name == "SaveUILayout":
-                self.wx_main.save_current_layout()
+                self.wx_main.on_save_current_layout()
 
             elif evt_name == "AddPanel":
                 self.wx_main.add_page(args)
             else:
-                constants.obs.trigger(evt_name, args)
+                editor.observer.trigger(evt_name, args)
 
-        elif evt.GetId() in self.user_layout_menus.keys():
-            # load layout
-            self.wx_main.load_layout(self.user_layout_menus[evt.GetId()])
-        elif evt.GetId() in self.plugin_menu_lst.keys():
-            constants.obs.trigger("OnPluginMenuEntrySelected", self.plugin_menu_lst[evt.GetId()])
+        elif evt.GetId() in self.ui_layout_menus.keys():
+            self.wx_main.load_layout(self.ui_layout_menus[evt.GetId()])
+
+        elif evt.GetId() in self.ed_plugin_menus.keys():
+            editor.observer.trigger("OnPluginMenuEntrySelected", self.ed_plugin_menus[evt.GetId()])
+
+        elif evt.GetId() in self.user_command_menu_items_id_map.keys():
+            editor.observer.trigger("OnSelUserCommandMenuEntry", self.user_command_menu_items_id_map[evt.GetId()])
+            # print(self.user_command_menu_items_id_map[evt.GetId()])
 
         evt.Skip()

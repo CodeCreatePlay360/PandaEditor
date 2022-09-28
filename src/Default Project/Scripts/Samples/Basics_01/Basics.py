@@ -18,89 +18,93 @@ class Basics(RuntimeModule):
         self.bool_property = False
         self.vector3 = p3dCore.LVecBase3f(10, 17, 28)
         self.vector2 = p3dCore.LVecBase2f(25, 46)
+        self.__color = p3dCore.LColor(1, 1, 1, 1)  # private attributes are not visible in inspector
 
         # Custom properties --------------------------------------------------------------------
-        # add some empty space
-        self.add_property(EdProperty.EmptySpace(0, 55))
+        # empty space property
+        self.add_property(EdProperty.EmptySpace(0, 5))
 
         # label property
         self.add_property(EdProperty.Label(name="Custom Properties", is_bold=True))
 
         # button property
-        self.add_property(EdProperty.ButtonProperty("Button", self.on_button))
+        self.add_property(EdProperty.ButtonProperty(name="ButtonProperty", func=self.on_button))
 
-        # a slider property
-        self.temperature = 5  # private to hide in inspector
-        self.add_property(EdProperty.Slider("Slider",
-                                            value=self.temperature,  # initial value
+        # slider property
+        self.__temperature = 5
+
+        self.add_property(EdProperty.Slider(name="Slider",
+                                            value=self.__temperature,  # initial value
                                             min_value=0,
                                             max_value=10,
                                             setter=self.set_temperature,
-                                            getter=self.get_temperature
+                                            getter=lambda: self.__temperature,
                                             ))
 
-        # a choice property
-        self.curr_choice = 0
-        self.hidden_attrs = "curr_choice"
+        # choice property
+        self.__curr_choice = 0
+
         choices = ["Apple", "PineApple", "BigApple", "Blueberry"]
-        self.add_property(EdProperty.ChoiceProperty("Choice",
+        self.add_property(EdProperty.ChoiceProperty(name="Choice",
                                                     choices=choices,
-                                                    value=self.curr_choice,  # initial value
+                                                    value=self.__curr_choice,  # initial value
                                                     setter=self.set_choice,
-                                                    getter=self.get_choice))
+                                                    getter=lambda: self.__curr_choice))
 
-        self.bool_a = True
-        properties = [EdProperty.ObjProperty("bool_a", self.bool_a, self)]
-        horizontal_layout_group = EdProperty.HorizontalLayoutGroup(properties)
-        self.add_property(horizontal_layout_group)
-
-        self.bool_b = False
-        properties = [EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_b, self),
-                      ]
-        foldout_group = EdProperty.FoldoutGroup(properties)
-        self.add_property(foldout_group)
-
-        self.bool_c = False
-        properties = [EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      EdProperty.ObjProperty("bool_b", self.bool_c, self),
-                      ]
-        foldout_group = EdProperty.FoldoutGroup(properties)
-        self.add_property(foldout_group)
+        # color property
+        self.add_property(EdProperty.FuncProperty(name="Color_picker",
+                                                  value=self.__color,
+                                                  setter=self.set_color,
+                                                  getter=self.get_color))
 
         # --------------------------------------------------------------------
+        # horizontal layout group property
+        self.toggle = True
+
+        properties = [EdProperty.Label(name="HorizontalGroup: ", is_bold=True),
+                      EdProperty.ObjProperty(name="vector2", value=self.vector2, obj=self),
+                      EdProperty.ObjProperty(name="toggle", value=self.toggle, obj=self)]
+
+        horizontal_layout_group = EdProperty.HorizontalLayoutGroup(name="HLayoutGroup", properties=properties)
+        self.add_property(horizontal_layout_group)
+
+        # --------------------------------------------------------------------
+        # vertical layout group or foldout group property
+
+        self.__integer = 45
+        self.__boolean = False
+        self.__vector = p3dCore.LVecBase3f(5, 10, 15)
+
+        properties = [EdProperty.ObjProperty(name="_Basics__integer", value=self.__integer, obj=self),
+                      EdProperty.ObjProperty(name="_Basics__boolean", value=self.__boolean, obj=self),
+                      EdProperty.ObjProperty(name="_Basics__vector", value=self.__vector, obj=self)]
+        foldout_group = EdProperty.FoldoutGroup(properties=properties)
+        self.add_property(foldout_group)
+
+        # you can also hide attributes in the inspector
+        # hide these attributes
+        self.hidden_attrs = "bool_a"
+        self.hidden_attrs = "bool_b"
+
+    def on_start(self):
+        """on_start method is called only once"""
+
+        # -------------------------------------------------------------------- #
         # attributes defined in Runtime module, they act as bridge between PandaEditor and Panda3d engine
         # self._win                : the window we are rendering into currently
         # self.mouse_watcher_node  : mouse watcher node
         # self.render              : this is the current scene's parent node-path
         # self.game                : instance of current running game
-
-    def on_start(self):
-        """on_start method is called only once"""
+        # -------------------------------------------------------------------- #
 
         # basic scene graph operations
         np = self.render.find("**/cube.fbx")
         camera_np = self.render.find("**/Camera")
 
-        # get a reference to other runtime modules
+        # get reference to other runtime modules
         test_module = self.game.get_module("TestModule")
         if test_module is not None:
-            # foo is a method defined TestModule
-            test_module.foo()
+            test_module.foo()  # foo is a method defined TestModule
 
         # creating direct gui elements
         self.create_ui()
@@ -136,13 +140,13 @@ class Basics(RuntimeModule):
         print("[Basics.py] EdProperty button pressed.")
 
     def set_temperature(self, val):
-        self.temperature = val
-
-    def get_temperature(self):
-        return self.temperature
+        self.__temperature = val
 
     def set_choice(self, val):
-        self.curr_choice = val
+        self.__curr_choice = val
 
-    def get_choice(self):
-        return self.curr_choice
+    def set_color(self, val):
+        self.__color = val
+
+    def get_color(self):
+        return self.__color

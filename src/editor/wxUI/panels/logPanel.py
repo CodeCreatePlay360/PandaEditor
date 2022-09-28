@@ -88,14 +88,8 @@ class LogPanel(wx.Panel):
         self.sizer.Add(self.tc, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
-        self.tc.Bind(wx.EVT_LEFT_UP, self.on_evt_left_up)
-
     def on_control_btn_select(self, index):
         pass
 
     def on_control_btn_deselect(self, index):
         pass
-
-    def on_evt_left_up(self, evt):
-        constants.obs.trigger("OnMouse1up", self)
-        evt.Skip()

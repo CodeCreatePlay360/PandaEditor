@@ -6,7 +6,7 @@ class Scene:
     def __init__(self, game, name, *args, **kwargs):
         self.game = game
         self.name = name
-        self.active_camera = None  # this is main rendering camera
+        self.main_camera = None  # this is main rendering camera
 
         # create a 3d rendering setup
         self.render = p3d_core.NodePath(self.name)
@@ -32,7 +32,7 @@ class Scene:
         self.render_2d.setDepthTest(False)
         self.render_2d.setDepthWrite(False)
 
-        self.aspect_2d = self.render_2d.attachNewNode(p3d_core.PGTop("aspect_2d"))
+        self.aspect_2d = self.render_2d.attachNewNode(p3d_core.PGTop("__aspect_2d__"))
         self.aspect_2d.set_scale(1.0/self.game.show_base.getAspectRatio(self.game.win), 1.0, 1.0)
         self.aspect_2d.node().set_mouse_watcher(self.game.mouse_watcher_node_2d)
 
@@ -47,6 +47,25 @@ class Scene:
         self.game.display_region_2d.setCamera(self.camera_2d)
 
     def setup_3d_render(self):
+        pass
+
+    def set_active_camera(self, cam):
+        self.main_camera = cam
+        self.game.set_active_cam(cam)
+
+    def clear_model(self, model):
+        pass
+
+    def clear_actor(self, actor):
+        pass
+
+    def clear_cam(self, cam):
+        """should be called after a camera object has been removed from scene graph"""
+        if cam == self.main_camera:
+            self.main_camera = None
+            self.game.clear_active_dr_3d()
+
+    def clear_light(self):
         pass
 
     @property
@@ -70,7 +89,7 @@ class Scene:
         def get_all_scene_cameras(np):
             for np_ in np.getChildren():
                 obj = np_.getPythonTag("PICKABLE")
-                if obj and obj.id == "CameraNodePath":
+                if obj.id == "__CameraNodePath__":
                     cameras.append(obj)
 
                 get_all_scene_cameras(np_)
@@ -78,5 +97,4 @@ class Scene:
         cameras = []
         get_all_scene_cameras(self.render)
         self.__scene_cameras = cameras
-
         return self.__scene_cameras

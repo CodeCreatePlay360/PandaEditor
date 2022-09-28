@@ -1,6 +1,5 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
-from editor.constants import obs
 
 
 class AuxiliaryPanel(ScrolledPanel):
@@ -16,5 +15,4 @@ class AuxiliaryPanel(ScrolledPanel):
         self.Bind(wx.EVT_SIZE, self.on_resize_event)
 
     def on_resize_event(self, evt):
-        obs.trigger("ResizeEvent")
         evt.Skip()

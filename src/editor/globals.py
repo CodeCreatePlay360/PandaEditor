@@ -1,23 +1,78 @@
-LIGHT_UIDs = ["PointLight", "SpotLight", "DirectionalLight", "AmbientLight"]
-CAMERA_UID = ["CameraNP"]
-MODEL_NP = ["ModelNP"]
-
-p3d_app = None
+from thirdparty.event.observable import Observable
+from editor.utils import ObjectRepository
 
 
-class Globals:
-    def __init__(self):
-        pass
+class Editor:
+    """The Globals class provide a common interface to most common systems, to avoid repeated imports in individual
+    modules"""
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(Editor, cls).__new__(cls)
+        return cls.instance
+
+    __observer = Observable()
+    __repository = ObjectRepository()
+
+    __p3d_app = None
+    __wx_main = None
+    __level_editor = None
+    __command_mgr = None
+    __resource_browser = None
+    __scene_graph = None
+    __inspector = None
+    __console = None
+
+    def init(self, p3d_pp, wx_main, level_editor, command_mgr, resource_browser, scene_graph, inspector_panel, console):
+        self.__p3d_app = p3d_pp
+        self.__wx_main = wx_main
+        self.__level_editor = level_editor
+        self.__command_mgr = command_mgr
+
+        self.__resource_browser = resource_browser.tree
+        self.__scene_graph = scene_graph
+        self.__inspector = inspector_panel
+        self.__console = console
 
     @property
-    def selected_resource_item(self):
-        tiles_panel = p3d_app.wx_main.resource_browser.tiles_panel
-        selection = tiles_panel.SELECTED_TILE
-        if selection:
-            return selection.data
-        return None
+    def observer(self):
+        return self.__observer
 
     @property
-    def selected_nps(self):
-        selection = p3d_app.level_editor.selection
-        return selection.selected_nps
+    def repository(self):
+        return self.repository
+
+    @property
+    def p3d_app(self):
+        return self.__p3d_app
+
+    @property
+    def wx_main(self):
+        return self.__wx_main
+
+    @property
+    def level_editor(self):
+        return self.__level_editor
+
+    @property
+    def command_mgr(self):
+        return self.__command_mgr
+
+    @property
+    def resource_browser(self):
+        return self.__resource_browser
+
+    @property
+    def scene_graph(self):
+        return self.__scene_graph
+
+    @property
+    def inspector(self):
+        return self.__inspector
+
+    @property
+    def console(self):
+        return self.__console
+
+
+editor = Editor()

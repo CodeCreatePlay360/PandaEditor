@@ -1,14 +1,14 @@
-from editor import p3d
+from editor.selection.singleTask import SingleTask
 
 MOUSE_ALT = 0
 MOUSE_CTRL = 1
 
 
-class Mouse(p3d.SingleTask):
+class Mouse(SingleTask):
     """Class representing the mouse."""
 
     def __init__(self, *args, **kwargs):
-        p3d.SingleTask.__init__(self, *args, **kwargs)
+        SingleTask.__init__(self, *args, **kwargs)
 
         self.x = 0
         self.y = 0

@@ -1,8 +1,8 @@
-from editor.commandManager import Command
-from editor.constants import object_manager, obs
+from editor.commandManager import EdCommand
+from editor.globals import editor
 
 
-class RemoveObjects(Command):
+class RemoveObjects(EdCommand):
 
     # TODO explanation
     RemoveNPsCmd = None
@@ -17,12 +17,12 @@ class RemoveObjects(Command):
         for np in selected:
             self.saved.append((np, np.get_parent()))
 
-        obs.trigger("OnRemoveNPs", selected)
+        editor.observer.trigger("OnRemoveNPs", selected)
         self.app.level_editor.remove_nps(selected)
-        object_manager.get("InspectorPanel").layout_auto()
+        editor.inspector.layout_auto()
 
     def undo(self):
         nps = self.app.level_editor.restore_nps(self.saved)
         self.app.level_editor.set_selected(nps)
-        obs.trigger("OnAddNPs", nps)
+        editor.observer.trigger("OnAddNPs", nps)
 

@@ -5,4 +5,4 @@ class ObjectData:
         self.properties = []
 
     def add_property(self, prop):
-        self.properties.append((prop.get_name(), prop.get_value()))
+        self.properties.append((prop.name, prop.get_value()))

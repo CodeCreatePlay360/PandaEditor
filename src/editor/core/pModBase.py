@@ -2,6 +2,7 @@ import editor.constants as constants
 import editor.utils as ed_utils
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import NodePath
+from editor.globals import editor
 
 
 def execute(*args, **kwargs):
@@ -12,9 +13,9 @@ def execute(*args, **kwargs):
 
 def stop_execution(module):
     if module.type == "EditorPlugin":
-        constants.obs.trigger("PluginFailed", module)
+        editor.observer.trigger("PluginFailed", module)
     else:
-        constants.obs.trigger("SwitchEdState", 0)
+        editor.observer.trigger("SwitchEdState", 0)
 
 
 class PModBase(DirectObject):
@@ -209,11 +210,10 @@ class PModBase(DirectObject):
     def get_savable_atts(self):
         attrs = []
         for name, val in self.__dict__.items():
-            if self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name) or \
-                    type(val) == NodePath:
+            if self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name):
                 # print("discarded attr name: {0}".format(name))
                 continue
-            # print("saved attr name: {0} val: {1}".format(name, val))
+            # print("[{0}] Saved attribute name: {1} val: {2}".format(self.name, name, val))
             attrs.append((name, val))
 
         return attrs
@@ -225,7 +225,6 @@ class PModBase(DirectObject):
 
     def get_properties(self):
         self.__properties = []
-
         for name, value in self.get_savable_atts():
 
             # hidden variables should be ignored
@@ -235,9 +234,12 @@ class PModBase(DirectObject):
             # private variables should be ignored
             if name[0] == "_":
                 continue
-
-            prop = ed_utils.EdProperty.ObjProperty(name=name, value=value, _type=type(value), obj=self)
-            self.__properties.append(prop)
+            try:
+                prop = ed_utils.EdProperty.ObjProperty(name=name, value=value, type_=type(value), obj=self)
+                self.__properties.append(prop)
+            except Exception as e:
+                print("Error: Unable to add property {0}".format(name))
+                print(e)
 
         self.__properties.extend(self.__user_properties)
         return self.__properties
@@ -258,14 +260,7 @@ class PModBase(DirectObject):
 
     def on_resize_event(self):
         """this method is called when window is resized"""
-        if self.__aspect2d is not None and self.__show_base is not None:
-            self.__aspect2d.set_scale(1.0 / self.__show_base.getAspectRatio(self.__win), 1.0, 1.0)
-
-    def clear_ui(self):
-        """clears all direct gui elements, by default this is executed before unloading editor plugin,
-         this method can be called manually as well"""
-        for np in self.__aspect2d.getChildren():
-            np.remove_node()
+        pass
 
     @property
     def hidden_attrs(self):
@@ -361,11 +356,17 @@ class PModBase(DirectObject):
 
     @hidden_attrs.setter
     def hidden_attrs(self, attr: str):
+        if not isinstance(attr, str):
+            print("{0}: Unable to set attribute {1} as hidden, value must be of type string".format(self.name, attr))
+            return
         if hasattr(self, attr) and not self.__hidden_attributes.__contains__(attr):
             self.__hidden_attributes.append(attr)
 
     @discarded_attrs.setter
     def discarded_attrs(self, attr: str):
+        if not isinstance(attr, str):
+            print("{0}: Unable to set attribute {1} as discarded, value must be of type string".format(self.name, attr))
+            return
         if hasattr(self, attr) and not self.__discarded_attributes.__contains__(attr):
             self.__discarded_attributes.append(attr)
 

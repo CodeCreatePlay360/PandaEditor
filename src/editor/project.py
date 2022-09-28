@@ -33,6 +33,5 @@ class Project(object):
         self.game = Game(
             show_base=self.app.show_base,
             win=self.app.show_base.main_win,
-            dr=self.app.show_base.game_dr,
             render=self.app.show_base.render,
         )

@@ -1,4 +1,4 @@
-from editor.p3d.object import Object
+from editor.utils.object import Object
 from direct.showbase.ShowBase import taskMgr
 
 
