@@ -8,6 +8,7 @@ class DirEventProcessor(FileSystemEventHandler):
     def __init__(self):
         self.received_events = []
         self.dir_event_task = None
+        self.__last_event = None
 
     def on_any_event(self, event):
         if self.dir_event_task is None:
@@ -28,10 +29,18 @@ class DirEventProcessor(FileSystemEventHandler):
             path = evt.src_path
             file_name = path.split("\\")[-1]
 
-            # make sure to only include .py files and check for duplicates as well
+            # new directory sends "created" and "modified" events consecutively,
+            # this will cause editor to reload twice whenever a new dir is created,
+            # this check will ensure "created" and "modified" are not sent consecutively by
+            # keeping track of last event.
+            if evt.event_type == "modified" and self.__last_event == "created":
+                continue
+            self.__last_event = evt.event_type
+            #
+            # -------------------------------------------------------------------------------
+
             if any([evt.event_type == "modified", evt.event_type == "created",
                     evt.event_type == "moved", evt.event_type == "deleted"]):
-                #  and all([file_name.endswith(".py"), file_name not in interested_events]):
                 interested_events.append(file_name)
 
         if len(interested_events) > 0:

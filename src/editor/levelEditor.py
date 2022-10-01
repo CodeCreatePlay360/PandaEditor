@@ -560,7 +560,7 @@ class LevelEditor(DirectObject):
         for key in self.key_event_map.keys():
             self.ignore(key)
 
-        self.app.show_base.ed_camera.disabled = True
+        # self.app.show_base.ed_camera.disabled = True
 
     def on_mouse1_down(self, shift):
         self.mouse_1_down = True

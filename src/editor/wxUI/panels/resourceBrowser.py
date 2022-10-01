@@ -431,7 +431,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
             return _new_dir_name
 
         dial = wx.TextEntryDialog(None, "New Directory", "Enter name", "NewDirectory")
-        if dial.ShowModal():
+        if dial.ShowModal() == wx.ID_OK:
             create(dial.GetValue())
 
     def rename_item(self):
@@ -516,7 +516,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
             editor.observer.trigger("CreateAsset", _type, path)
 
         dial = wx.TextEntryDialog(None, "Create New Asset", "New Asset Name", "NewAsset")
-        if dial.ShowModal():
+        if dial.ShowModal() == wx.ID_OK:
             create(dial.GetValue())
 
     def import_assets(self, *args):
