@@ -34,20 +34,20 @@ It has all the basic features of a level editor including
 2. Run main.py
 
 ## Manual
-* [Starting a new project](https://github.com/barbarian77/PandaEditor#starting-a-new-project "")
-* [Object manipulation](https://github.com/barbarian77/PandaEditor#object-manipulation)
-* Editor modes
-* [Editor resources](https://github.com/barbarian77/PandaEditor#assets-management)
-  * [Runtime modules](https://github.com/barbarian77/PandaEditor#runtime-user-modules)
-  * [Editor plugins](https://github.com/barbarian77/PandaEditor#editor-plugins)
-  * Text files
-  * Nodepath Component
-* [User commands]
-* [Scripting]
-* [Known issues](https://github.com/barbarian77/PandaEditor#known-issues)
-* [Roadmap]
-* [Getting started](https://github.com/barbarian77/PandaEditor#getting-started)
-* [Tutorials](https://github.com/barbarian77/PandaEditor#tutorials)
+* [Starting a new project](https://github.com/CodeCreatePlay360/PandaEditor#starting-a-new-project "")
+* [Object manipulation](https://github.com/CodeCreatePlay360/PandaEditor#object-manipulation "")
+* [Editor modes](https://github.com/CodeCreatePlay360/PandaEditor#editor-modes "")
+* [Editor resources](https://github.com/CodeCreatePlay360/PandaEditor#editor-resources "")
+  * [Runtime modules](https://github.com/CodeCreatePlay360/PandaEditor#runtime-modules "")
+  * [Editor plugins](https://github.com/CodeCreatePlay360/PandaEditor#editor-plugins "")
+  * [Text files](https://github.com/CodeCreatePlay360/PandaEditor#text-files "")
+  * [Nodepath Component](https://github.com/CodeCreatePlay360/PandaEditor#nodepath-component "")
+* [User commands](https://github.com/CodeCreatePlay360/PandaEditor#user-commands "")
+* [Editor UI](https://github.com/CodeCreatePlay360/PandaEditor/#editor-ui "")
+* [Known issues](https://github.com/CodeCreatePlay360/PandaEditor#known-issues "")
+* [Roadmap](https://github.com/CodeCreatePlay360/PandaEditor#roadmap "")
+* [Getting started](https://github.com/CodeCreatePlay360/PandaEditor#getting-started "")
+* [Tutorials](https://github.com/CodeCreatePlay360/PandaEditor#tutorials "")
 
 ## Starting a new project
 PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is setup for you.
@@ -252,6 +252,16 @@ Here is an sample code for a simple command that randomly offsets position of a 
 
 ```
 ```
+
+## Editor UI
+The editor's user interface is divided into 5 main panels,
+1. ViewPort
+2. SceneGraph
+3. Console or LogPanel
+4. ResourcesBrowser and
+5. InspectorPanel
+
+When you first start Editor a default layout (arrangement of panels) is created for you but you can also drag panels around and create custom layouts from **menu_bar > Layout > SaveLayout**.
 
 ## Known issues
 1. Due to a known bug undo / redo cache has to be cleared as soon as GameMode is enabled, this is something that will be fixed as soon as possible.
