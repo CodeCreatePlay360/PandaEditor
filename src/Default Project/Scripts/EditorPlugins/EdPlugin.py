@@ -4,14 +4,18 @@ from editor.commandManager import Command
 
 
 class MyCommand(Command):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, np, *args, **kwargs):
         Command.__init__(self, *args, **kwargs)
+        self.np = None
 
-    def do(self, s):
-        print("command do")
+    def do(self):
+        pass
 
     def undo(self):
         print("command undo")
+
+    def clean(self):
+        pass
 
 
 class EdPlugin(EditorPlugin):
@@ -22,14 +26,12 @@ class EdPlugin(EditorPlugin):
 
         le = self.le  # instance of level editor
 
-        command = MyCommand()
-        self.add_command("Math", command)
-
     def on_start(self):
         """on_start method is called once when editor is loaded,
         new node-paths such as direct gui elements, should be created here."""
+        command = MyCommand(self.render.find("**/Cube.fbx"))
+        self.add_command("Math", command)
         pass
 
     def on_update(self):
         """update method is called every frame"""
-        pass

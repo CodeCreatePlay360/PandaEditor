@@ -29,13 +29,20 @@ class MyApp(wxPanda.App):
         self.show_base.finish_init()
         self.command_manager = CommandManager()
         self.level_editor = LevelEditor(self)
-        self.set_mouse_mode("Confined")
-        self.wx_main.do_after()
-        editor.init(self, self.wx_main, self.level_editor, self.command_manager,
-                    self.wx_main.resource_browser, self.wx_main.scene_graph_panel.scene_graph,
-                    self.wx_main.inspector_panel, self.wx_main.console_panel,
+        editor.init(self,
+                    self.level_editor.project.game,
+                    self.wx_main,
+                    self.level_editor,
+                    self.command_manager,
+                    self.wx_main.resource_browser,
+                    self.wx_main.scene_graph_panel.scene_graph,
+                    self.wx_main.inspector_panel,
+                    self.wx_main.console_panel,
                     )
         self.level_editor.start()
+        editor.do_after()
+        self.wx_main.do_after()
+        self.set_mouse_mode("Confined")
 
     MOUSE_MODE_MAP = {"Absolute": WindowProperties.M_absolute,
                       "Relative": WindowProperties.M_relative,

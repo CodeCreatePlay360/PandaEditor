@@ -3,7 +3,6 @@ from game.scene import Scene
 from panda3d.core import WindowProperties
 
 # some static globals constants
-TAG_GAME_OBJECT = "GameObject"  # global tag for all nodepaths in scenegraph
 DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or Component regular UpdateTask
 
 
@@ -22,7 +21,7 @@ class Game:
         self.mouse_watcher_node_2d = None
 
         self.render = kwargs.pop("render", None)  # top level game render, individual
-                                                  # scene renders should be re-parented to this.
+        # scene renders should be re-parented to this.
 
         self.setup_dr_2d()
         self.setup_mouse_watcher_2d()
@@ -30,8 +29,9 @@ class Game:
         self.setup_dr_3d()
         self.setup_mouse_watcher_3d()
 
-        self.game_modules = {}  # current loaded user modules
-        self.scenes = []        # all scenes in this game
+        self.runtime_modules = {}  # loaded runtime modules
+        self.__all_modules = {}  # runtime modules + components
+        self.scenes = []  # all scenes in this game
         self.active_scene = None
 
     def create_new_scene(self, name: str):
@@ -45,17 +45,21 @@ class Game:
         self.display_region.setActive(False)
         self.display_region.setCamera(p3d_core.NodePath())
 
-    def get_module(self, module_name):
-        if self.game_modules.__contains__(module_name):
-            return self.game_modules[module_name].class_instance
-        return None
-
     def start(self):
+        self.__all_modules = {}
+        for key, value in self.runtime_modules.items():
+            self.__all_modules[key] = value
+
+        components = self.components
+        for np in components.keys():
+            for component in components[np]:
+                self.__all_modules[component.path] = component
+
         # classify all modules according to task sort values
-        # mod_exec_order[sort_value] = [mod1, mod2,....]
-        mod_exec_order = {}
-        for key in self.game_modules:
-            mod = self.game_modules[key]
+        mod_exec_order = {}  # mod_exec_order[sort_value] = [mod1, mod2,....]
+
+        for key in self.__all_modules:
+            mod = self.__all_modules[key]
 
             sort_value = mod.class_instance.sort
 
@@ -100,13 +104,12 @@ class Game:
             late_update_sort += 1
 
     def stop(self):
-        for key in self.game_modules:
-            module = self.game_modules[key]
-
+        for key in self.__all_modules:
+            module = self.__all_modules[key]
             module.class_instance.ignore_all()
             module.class_instance.stop()
-            # module.class_instance.clear_ui()
             module.reload_data()
+
             self.hide_cursor(False)
 
         for np in self.active_scene.render_2d.getChildren():
@@ -117,6 +120,8 @@ class Game:
 
         for np in self.active_scene.aspect_2d.getChildren():
             np.remove_node()
+
+        self.__all_modules.clear()
 
     def hide_cursor(self, value: bool):
         if type(value) is bool:
@@ -153,9 +158,37 @@ class Game:
         self.display_region.set_camera(cam)
         cam.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
 
+    def get_module(self, module_name):
+        if self.runtime_modules.__contains__(module_name):
+            return self.runtime_modules[module_name].class_instance
+        return None
+
+    def is_runtime_module(self, path):
+        if self.runtime_modules.__contains__(path):
+            return True
+        return False
+
     def resize_event(self):
         """should be called after a window has been resized"""
         if self.active_scene.main_camera:
             self.active_scene.main_camera.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
 
         self.active_scene.aspect_2d.set_scale(1.0 / self.show_base.getAspectRatio(self.win), 1.0, 1.0)
+
+    @property
+    def components(self):
+        components = {}  # np: list of component
+
+        def traverse(np_):
+            np = np_.getPythonTag("__TAG_GAME_OBJECT__")
+            if np:
+                for path in np.components.keys():
+                    if not components.__contains__(np):
+                        components[np] = []
+                    components[np].append(np.components[path])
+
+            for child in np_.getChildren():
+                traverse(child)
+
+        traverse(self.active_scene.render)
+        return components

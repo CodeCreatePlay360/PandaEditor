@@ -4,21 +4,18 @@ from panda3d.core import LColor, LVecBase3f
 
 
 class LightNp(BaseNodePath):
-    def __init__(self, np, uid=None, *args, **kwargs):
-        BaseNodePath.__init__(self, np, uid, create_properties=False, *args, **kwargs)
+    def __init__(self, np, path, id_, uid=None):
+        BaseNodePath.__init__(self, np, path, id_=id_, uid=uid)
 
         self.__ed_light_colour = LColor(1, 1, 1, 1)  # actual color(Hue), as seen, unscaled by intensity
         self.__intensity = 1.0
         self.__is_active = True
 
-        self.setScale(4)
-
-        copy = kwargs.pop("copy", False)
-        if copy and np.hasPythonTag("PICKABLE"):
-            np = np.getPythonTag("PICKABLE")
-            self.__intensity = np.intensity
-            self.__ed_light_colour = np.get_color()
-            self.toggle_active(np.get_active_status())
+        # if np_other and np_other.hasPythonTag("PICKABLE"):
+        #     np_other = np_other.getPythonTag("PICKABLE")
+        #     self.__intensity = np_other.intensity
+        #     self.__ed_light_colour = np_other.get_color()
+        #     self.toggle_active(self.get_active())
 
     def create_properties(self):
         super().create_properties()
@@ -29,17 +26,17 @@ class LightNp(BaseNodePath):
         colour = ed_utils.EdProperty.FuncProperty(name="Light Color",
                                                   value=self.__ed_light_colour,
                                                   setter=self.set_color,
-                                                  getter=lambda: self.__ed_light_colour)
+                                                  getter=self.get_color)
 
         intensity = ed_utils.EdProperty.FuncProperty(name="Color intensity",
                                                      value=self.__intensity,
                                                      setter=self.set_intensity,
-                                                     getter=lambda: self.__intensity)
+                                                     getter=self.get_intensity)
 
         is_active = ed_utils.EdProperty.FuncProperty(name="Is Active",
-                                                     value=self.get_active_status(),
+                                                     value=self.__is_active,
                                                      setter=self.toggle_active,
-                                                     getter=self.get_active_status)
+                                                     getter=self.get_active)
 
         self.properties.append(space)
         self.properties.append(label)
@@ -73,8 +70,11 @@ class LightNp(BaseNodePath):
         if not self.__is_active:
             self.set_intensity(0.0)
 
-    def get_active_status(self):
+    def get_active(self):
         return self.__is_active
+
+    def get_intensity(self):
+        return self.__intensity
 
     @property
     def intensity(self):
@@ -82,9 +82,9 @@ class LightNp(BaseNodePath):
 
 
 class EdDirectionalLight(LightNp):
-    def __init__(self, np, uid=None, *args, **kwargs):
-        LightNp.__init__(self, np, uid, *args, **kwargs)
-        self._id = "__DirectionalLight__"
+    def __init__(self, np, path, uid=None):
+        # np = NodePath(DirectionalLight("DirectionalLight"))
+        LightNp.__init__(self, np, path, id_="__DirectionalLight__", uid=uid)
         self.set_scale(8)
         self.create_properties()
 
@@ -93,11 +93,12 @@ class EdDirectionalLight(LightNp):
 
 
 class EdPointLight(LightNp):
-    def __init__(self, np, uid=None, *args, **kwargs):
-        LightNp.__init__(self, np, uid, *args, **kwargs)
-        self._id = "__PointLight__"
+    def __init__(self, np, path, uid=None):
+        # np = NodePath(PointLight("PointLight"))
+        LightNp.__init__(self, np, path, id_="__PointLight__", uid=uid)
 
-        self.attenuation_map = {
+        self.__attenuation = 0
+        self.__attenuation_map = {
             0: LVecBase3f(1, 0, 0),
             1: LVecBase3f(0, 1, 0),
             2: LVecBase3f(0, 0, 1),
@@ -105,15 +106,13 @@ class EdPointLight(LightNp):
         }
 
         # set default value for attenuation
-        self.attenuation = -1
-        if self.node().getAttenuation() in self.attenuation_map.values():
-            value = [i for i in self.attenuation_map if self.attenuation_map[i] == self.node().getAttenuation()]
-            self.attenuation = value[0]
+        if self.node().getAttenuation() in self.__attenuation_map.values():
+            value = [i for i in self.__attenuation_map if self.__attenuation_map[i] == self.node().getAttenuation()]
+            self.__attenuation = value[0]
 
-        copy = kwargs.pop("copy", False)
-        if copy and np.hasPythonTag("PICKABLE"):
-            np = np.getPythonTag("PICKABLE")
-            self.set_attenuation(np.get_attenuation())
+        # if np_other and np.hasPythonTag("PICKABLE"):
+        #     np = np.getPythonTag("PICKABLE")
+        #     self.set_attenuation(np.get_attenuation())
 
         self.set_scale(15)
         self.create_properties()
@@ -122,7 +121,7 @@ class EdPointLight(LightNp):
         super(EdPointLight, self).create_properties()
 
         attenuation = ed_utils.EdProperty.ChoiceProperty(name="Attenuation",
-                                                         value=self.get_attenuation(),
+                                                         value=self.__attenuation,
                                                          setter=self.set_attenuation,
                                                          getter=self.get_attenuation,
                                                          choices=['constant', 'linear', 'quadratic',
@@ -130,19 +129,19 @@ class EdPointLight(LightNp):
 
         self.properties.append(attenuation)
 
-    def get_attenuation(self):
-        return self.attenuation
-
     def set_attenuation(self, val):
-        self.node().setAttenuation(self.attenuation_map[val])
-        self.attenuation = val
+        self.node().setAttenuation(self.__attenuation_map[val])
+
+    def get_attenuation(self):
+        return self.__attenuation
 
 
 class EdSpotLight(LightNp):
-    def __init__(self, np, uid=None, *args, **kwargs):
-        LightNp.__init__(self, np, uid, *args, **kwargs)
-        self._id = "__SpotLight__"
+    def __init__(self, np, path, uid=None):
+        # np = NodePath(Spotlight("SpotLight"))
+        LightNp.__init__(self, np, path, id_="__SpotLight__", uid=uid)
 
+        self.__attenuation = 0
         self.attenuation_map = {
             0: (1, 0, 0),
             1: (0, 1, 0),
@@ -150,15 +149,13 @@ class EdSpotLight(LightNp):
             3: (0, 1, 1)
         }
         # set default value for attenuation
-        self.attenuation = -1
         if self.node().getAttenuation() in self.attenuation_map.values():
             value = [i for i in self.attenuation_map if self.attenuation_map[i] == self.node().getAttenuation()]
-            self.attenuation = value[0]
+            self.__attenuation = value[0]
 
-        copy = kwargs.pop("copy", False)
-        if copy and np.hasPythonTag("PICKABLE"):
-            np = np.getPythonTag("PICKABLE")
-            self.set_attenuation(np.get_attenuation())
+        # if np_other and np.hasPythonTag("PICKABLE"):
+        #     np = np.getPythonTag("PICKABLE")
+        #     self.set_attenuation(np.get_attenuation())
 
         self.create_properties()
 
@@ -166,7 +163,7 @@ class EdSpotLight(LightNp):
         super(EdSpotLight, self).create_properties()
 
         attenuation = ed_utils.EdProperty.ChoiceProperty(name="Attenuation",
-                                                         value=self.get_attenuation(),
+                                                         value=self.__attenuation,
                                                          setter=self.set_attenuation,
                                                          getter=self.get_attenuation,
                                                          choices=['constant', 'linear', 'quadratic',
@@ -184,18 +181,18 @@ class EdSpotLight(LightNp):
         self.properties.append(label)
         self.properties.extend(lens_props)
 
-    def get_attenuation(self):
-        return self.attenuation
-
     def set_attenuation(self, val):
-        self.node().attenuation = self.attenuation_map[val]
-        self.attenuation = val
+        self.node().setAttenuation(self.attenuation_map[val])
+
+    def get_attenuation(self):
+        return self.__attenuation
 
 
 class EdAmbientLight(LightNp):
-    def __init__(self, np, uid=None, *args, **kwargs):
-        LightNp.__init__(self, np, uid, *args, **kwargs)
-        self._id = "__AmbientLight__"
+    def __init__(self, np, path, uid=None):
+        # np = NodePath(AmbientLight("AmbientLight"))
+        LightNp.__init__(self, np, path, id_="__AmbientLight__", uid=uid)
+        self.create_properties()
 
     def create_properties(self):
         super(EdAmbientLight, self).create_properties()

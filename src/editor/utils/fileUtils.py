@@ -1,6 +1,5 @@
 """implements various directory operations rename, duplicate, delete etc."""
 
-
 import os
 
 

@@ -46,7 +46,7 @@ def is_valid_float(curr_value):
 class WxCustomProperty(wx.Window):
     def __init__(self, parent, prop=None, h_offset=1, *args, **kwargs):
         wx.Window.__init__(self, parent, *args)
-        self.SetBackgroundColour(wx.Colour(edPreferences.Colors.Panel_Normal))
+        self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
         self.parent = parent
 
         self.property = prop

@@ -1,8 +1,8 @@
 import panda3d.core as pm
-
 from editor.selection.marquee import Marquee
 from editor.selection.mousePicker import MousePicker
-from editor.constants import TAG_PICKABLE
+from editor.globals import editor
+from editor.constants import TAG_GAME_OBJECT
 
 
 class Selection:
@@ -48,7 +48,7 @@ class Selection:
             self.append = append
             self.marquee.Start()
 
-    def stop_drag_select(self):
+    def stop_drag_select(self, return_py_tags=False):
         """
         Stop the marquee and get all the node paths under it with the correct
         tag. Also append any node which was under the mouse at the end of the
@@ -56,7 +56,6 @@ class Selection:
         """
 
         self.marquee.Stop()
-
         new_selections = []
 
         if self.append:
@@ -67,15 +66,15 @@ class Selection:
 
         for pick_np in self.active_scene.render.findAllMatches('**'):
             if pick_np is not None:
-                if self.marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_PICKABLE):
-                    np = pick_np.getNetPythonTag("PICKABLE")
+                if self.marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_GAME_OBJECT):
+                    np = pick_np.getNetPythonTag(TAG_GAME_OBJECT)
                     if np not in new_selections:
                         new_selections.append(np)
 
         # Add any node path which was under the mouse to the selection.
         np = self.get_np_under_mouse()
-        if np is not None and np.hasNetPythonTag(TAG_PICKABLE):
-            np = np.getNetPythonTag("PICKABLE")
+        if np is not None and np.hasNetPythonTag(TAG_GAME_OBJECT):
+            np = np.getNetPythonTag(TAG_GAME_OBJECT)
             if np not in new_selections:
                 new_selections.append(np)
 
@@ -97,14 +96,13 @@ class Selection:
         return picked_np
 
     top_np = None
-
     def get_top_np(self, np):
         top_np = np.get_parent()
         if top_np == self.active_scene.render:
-            self.top_np = np.getPythonTag("PICKABLE")
+            self.top_np = np.getPythonTag(TAG_GAME_OBJECT)
             return
 
-        top_np = top_np.getPythonTag("PICKABLE")
+        top_np = top_np.getPythonTag(TAG_GAME_OBJECT)
         if top_np != self.active_scene.render and top_np is not None:
             self.get_top_np(top_np)
 

@@ -1,11 +1,9 @@
-from editor.commandManager import EdCommand
+from editor.commandManager import Command
 from editor.globals import editor
 
 
-class ReparentNPs(EdCommand):
-    def __init__(self, app, src_nps, target_np, *args, **kwargs):
-        super(ReparentNPs, self).__init__(app)
-
+class ReparentNPs(Command):
+    def __init__(self, src_nps, target_np, *args, **kwargs):
         self.src_nps = src_nps
 
         self.original_src_np_parents = []
@@ -28,8 +26,10 @@ class ReparentNPs(EdCommand):
         editor.inspector.set_object(np, np.get_name(), np.get_properties())
 
     def undo(self):
-        self.app.level_editor.reparent_np(self.src_nps, self.original_src_np_parents)
-
+        editor.level_editor.reparent_np(self.src_nps, self.original_src_np_parents)
         editor.scene_graph.rebuild()
         editor.scene_graph.select(self.src_nps)
-        self.app.level_editor.set_selected(self.src_nps)
+        editor.level_editor.set_selected(self.src_nps)
+
+    def clean(self, **kwargs):
+        pass

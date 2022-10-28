@@ -2,7 +2,6 @@ import wx
 import editor.edPreferences as edPreferences
 import editor.wxUI.custom as wx_custom
 from editor.constants import ICONS_PATH
-from editor.globals import editor
 
 Panel_Fold_size = 23.0
 
@@ -21,16 +20,17 @@ Debug_Mode = True  # debug mode add a small separation of 0.2 between two vertic
 
 
 class FoldPanel(wx.Panel):
-    def __init__(self, fold_manager, label, toggle_property=None, *args, **kwargs):
+    def __init__(self, fold_manager, label, is_sub_panel=False):
         wx.Panel.__init__(self, fold_manager)
 
         self.SetWindowStyleFlag(wx.BORDER_NONE)
         self.SetBackgroundColour(wx.Colour(edPreferences.Colors.Panel_Dark))
 
         self.fold_manager = fold_manager
-        self.toggle_property = toggle_property
+        self.toggle_property = None
         self.__label = label
         self.__controls_in_sizer = False
+        self.__is_sub_panel = is_sub_panel
 
         # load text resources
         self.font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
@@ -56,7 +56,6 @@ class FoldPanel(wx.Panel):
         self.SetSizer(self.v_sizer)
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
-        self.Bind(wx.EVT_LEFT_UP, self.on_evt_left_up)
         self.Bind(wx.EVT_SIZE, self.on_evt_size)
 
     @property
@@ -191,10 +190,6 @@ class FoldPanel(wx.Panel):
         self.switch_expanded_state()
         evt.Skip()
 
-    def on_evt_left_up(self, evt):
-        editor.observer.trigger("OnMouse1up", self)
-        evt.Skip()
-
     def on_evt_size(self, evt):
         self.update_controls(self.expanded)
         evt.Skip()
@@ -204,7 +199,7 @@ class FoldPanelManager(wx.Panel):
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
         self.SetWindowStyleFlag(wx.BORDER_NONE)
-        self.SetBackgroundColour(wx.Colour(100, 100, 100, 255))
+        # self.SetBackgroundColour(wx.Colour(100, 100, 100, 255))
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -212,12 +207,13 @@ class FoldPanelManager(wx.Panel):
         self.panels = []
         self.parent = args[0]
 
-    def add_panel(self, name="", toggle_property=None, create_buttons=True):
-        panel = FoldPanel(self, name, toggle_property)
-        if create_buttons:
-            panel.create_buttons()
+    def add_panel(self, name="", is_sub_panel=False):
+        panel = FoldPanel(self, name, is_sub_panel)
 
-        self.sizer.Add(panel, 0, wx.EXPAND)
+        if is_sub_panel:
+            self.sizer.Add(panel, 0, wx.EXPAND | wx.LEFT, border=8)
+        else:
+            self.sizer.Add(panel, 0, wx.EXPAND)
 
         self.panels.append(panel)
         return panel

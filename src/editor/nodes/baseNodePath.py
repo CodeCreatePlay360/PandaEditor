@@ -5,25 +5,19 @@ from editor.utils import EdProperty, common_maths
 
 
 class BaseNodePath(NodePath):
-    def __init__(self, np, uid=None, copy=False, *args, **kwargs):
+    def __init__(self, np, path, id_, uid=None):
         NodePath.__init__(self, np)
+        self.setColor(LColor(1, 1, 1, 1))
 
-        self._id = "__NodePath__"
-        self.__tag = "default"
-
-        self.path = kwargs.pop("path", None)  # path this resource is loaded from
-        create_properties = kwargs.pop("create_properties", True)
-
+        self.__np = np
+        self.__id = id_
+        self.__path = path  # path this resource is loaded from
         self.__uuid = uid if uid is not None else uuid.uuid4().__str__()
-        self.properties = []
-        self._save_data_info = {}
-        self._save_data = []
-
-        if create_properties:
-            self.create_properties()
+        self.__properties = []
+        self.__components = {}  # self.components["full_path"] = component object
 
     def create_properties(self):
-        self.properties.clear()
+        self.__properties.clear()
 
         label = EdProperty.Label(name="Transform", is_bold=True)
 
@@ -43,39 +37,31 @@ class BaseNodePath(NodePath):
                                         setter=self.set_scale,
                                         getter=self.getScale)
 
-        self.properties.append(label)
-        self.properties.append(pos)
-        self.properties.append(rot)
-        self.properties.append(scale)
+        self.__properties.append(label)
+        self.__properties.append(pos)
+        self.__properties.append(rot)
+        self.__properties.append(scale)
 
         space = EdProperty.EmptySpace(0, 10)
         label = EdProperty.Label(name="Node Properties", is_bold=True)
-        color = EdProperty.FuncProperty(name="Color", value=self.get_ed_colour(), setter=self.set_ed_colour,
+        color = EdProperty.FuncProperty(name="Color",
+                                        value=self.get_ed_colour(),
+                                        setter=lambda val: self.setColor(val),
                                         getter=self.get_ed_colour)
 
-        self.properties.append(space)
-        self.properties.append(label)
-        self.properties.append(color)
+        self.__properties.append(space)
+        self.__properties.append(label)
+        self.__properties.append(color)
+
+    def copy_properties(self, np_other):
+        properties = np_other.get_properties()
+
+        for i in range(len(properties)):
+            if i < len(self.__properties):
+                self.__properties[i].set_value(properties[i].get_value())
 
     def get_properties(self):
-        return self.properties
-
-    def update_properties(self):
-        for prop in self.properties:
-            if prop._type == "label" or prop._type == "space":
-                continue
-            x = prop.getter
-            if x:
-                prop.set_value(x())
-            else:
-                prop.set_value(getattr(self, prop.get_name()))
-
-    def on_property_modified(self, prop, value):
-        x = prop.setter
-        x(self, value)
-
-    def set_ed_colour(self, val):
-        self.setColor(val)
+        return self.__properties
 
     def get_ed_colour(self):
         if self.hasColor():
@@ -85,24 +71,42 @@ class BaseNodePath(NodePath):
 
         return val
 
-    def has_ed_property(self, name: str):
-        for prop in self.properties:
-            if prop.name == name:
-                return True
-        return False
+    def attach_component(self, path, component):
+        if not self.__components.__contains__(path):
+            self.__components[path] = component
+            # print("Component: [{0}] attached to [{1}]".format(component, self.name))
+        else:
+            print("Warning: Attempt to attach multiple Components of same type, "
+                  "Component: [{0}] already attached to [{1}] !".format(path, self.name))
+
+    def detach_component(self, path):
+        if self.__components.__contains__(path):
+            del self.__components[path]
+
+    def clear_components(self):
+        print("Cleared all Components on {0}".format(self.name))
+        self.__components.clear()
+
+    @property
+    def np(self):
+        return self.__np
 
     @property
     def id(self):
-        return self._id
+        return self.__id
 
     @property
-    def tag(self):
-        return self.__tag
+    def path(self):
+        return self.__path
 
     @property
     def uid(self):
         return self.__uuid
 
-    @tag.setter
-    def tag(self, value):
-        self.__tag = value
+    @property
+    def properties(self):
+        return self.__properties
+
+    @property
+    def components(self):
+        return self.__components

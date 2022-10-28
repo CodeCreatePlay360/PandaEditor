@@ -11,7 +11,7 @@ import editor.resources.globals as resourceGlobals
 from editor.utils.exceptionHandler import try_execute
 from editor.utils import DirWatcher
 from thirdparty.wxCustom.imageTilesPanel import ImageTilesPanel
-from editor.utils import PathUtils
+from editor.utils import FileUtils
 from editor.globals import editor
 
 # event ids for different event types
@@ -21,10 +21,12 @@ EVT_DUPLICATE_ITEM = wx.NewId()
 EVT_REMOVE_ITEM = wx.NewId()
 EVT_SHOW_IN_EXPLORER = wx.NewId()
 
+EVT_CREATE_RUNTIME_MOD = wx.NewId()
+EVT_CREATE_COMPONENT = wx.NewId()
+EVT_CREATE_ED_PLUGIN = wx.NewId()
 EVT_CREATE_PY_MOD = wx.NewId()
 EVT_CREATE_TXT_FILE = wx.NewId()
-EVT_CREATE_P3D_USER_MOD = wx.NewId()
-EVT_CREATE_ED_TOOL = wx.NewId()
+
 
 EVT_APPEND_LIBRARY = wx.NewId()
 EVT_IMPORT_ASSETS = wx.NewId()
@@ -41,11 +43,12 @@ def create_generic_menu_items(parent_menu):
 def create_add_menu_items(parent_menu):
     # add objects menu
     objects_items = [
-        (EVT_CREATE_PY_MOD, "&Python Module", None),
-        (EVT_CREATE_P3D_USER_MOD, "&User Module", None),
-        (EVT_CREATE_ED_TOOL, "&Editor Plugin", None),
-        (EVT_CREATE_TXT_FILE, "&Text File", None),
-        (EVT_NEW_DIR, "&New Folder", None)
+        (EVT_CREATE_RUNTIME_MOD, "RuntimeUserModule", None),
+        (EVT_CREATE_COMPONENT, "Component", None),
+        (EVT_CREATE_ED_PLUGIN, "EditorPlugin", None),
+        (EVT_CREATE_PY_MOD, "Python Module", None),
+        (EVT_CREATE_TXT_FILE, "Text File", None),
+        (EVT_NEW_DIR, "New Folder", None)
     ]
     objects_menu = wx.Menu()
     wxGlobals.build_menu(objects_menu, objects_items)
@@ -157,10 +160,11 @@ class ResourceTree(customtree.CustomTreeCtrl):
             EVT_REMOVE_ITEM: (self.on_file_op, "remove_item"),
             EVT_SHOW_IN_EXPLORER: (self.on_file_op, "show_in_explorer"),
 
+            EVT_CREATE_RUNTIME_MOD: (self.create_asset, "p3d_user_mod"),
+            EVT_CREATE_COMPONENT: (self.create_asset, "component"),
+            EVT_CREATE_ED_PLUGIN: (self.create_asset, "p3d_ed_tool"),
             EVT_CREATE_PY_MOD: (self.create_asset, "py_mod"),
             EVT_CREATE_TXT_FILE: (self.create_asset, "txt_file"),
-            EVT_CREATE_P3D_USER_MOD: (self.create_asset, "p3d_user_mod"),
-            EVT_CREATE_ED_TOOL: (self.create_asset, "p3d_ed_tool"),
 
             EVT_APPEND_LIBRARY: (self.append_library, None),
             EVT_IMPORT_ASSETS: (self.import_assets, None),
@@ -232,7 +236,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
         picked_data = pickle.dumps(dragged_data, 1)
 
         # create a custom data obj and set its data to dragged data
-        custom_data_obj = wx.CustomDataObject(wx.DataFormat('TransanaData'))
+        custom_data_obj = wx.CustomDataObject(wx.DataFormat('ResourceBrowserData'))
         custom_data_obj.SetData(picked_data)
 
         # create a source for drag and drop
@@ -241,7 +245,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
 
         # Initiate the Drag Operation
         drag_result = drop_source.DoDragDrop()
-
+        editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         evt.Skip()
 
     # ---------------------- All methods for building tree items ---------------------- #
@@ -457,7 +461,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
                     self.libraries[new_label] = current_path
                 else:
                     print("[ResourceBrowser]: Failed to rename item")
-            elif PathUtils.rename(self.GetItemData(self.GetSelection()), new_label):
+            elif FileUtils.rename(self.GetItemData(self.GetSelection()), new_label):
                 self.SetItemText(self.GetSelection(), new_label)
             else:
                 print("[ResourceBrowser]: Failed to rename item")
@@ -488,7 +492,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 else:
                     success = False
                     try:
-                        success = PathUtils.delete(item_path)
+                        success = FileUtils.delete(item_path)
                     except PermissionError:
                         print("PermissionError")
                     finally:
@@ -629,7 +633,6 @@ class TestDropSource(wx.DropSource):
         wx.DropSource.__init__(self)
         self.tree = tree
         self.data = None
-        self.cannot_drop = False
 
     def SetData(self, data):
         wx.DropSource.SetData(self, data)
@@ -637,16 +640,18 @@ class TestDropSource(wx.DropSource):
 
     def GiveFeedback(self, effect):
         (window_x, window_y) = wx.GetMousePosition()
+
+        # first check if we are inside the tree
         (x, y) = self.tree.ScreenToClient(window_x, window_y)
         (item_under_mouse, flag) = self.tree.HitTest((x, y))
 
         self.tree.can_do_drag_drop(item_under_mouse)
         if not self.tree.can_drag_drop:
-            self.tree.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+            editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
             effect = wx.DragNone
             return True
         else:
-            self.tree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+            editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             return False
 
 
@@ -673,7 +678,7 @@ class TestDropTarget(wx.PyDropTarget):
         self.drop_location = None
 
         # specify the data formats to accept
-        self.data_format = wx.DataFormat('TransanaData')
+        self.data_format = wx.DataFormat('ResourceBrowserData')
         self.custom_data_obj = wx.CustomDataObject(self.data_format)
         self.SetDataObject(self.custom_data_obj)
 
@@ -683,39 +688,30 @@ class TestDropTarget(wx.PyDropTarget):
         return d
 
     def OnLeave(self):
-        # print "OnLeave"
         pass
 
     def OnDrop(self, x, y):
         (id_, flag) = self.tree.HitTest((x, y))
         if not id_:
             return False
+
         temp_str = self.tree.GetItemText(id_)
         self.drop_item = id_
         self.drop_location = temp_str
         # print("Dropped on %s." % temp_str)
-        self.tree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         return True
 
     def OnData(self, x, y, d):
-        def is_ok(np_):
-            for np in np_.getChildren():
-                is_ok(np)
-
         if self.GetData():
             data = pickle.loads(self.custom_data_obj.GetData())
         else:
             return wx.DragNone
 
         self.tree.can_do_drag_drop(self.drop_item)
-        # target_np = self.tree.GetItemData(self.drop_item)  # nps / tree items dropped onto
-        # nps = self.tree.get_selected_nps()  # nps / tree items being dragged
 
         if not self.tree.can_drag_drop:
             return wx.DragError
         else:
-            app = constants.object_manager.get("P3dApp")
             self.tree.do_drag_drop(self.tree.GetSelections(), self.drop_item)
-            # app.command_manager.do(ReparentNPs(app, nps, target_np))
 
         return d

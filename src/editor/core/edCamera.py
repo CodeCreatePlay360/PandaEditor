@@ -1,7 +1,7 @@
 import math
 import panda3d.core as p3d_core
-from direct.showbase.ShowBase import taskMgr
 import editor.core as ed_core
+from direct.showbase.ShowBase import taskMgr
 from editor.p3d.geometry import Axes
 from editor.utils import common_maths
 
@@ -22,7 +22,6 @@ class EditorCamera(p3d_core.NodePath):
         self.mouse_watcher_node = mouse_watcher_node
         self.default_pos = default_pos
         self.speed = 0.5
-        self.disabled = False
 
         self.mouse = ed_core.Mouse(self.mouse_watcher_node, win)
 
@@ -48,7 +47,6 @@ class EditorCamera(p3d_core.NodePath):
         self.axes.set_scale(0.008)
 
         self.task = None
-
         self.reset()
 
     def reset(self):
@@ -67,9 +65,6 @@ class EditorCamera(p3d_core.NodePath):
         self.task = taskMgr.add(self.update, "EdCameraUpdate", sort=0, priority=None)
 
     def update(self, task):
-        if self.disabled:
-            return task.cont
-
         self.mouse.update()
 
         # Return if no mouse is found or alt not down

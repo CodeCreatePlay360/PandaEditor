@@ -114,21 +114,19 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         evt.Skip()
 
     def on_evt_select(self, evt):
-
         selections = []
         for item in self.GetSelections():
             if item == self.scene_graph_item:
                 continue
             np = self.GetItemPyData(item)
-            np = np.getPythonTag(constants.TAG_PICKABLE)
+            np = np.getPythonTag(constants.TAG_GAME_OBJECT)
             selections.append(np)
 
         if len(selections) == 0:
             return
 
-        app = editor.p3d_app
         le = editor.level_editor
-        editor.command_mgr.do(SelectObjects(app, selections, [np for np in le.selection.selected_nps], from_le=False))
+        editor.command_mgr.do(SelectObjects(selections, [np for np in le.selection.selected_nps], from_le=False))
         evt.Skip()
 
     def on_begin_drag(self, evt):
@@ -140,7 +138,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         picked_data = pickle.dumps(dragged_data, 1)
 
         # create a custom data obj and set its data to dragged data
-        custom_data_obj = wx.CustomDataObject(wx.DataFormat('TransanaData'))
+        custom_data_obj = wx.CustomDataObject(wx.DataFormat('SceneBrowserData'))
         custom_data_obj.SetData(picked_data)
 
         # create a source for drag and drop
@@ -149,7 +147,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
         # Initiate the Drag Operation
         drag_result = drop_source.DoDragDrop()
-
+        editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         evt.Skip()
 
     def on_end_drag(self, evt):
@@ -166,13 +164,12 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
     def add(self, np, parent_item=None, only_children=False):
         """recursively add a nodepath and its children into tree"""
-
         def add_(np_, tree_item):
             for child in np_.getChildren():
                 tree_item_ = None
-                if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_PICKABLE):
+                if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
                     tree_item_ = self.AppendItem(tree_item, child.get_name(),
-                                                 data=child.getPythonTag(constants.TAG_PICKABLE))
+                                                 data=child.getPythonTag(constants.TAG_GAME_OBJECT))
                     self.np_id_to_tree_item_map[child] = tree_item_
 
                 if tree_item_ is not None:
@@ -189,7 +186,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
             parent_item_ = self.scene_graph_item
 
         if not only_children:
-            np = np.getPythonTag(constants.TAG_PICKABLE)
+            np = np.getPythonTag(constants.TAG_GAME_OBJECT)
             parent_item_ = self.AppendItem(parent_item_, np.get_name(), data=np)
             self.np_id_to_tree_item_map[np] = parent_item_
 
@@ -201,7 +198,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         pass
 
     def remove_item(self):
-        editor.command_mgr.do(RemoveObjects(editor.p3d_app, self.get_selected_nps()))
+        editor.command_mgr.do(RemoveObjects(self.get_selected_nps()))
         self.Refresh()
 
     def on_remove(self, nps):
@@ -209,7 +206,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
         def remove_(np_):
             for child in np_.getChildren():
-                if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_PICKABLE):
+                if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
                     del self.np_id_to_tree_item_map[child]
                 remove_(child)
 
@@ -336,11 +333,11 @@ class TestDropSource(wx.DropSource):
 
         self.tree.can_do_drag_drop(item_under_mouse)
         if not self.tree.can_drag_drop:
-            self.tree.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+            editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
             effect = wx.DragNone
             return True
         else:
-            self.tree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+            editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             return False
 
 
@@ -367,7 +364,7 @@ class TestDropTarget(wx.PyDropTarget):
         self.drop_location = None
 
         # specify the data formats to accept
-        self.data_format = wx.DataFormat('TransanaData')
+        self.data_format = wx.DataFormat('SceneBrowserData')
         self.custom_data_obj = wx.CustomDataObject(self.data_format)
         self.SetDataObject(self.custom_data_obj)
 
@@ -388,7 +385,6 @@ class TestDropTarget(wx.PyDropTarget):
         self.drop_item = id_
         self.drop_location = temp_str
         # print("Dropped on %s." % temp_str)
-        self.tree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         return True
 
     def OnData(self, x, y, d):
@@ -408,6 +404,6 @@ class TestDropTarget(wx.PyDropTarget):
         if not self.tree.can_drag_drop:
             return wx.DragError
         else:
-            editor.command_mgr.do(ReparentNPs(editor.p3d_app, nps, target_np))
+            editor.command_mgr.do(ReparentNPs(nps, target_np))
 
         return d

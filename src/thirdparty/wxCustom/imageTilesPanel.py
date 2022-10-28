@@ -1,4 +1,5 @@
 import os
+import pickle
 import math
 import wx
 import editor.constants as constants
@@ -6,12 +7,12 @@ import editor.edPreferences as edPreferences
 import editor.wxUI.globals as wxGlobals
 import editor.commands as commands
 
-from editor.utils import PathUtils
+from editor.utils import FileUtils
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.custom import ControlGroup, SelectionButton
 from editor.wxUI.custom import SearchBox
 from editor.globals import editor
-
+from editor.core import RuntimeModule, EditorPlugin, Component
 
 # event ids for different event types
 EVT_RENAME_ITEM = wx.NewId()
@@ -52,9 +53,38 @@ def create_3d_model_menu_items(parent_menu):
 
 
 class ImageTile(wx.Panel):
-    """class representing a single image tile, with a text field below image"""
+    class TestDragDropData(object):
+        def __init__(self):
+            self.path = None
+
+        def __repr__(self):
+            return "DragDropData"
+
+        def set_source(self, data):
+            self.path = data
+
+    class TestDropSource(wx.DropSource):
+        def __init__(self):
+            wx.DropSource.__init__(self)
+            self.data = None
+
+        def SetData(self, data):
+            wx.DropSource.SetData(self, data)
+            self.data = data
+
+        def GiveFeedback(self, effect):
+            (window_x, window_y) = wx.GetMousePosition()
+            if editor.inspector.components_dnd_panel and \
+                    editor.inspector.components_dnd_panel.GetScreenRect().Contains(wx.Point(window_x, window_y)):
+                # editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_SIZING))
+                return True
+            else:
+                # editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+                return True
 
     def __init__(self, parent, label, extension, style, color, size, position, tile_index=-1, data=None):
+        """class representing a single image tile, with a text field below image"""
+
         wx.Panel.__init__(self, parent)
 
         self.parent = parent
@@ -70,7 +100,7 @@ class ImageTile(wx.Panel):
         self.image_path = None
         self.image = None
         self.image_control = None
-        self.data = data
+        self.path = data
         self.label = label
         self.extension = extension
 
@@ -100,9 +130,37 @@ class ImageTile(wx.Panel):
             EVT_LOAD_ACTOR: (self.load_actor, None),
         }
 
-        self.image_ctrl.Bind(wx.EVT_LEFT_DOWN, self.on_select)
+        self.image_ctrl.Bind(wx.EVT_LEFT_UP, self.on_select)
         self.image_ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down)
         self.Bind(wx.EVT_MENU, self.on_select_context)
+        self.image_ctrl.Bind(wx.EVT_MOTION, self.on_begin_drag)
+
+    def on_begin_drag(self, evt):
+        if evt.Dragging():
+            # create data that is being dragged
+            dragged_data = ImageTile.TestDragDropData()
+            dragged_data.set_source([self.path])
+
+            # pickle dragged data
+            picked_data = pickle.dumps(dragged_data, 1)
+
+            # create a custom data obj and set its data to dragged data
+            custom_data_obj = wx.CustomDataObject(wx.DataFormat('ImageTileData'))
+            custom_data_obj.SetData(picked_data)
+
+            # create a source for drag and drop
+            drop_source = ImageTile.TestDropSource()
+            drop_source.SetData(custom_data_obj)
+
+            # Initiate the Drag Operation
+            drag_result = drop_source.DoDragDrop()
+            if drag_result == wx.DragNone:
+                print("Drag failed")
+            elif drag_result == wx.DragError:
+                print("Drag error")
+
+            editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+            evt.Skip()
 
     def set_active(self, value):
         self.is_selected = value
@@ -155,7 +213,7 @@ class ImageTile(wx.Panel):
         self.text_ctrl.SetBackgroundColour(edPreferences.Colors.Image_Tile_Selected)
         self.Refresh()
 
-        editor.observer.trigger("OnResourceTileSelected", self.data)
+        editor.observer.trigger("OnResourceTileSelected", self.path)
 
         if evt:
             evt.Skip()
@@ -192,7 +250,7 @@ class ImageTile(wx.Panel):
     def rename_item(self):
         def rename(new_label):
             if new_label != self.label:
-                PathUtils.rename(self.data, new_label, self.extension)
+                FileUtils.rename(self.path, new_label, self.extension)
 
         dial = wx.TextEntryDialog(None, "Rename resource item", "Rename", self.label)
         if dial.ShowModal():
@@ -203,7 +261,7 @@ class ImageTile(wx.Panel):
 
     def delete_item(self):
         def remove():
-            PathUtils.delete(self.data)
+            FileUtils.delete(self.path)
 
         dial = wx.MessageDialog(None, "Confirm remove item ?", "Remove item",
                                 style=wx.YES_NO | wx.ICON_QUESTION).ShowModal()
@@ -211,11 +269,11 @@ class ImageTile(wx.Panel):
             remove()
 
     def load_model(self):
-        path = self.data
+        path = self.path
         editor.command_mgr.do(commands.LoadModel(editor.p3d_app, path=path, is_actor=False))
 
     def load_actor(self):
-        path = self.data
+        path = self.path
         editor.command_mgr.do(commands.LoadModel(editor.p3d_app, path=path, is_actor=True))
 
 
@@ -269,7 +327,7 @@ class ImageTilesPanel(ScrolledPanel):
             self.item_info_ctrl.SetForegroundColour(edPreferences.Colors.Panel_Light)
             font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD)
             self.item_info_ctrl.SetFont(font)
-            sizer.Add(self.item_info_ctrl, 1, wx.EXPAND | wx.TOP|wx.LEFT, border=2)
+            sizer.Add(self.item_info_ctrl, 1, wx.EXPAND | wx.TOP | wx.LEFT, border=2)
             # -------------------------------------------------------------
 
             self.sizer.Add(self.search_control, 1, wx.EXPAND | wx.LEFT, border=1)
@@ -324,7 +382,7 @@ class ImageTilesPanel(ScrolledPanel):
 
             # other
             "py": UserModule_icon,
-            "ed_plugin": UserModule_icon,
+            "ed_plugin": EditorPlugin_icon,
             "txt": TextFile_icon,
 
             # audio
@@ -366,6 +424,9 @@ class ImageTilesPanel(ScrolledPanel):
         selections_organized["generic"] = []  # add one generic for not supported extensions.
 
         for _dir, path in selections:
+            if not os.path.isdir(path):
+                print("[TilesPanel] Path {0} not found".format(path))
+                continue
             dir_items = os.listdir(path)
             for item in dir_items:
 
@@ -378,7 +439,18 @@ class ImageTilesPanel(ScrolledPanel):
                 file_path = path + "/" + item
 
                 if extension in self.icon_and_extension:
-                    image = self.icon_and_extension[extension]
+
+                    if editor.level_editor.is_module(file_path):
+                        module = editor.level_editor.get_module(file_path)
+                        if isinstance(module, RuntimeModule):
+                            image = UserModule_icon
+                        elif isinstance(module, Component):
+                            pass
+                        elif isinstance(module, EditorPlugin):
+                            image = EditorPlugin_icon
+                    else:
+                        image = self.icon_and_extension[extension]
+
                     selections_organized[extension].append((image, file_name, extension, file_path))
                 else:
                     image = self.icon_and_extension["generic"]
@@ -402,7 +474,7 @@ class ImageTilesPanel(ScrolledPanel):
                         tiles[i].on_select()
                     self.__selected_tiles.append(tiles[i])
 
-            self.options.set_item_info_text(tiles[0].data)
+            self.options.set_item_info_text(tiles[0].path)
 
     def select_tiles_from_paths(self, paths, select=True):
         if len(paths) > 0:
@@ -418,7 +490,7 @@ class ImageTilesPanel(ScrolledPanel):
                         tile.on_select()
                     self.__selected_tiles.append(tile)
 
-                self.options.set_item_info_text(tile.data)
+                self.options.set_item_info_text(tile.path)
 
     def deselect_all(self):
         for tile in self.__tiles:
@@ -476,7 +548,7 @@ class ImageTilesPanel(ScrolledPanel):
         if len(self.__selected_tiles) > 0:
             if paths:
                 for tile in self.__selected_tiles:
-                    selected.append(tile.data)
+                    selected.append(tile.path)
             else:
                 for tile in self.__selected_tiles:
                     selected.append(tile)
@@ -486,13 +558,13 @@ class ImageTilesPanel(ScrolledPanel):
         tiles = []
         for i in range(len(self.__tiles)):
             if paths:
-                tiles.append(self.__tiles[i].data)
+                tiles.append(self.__tiles[i].path)
             else:
-                tiles.append(self.__tiles[i].data)
+                tiles.append(self.__tiles[i].path)
         return tiles
 
     def get_tile_from_path(self, path):
         for i in range(len(self.__tiles)):
-            if self.__tiles[i].data == path:
+            if self.__tiles[i].path == path:
                 return self.__tiles[i]
         return None

@@ -1,7 +1,7 @@
 import webbrowser
 import wx
 from editor.globals import editor
-from editor.constants import GAME_STATE, TAG_PICKABLE
+from editor.constants import GAME_STATE, TAG_GAME_OBJECT
 
 
 obs = editor.observer
@@ -58,7 +58,7 @@ def save_session_as(*args):
 @obs.on("AppendLibrary")
 def append_library(*args):
     le = editor.level_editor
-    resource_tree = editor.resource_browser.tree
+    resource_tree = editor.resource_browser
     wx_main = editor.wx_main
 
     if le.ed_state is GAME_STATE:
@@ -141,6 +141,11 @@ def create_asset(asset_type, path):
         base_class_name = "EditorPlugin"
         path += ".py"
 
+    elif asset_type == "component":
+        base_mod_name = "component"
+        base_class_name = "Component"
+        path += ".py"
+
     elif asset_type == "txt_file":
         path += ".txt"
         with open(path, "w") as txt_file:
@@ -177,8 +182,9 @@ def on_scene_start():
 
     # set a default active object for inspector
     inspector.inspector_type_btns.select_button(0)
-    cube = level_editor.active_scene.render.find("**/cube.fbx").getPythonTag(TAG_PICKABLE)
-    inspector.set_object(cube, cube.get_name(), cube.get_properties())
+    cube = level_editor.active_scene.render.find("**/cube.fbx")
+    cube = cube.getPythonTag(TAG_GAME_OBJECT)
+    # inspector.set_object(cube, cube.get_name(), cube.get_properties())
 
     scene_graph.ExpandAll()  # expand scene graph
     # resource_tree.schedule_dir_watcher()  # start the project directory watcher
@@ -217,6 +223,7 @@ def on_add_nps(nps):
 
     for np in nps:
         scene_graph.add(np)
+
     scene_graph.select(nps)
     inspector.layout_auto()
 
@@ -268,22 +275,13 @@ def switch_ed_state(state=None):
 
 @obs.on("OnEnableEditorState")
 def on_enable_ed_state():
-    scene_graph = editor.scene_graph
-    inspector = editor.inspector
-
-    scene_graph.rebuild()
-    scene_graph.UnselectAll()
-
-    if inspector.has_object():
-        inspector.update(force_update_all=True)
+    editor.scene_graph.rebuild()
+    editor.scene_graph.UnselectAll()
 
 
 @obs.on("OnEnableGameState")
 def on_enable_game_state():
-    # TODO fix this
-    scene_graph = editor.scene_graph
-    scene_graph.UnselectAll()
-    # -----------------------
+    editor.scene_graph.UnselectAll()
 
 
 @obs.on("ToggleSceneLights")
@@ -306,7 +304,7 @@ def toggle_lights(value=None):
 
 @obs.on("PluginFailed")
 def plugin_execution_failed(plugin):
-    editor.level_editor.unload_editor_plugin(plugin)
+    editor.level_editor.unregister_editor_plugin(plugin)
 
 
 @obs.on("CleanUnusedLoadedNPs")
@@ -337,11 +335,12 @@ def reload_editor(*args):
 
     wx_main.freeze()
 
-    # rebuild resources tree AND reload all the resources
+    # rebuild resources tree and reload all resources
     resource_tree.create_or_rebuild_tree(le.project.project_path, rebuild_event=True)
-    le.register_all_mods(resource_tree.resources["py"])
+    le.register_user_modules(resource_tree.resources["py"])
+    le.reload_components(resource_tree.resources["py"])
     le.register_text_files(resource_tree.resources["txt"])
-    # -----------------------------------------------------
+    # ---------------------------------------------------
 
     scene_graph.rebuild()  # rebuild the scene graph
 
@@ -367,7 +366,7 @@ def switch_ed_viewport_style():
 @obs.on("OnResourceTileSelected")
 def on_resource_tile_selected(file_path):
     def on_module_selected(module):
-        inspector.set_object(module, module.name, module.get_properties())
+        inspector.layout(module, module.name, module.get_properties())
 
     def on_txt_file_selected(txt_file):
         inspector.set_text(txt_file.text)

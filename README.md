@@ -62,9 +62,9 @@ It's located in current working directory and should not be deleted. You can use
 * **X** to remove / delete selected objects
 * **control + z** to undo
 
-## Editor modes
-PandaEditor has two modes **EditorMode** and **GameMode**, at any given time editor can only be in one of two modes.  
-The **EditorMode** is your scene creation state, this is where you would set up your 2D or 3D scenes, program the game logic using **RuntimeModules** and define object behaviors by using  or nodepath **Components**.  
+## Editor states
+At any given moment, PandaEditor  **EditorMode** and **GameMode**, at any given time editor can only be in one of two modes.  
+The **EditorState** is your scene creation state, this is where you would set up your 2D or 3D scenes, 
 The game logic and object behaviors defined during editor mode are executed in game mode, the game mode is also what you would expect as final game view.  
 
 ## Editor resources

@@ -165,11 +165,11 @@ class WxFrame(wx.Frame):
 
         self.dialogue_manager = DialogManager()
 
-        self.ed_viewport_panel = Viewport(self.notebook)
-        self.inspector_panel = InspectorPanel(self.notebook)
-        self.console_panel = LogPanel(self.notebook)
-        self.resource_browser = ResourceBrowser(self.notebook)
-        self.scene_graph_panel = SceneBrowserPanel(self.notebook)
+        self.ed_viewport_panel = Viewport(self)
+        self.inspector_panel = InspectorPanel(self)
+        self.console_panel = LogPanel(self)
+        self.resource_browser = ResourceBrowser(self)
+        self.scene_graph_panel = SceneBrowserPanel(self)
 
         self.pages = [(self.ed_viewport_panel, "ViewPort"),
                       (self.inspector_panel, "Inspector"),

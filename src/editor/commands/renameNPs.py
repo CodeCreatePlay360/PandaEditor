@@ -1,10 +1,9 @@
-from editor.commandManager import EdCommand
+from editor.commandManager import Command
 from editor.globals import editor
 
 
-class RenameNPs(EdCommand):
-    def __init__(self, app, np, old_name, new_name, *args, **kwargs):
-        super(RenameNPs, self).__init__(app)
+class RenameNPs(Command):
+    def __init__(self, np, old_name, new_name, *args, **kwargs):
 
         self.np = np
         self.old_name = old_name
@@ -19,3 +18,5 @@ class RenameNPs(EdCommand):
         editor.scene_graph.rename_item(self.np, self.np.get_name())
         editor.inspector.layout_object_properties(self.np, self.np.get_name(), self.np.get_properties())
 
+    def clean(self, **kwargs):
+        pass

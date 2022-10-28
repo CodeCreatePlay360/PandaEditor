@@ -5,6 +5,17 @@ from editor.core import RuntimeModule
 from editor.utils import EdProperty
 
 
+class Component(RuntimeModule, p3dCore.NodePath):
+    def __init__(self, *args, **kwargs):
+        RuntimeModule.__init__(self, *args, **kwargs)
+
+    def __attach__(self, np):
+        p3dCore.NodePath.__init__(self, np)
+
+    def __detach__(self):
+        pass
+
+
 class Basics(RuntimeModule):
     def __init__(self, *args, **kwargs):
         """__init__ should not be used for anything except for variable declaration"""

@@ -72,7 +72,7 @@ class Scene:
     def scene_lights(self):
         def get_all_scene_lights(np):
             for np_ in np.getChildren():
-                obj = np_.getPythonTag("PICKABLE")
+                obj = np_.getPythonTag("__TAG_GAME_OBJECT__")
                 if obj and obj.id in ["__PointLight__", "__SpotLight__", "__DirectionalLight__", "__AmbientLight__"]:
                     lights.append(obj)
 
@@ -88,7 +88,7 @@ class Scene:
     def cameras(self):
         def get_all_scene_cameras(np):
             for np_ in np.getChildren():
-                obj = np_.getPythonTag("PICKABLE")
+                obj = np_.getPythonTag("__TAG_GAME_OBJECT__")
                 if obj.id == "__CameraNodePath__":
                     cameras.append(obj)
 

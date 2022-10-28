@@ -1,7 +1,6 @@
 import editor.constants as constants
 import editor.utils as ed_utils
 from direct.showbase.DirectObject import DirectObject
-from panda3d.core import NodePath
 from editor.globals import editor
 
 
@@ -12,7 +11,7 @@ def execute(*args, **kwargs):
 
 
 def stop_execution(module):
-    if module.type == "EditorPlugin":
+    if module.type == constants.EditorPlugin:
         editor.observer.trigger("PluginFailed", module)
     else:
         editor.observer.trigger("SwitchEdState", 0)

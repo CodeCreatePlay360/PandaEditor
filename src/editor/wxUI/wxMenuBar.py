@@ -260,10 +260,10 @@ class WxMenuBar(wx.MenuBar):
 
     def add_ed_plugin_menu(self, menu_name: str):
         if menu_name not in self.ed_plugin_menus.values():
-            _id = wx.NewId()
-            menu_item = wx.MenuItem(self.plugin_menu, _id, menu_name)
+            id_ = wx.NewId()
+            menu_item = wx.MenuItem(self.plugin_menu, id_, menu_name)
             self.plugin_menu.Append(menu_item)
-            self.ed_plugin_menus[_id] = menu_name
+            self.ed_plugin_menus[id_] = menu_name
 
     def add_user_command_menu(self, command_name: str):
         menu_ = command_name.split("/")
@@ -301,7 +301,13 @@ class WxMenuBar(wx.MenuBar):
         self.ed_plugin_menus.clear()
 
     def clear_user_command_menus(self):
-        pass
+        for menu in self.user_command_menu_items_id_map.values():
+            pos = self.user_command_menu.FindItem(menu)
+            if pos >= 0:
+                self.user_command_menu.Remove(pos)
+
+        self.user_command_menu_items_id_map.clear()
+        self.user_command_menus_id_map.clear()
 
     def on_event(self, evt):
         if evt.GetId() in EVENT_MAP:
@@ -309,11 +315,11 @@ class WxMenuBar(wx.MenuBar):
             args = EVENT_MAP[evt.GetId()][1]
 
             if evt_name == "AddObject":
-                editor.command_mgr.do(commands.ObjectAdd(editor.p3d_app, args))
+                editor.command_mgr.do(commands.ObjectAdd(args))
             elif evt_name == "AddLight":
-                editor.command_mgr.do(commands.AddLight(editor.p3d_app, args))
+                editor.command_mgr.do(commands.AddLight(args))
             elif evt_name == "AddCamera":
-                editor.command_mgr.do(commands.AddCamera(editor.p3d_app))
+                editor.command_mgr.do(commands.AddCamera())
 
             elif evt_name == "SaveUILayout":
                 self.wx_main.on_save_current_layout()

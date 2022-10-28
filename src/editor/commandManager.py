@@ -1,4 +1,3 @@
-import editor.constants as constants
 from abc import ABC, abstractmethod
 from editor.utils import try_execute as safe_execute
 
@@ -17,24 +16,8 @@ class Command(ABC):
     def undo(self, *args, **kwargs):
         return
 
-
-class EdCommand(Command):
-    """Base abstract Command class"""
-
-    def __init__(self, app):
-        """
-        app = panda3d app,
-        execute_once = if False undo redo operation is supported
-        """
-        Command.__init__(self)
-        self.app = app
-
     @abstractmethod
-    def do(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def undo(self):
+    def clean(self, **kwargs):
         pass
 
 
@@ -50,20 +33,9 @@ class CommandManager(object):
         """Push the given command to the undo command stack."""
         self.undo_commands.append(command)
 
-        # --------------------------------------------------
         if len(self.undo_commands) > self.max_commands:
             cmd = self.undo_commands[0]
-            # see constants.CleanUnusedLoadedNPs for explanation
-            try:
-                cmd.RemoveNPsCmd
-                nps_ = []
-                for np, parent in cmd.saved:
-                    nps_.append(np)
-                constants.obs.trigger("CleanUnusedLoadedNPs", nps_)
-            except AttributeError:
-                pass
-            # ---------------------------------------------------
-
+            cmd.clean()
             self.undo_commands.remove(cmd)
 
     def pop_undo_command(self):
@@ -123,6 +95,8 @@ class CommandManager(object):
                 if safe_execute(command):
                     self.push_undo_command(command)
 
-    def clear(self):
+    def clear(self, **kwargs):
+        for cmd in self.undo_commands:
+            cmd.clean(**kwargs)
         self.undo_commands.clear()
         self.redo_commands.clear()
