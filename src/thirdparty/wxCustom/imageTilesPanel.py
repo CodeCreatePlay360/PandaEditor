@@ -159,6 +159,10 @@ class ImageTile(wx.Panel):
             elif drag_result == wx.DragError:
                 print("Drag error")
 
+            editor.wx_main.freeze()
+            editor.inspector.layout_auto()
+            editor.wx_main.thaw()
+
             editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             evt.Skip()
 

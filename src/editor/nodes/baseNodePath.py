@@ -76,8 +76,8 @@ class BaseNodePath(NodePath):
             self.__components[path] = component
             # print("Component: [{0}] attached to [{1}]".format(component, self.name))
         else:
-            print("Warning: Attempt to attach multiple Components of same type, "
-                  "Component: [{0}] already attached to [{1}] !".format(path, self.name))
+            print("Warning: Attempt to attach multiple Components of same type... "
+                  "Component: [{0}] is already attached to [{1}] !".format(path, self.name))
 
     def detach_component(self, path):
         if self.__components.__contains__(path):

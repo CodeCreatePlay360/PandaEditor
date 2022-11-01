@@ -53,7 +53,8 @@ class Game:
         components = self.components
         for np in components.keys():
             for component in components[np]:
-                self.__all_modules[component.path] = component
+                self.__all_modules[component.path+component.class_instance.getPythonTag("__TAG_GAME_OBJECT__").uid] =\
+                    component
 
         # classify all modules according to task sort values
         mod_exec_order = {}  # mod_exec_order[sort_value] = [mod1, mod2,....]
@@ -177,6 +178,9 @@ class Game:
 
     @property
     def components(self):
+        """:returns all component modules attached to nodepaths in active_scene as a dictionary
+         (components[np] = list of component_modules), the actual component is wrapped in module.class_instance"""
+
         components = {}  # np: list of component
 
         def traverse(np_):

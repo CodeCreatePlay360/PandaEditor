@@ -1,6 +1,5 @@
 import wx
 import editor.edPreferences as edPreferences
-import editor.wxUI.custom as wx_custom
 from editor.constants import ICONS_PATH
 
 Panel_Fold_size = 23.0
@@ -13,8 +12,6 @@ Controls_offset_right = 18
 
 FOLD_OPEN_ICON = ICONS_PATH + "\\" + "foldOpen_16.png"
 FOLD_CLOSE_ICON = ICONS_PATH + "\\" + "foldClose_16.png"
-PIN_BUTTON_ICON = ICONS_PATH + "\\" + "pin.png"
-REFRESH_BTN_ICON = ICONS_PATH + "\\" + "arrow_refresh.png"
 
 Debug_Mode = True  # debug mode add a small separation of 0.2 between two vertical adjacent controls
 
@@ -27,7 +24,7 @@ class FoldPanel(wx.Panel):
         self.SetBackgroundColour(wx.Colour(edPreferences.Colors.Panel_Dark))
 
         self.fold_manager = fold_manager
-        self.toggle_property = None
+
         self.__label = label
         self.__controls_in_sizer = False
         self.__is_sub_panel = is_sub_panel
@@ -38,9 +35,6 @@ class FoldPanel(wx.Panel):
 
         self.fd_control = None
         self.label_control = None
-
-        # this should be called from fold-manager when adding a new panel.
-        # self.create_buttons()
 
         self.wx_properties = []
         self.expanded = False
@@ -75,41 +69,17 @@ class FoldPanel(wx.Panel):
             prop.Destroy()
         self.wx_properties.extend(controls)
 
-    def create_buttons(self):
+    def create_buttons(self, toggle_btn=None, control_group=None):
+        """Draws panel open and close buttons, a toggle property, set via call to fold_panel.set_toggle_property
+        and an optional wx_custom.control_group"""
+
         # set panel open and close icons
         self.fd_open_icon = wx.Image(FOLD_OPEN_ICON, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
         self.fd_close_icon = wx.Image(FOLD_CLOSE_ICON, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
         self.fd_control = wx.StaticBitmap(self, -1, self.fd_close_icon, (0, 0), size=wx.Size(9, 9))
 
-        # pin_icon = wx.Image(PIN_BUTTON_ICON, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        # self.pin_btn = wx.StaticBitmap(self, -1, pin_icon, (0, 0), size=wx.Size(16, 16))
-        self.options_panel = wx_custom.ControlGroup(self, size=(18, 18))
-
-        pin_btn = wx_custom.PinButton(
-            bg_color=self.GetBackgroundColour(),
-            parent=self.options_panel,
-            btn_index=0,
-            label_text="",
-            image_path=PIN_BUTTON_ICON,
-            image_pos=(1, 2),
-            image_scale=16,
-            select_func=self.on_pin,
-            deselect_func=self.on_clear_pinned,
-        )
-
-        # refresh_btn = wx_custom.ToggleButton(
-        #     parent=self.options_panel,
-        #     select_func=self.on_select,
-        #     deselect_func=self.on_deselect,
-        #     btn_index=1,
-        #     image_path=REFRESH_BTN_ICON,
-        #     label_text="",
-        #     image_pos=(1, 2),
-        #     image_scale=14)
-        # refresh_btn.SetBackgroundColour(self.GetBackgroundColour())
-
-        self.options_panel.add_button(pin_btn, flags=wx.EXPAND, border=0)
-        # self.options_panel.add_button(refresh_btn, flags=wx.EXPAND, border=0)
+        #
+        # self.options_panel = control_group
 
         self.label_control = wx.StaticText(self, label=self.__label)
         self.label_control.SetFont(self.font)
@@ -119,14 +89,16 @@ class FoldPanel(wx.Panel):
         self.h_sizer.Add(self.fd_control, 0, wx.EXPAND | wx.TOP, border=1)
         self.h_sizer.AddSpacer(2)
 
-        if self.toggle_property:
-            self.h_sizer.Add(self.toggle_property, 0, wx.EXPAND, border=0)
+        if toggle_btn:
+            self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.RIGHT, border=3)
         else:
             self.h_sizer.AddSpacer(2)
 
         self.h_sizer.Add(self.label_control, 0, wx.EXPAND | wx.TOP, border=2)
-        self.h_sizer.AddStretchSpacer()
-        self.h_sizer.Add(self.options_panel, 0, wx.EXPAND | wx.RIGHT, border=5)
+
+        if control_group:
+            self.h_sizer.AddStretchSpacer()
+            self.h_sizer.Add(control_group, 0, wx.EXPAND | wx.RIGHT, border=5)
 
         self.v_sizer.Layout()
 
@@ -135,10 +107,6 @@ class FoldPanel(wx.Panel):
 
     def on_clear_pinned(self, idx):
         pass
-
-    def set_toggle_property(self, toggle_property):
-        self.toggle_property = toggle_property
-        self.toggle_property.SetBackgroundColour(self.GetBackgroundColour())
 
     def update_controls(self, shown=True):
         layout = False
@@ -220,3 +188,7 @@ class FoldPanelManager(wx.Panel):
 
     def on_panel_foldout(self, panel):
         self.PostSizeEventToParent()
+
+    @property
+    def panel_count(self):
+        return len(self.panels)
