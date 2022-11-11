@@ -32,13 +32,13 @@ class SelectObjects(Command):
             editor.scene_graph.select(self.last_selections)
 
             obj = self.last_selections[0]
-            editor.inspector.set_object(obj, obj.get_name(), obj.get_properties())
+            editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
         else:
             editor.level_editor.set_selected(self.selected_nps)
             editor.scene_graph.select(self.selected_nps)
 
             obj = self.selected_nps[0]
-            editor.inspector.set_object(obj, obj.get_name(), obj.get_properties())
+            editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
 
         editor.wx_main.thaw()
 

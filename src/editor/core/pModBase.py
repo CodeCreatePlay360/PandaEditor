@@ -54,32 +54,7 @@ class PModBase(DirectObject):
 
         # to be discarded variables
         # these variables will not be saved
-        self.__discarded_attributes = [
-            "_MSGRmessengerId",
-
-            "_name",
-            "_render",
-            "_mouse_watcher",
-            "_win",
-
-            "_editor_plugin",
-
-            "_task",
-            "_late_task",
-            "_sort",
-            "_late_update_sort",
-
-            "_active",
-            "_initialized",
-            "_error",
-
-            "_properties",
-            "_user_properties",
-            "_hidden_attributes",
-
-            "module_type",
-
-            "_discarded_attrs"]
+        self.__discarded_attributes = []
 
     def accept(self, event, method, extra_args: list = None):
         if extra_args is None:
@@ -209,7 +184,9 @@ class PModBase(DirectObject):
     def get_savable_atts(self):
         attrs = []
         for name, val in self.__dict__.items():
-            if self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name):
+            if name == "_PModBase__active":
+                pass
+            elif self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name):
                 # print("discarded attr name: {0}".format(name))
                 continue
             # print("[{0}] Saved attribute name: {1} val: {2}".format(self.name, name, val))

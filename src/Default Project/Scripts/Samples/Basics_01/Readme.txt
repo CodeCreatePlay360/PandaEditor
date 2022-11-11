@@ -1,1 +1,1 @@
-This is the first basic sample, it shows basic usage of a user module, including creating propeties, accessing other modules, scene graph manipulations and event handling.
+This is the first sample, it shows basic usage of a UserModule and some scripting basics in PandaEditor.

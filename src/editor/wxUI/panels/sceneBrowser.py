@@ -207,7 +207,8 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         def remove_(np_):
             for child in np_.getChildren():
                 if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
-                    del self.np_id_to_tree_item_map[child]
+                    if self.np_id_to_tree_item_map.__contains__(child):
+                        del self.np_id_to_tree_item_map[child]
                 remove_(child)
 
         for np in nps:
@@ -283,7 +284,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
                     self.SetItemText(tree_item, new_name)
 
                     # finally, create the rename command
-                    editor.command_mgr.do(RenameNPs(editor.p3d_app, np, old_name, new_name))
+                    editor.command_mgr.do(RenameNPs(np, old_name, new_name))
 
         self.Refresh()
 

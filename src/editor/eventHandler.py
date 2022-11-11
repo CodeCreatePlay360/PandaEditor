@@ -215,10 +215,8 @@ def on_add_nps(nps):
     resource_tree = editor.resource_browser
 
     wx_main.freeze()
-
     app.level_editor.deselect_all()
     resource_tree.deselect_all_files()
-
     app.level_editor.set_selected(nps)
 
     for np in nps:
@@ -226,7 +224,6 @@ def on_add_nps(nps):
 
     scene_graph.select(nps)
     inspector.layout_auto()
-
     wx_main.thaw()
 
 

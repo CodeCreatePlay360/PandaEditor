@@ -293,8 +293,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 self.name_to_item[key] = tree_item
                 self.create_tree_from_dir(path, tree_item)
 
-            root_node = self.libraries["Project"][1]
-            self.Expand(root_node)
+            self.ExpandAll()
             self.Refresh()
 
     def create_tree_from_dir(self, dir_path=None, parent=None):
@@ -321,6 +320,8 @@ class ResourceTree(customtree.CustomTreeCtrl):
                     self.resources[extension] = []
 
                 self.resources[extension].append(file_path)
+
+        self.ExpandAll()
 
     def schedule_dir_watcher(self):
         for key in self.libraries.keys():

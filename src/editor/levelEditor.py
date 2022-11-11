@@ -128,8 +128,8 @@ class LevelEditor(DirectObject):
             editor.observer.trigger("XFormTask")
             self.current_xform_time += self.x_form_delay
 
+        self.update_gizmo()  # this has to be updated regularly otherwise gizmo movement appears jagged
         editor.observer.trigger("EditorUpdate")
-
         return task.cont
 
     # --------------------------------Scene operations-----------------------------#
@@ -360,7 +360,10 @@ class LevelEditor(DirectObject):
                 nps_ = nps if nps else self.selection.selected_nps
                 for np in nps_:
                     # initialize
-                    cls_instance = self.initialize_component(cls_name, cls, path, np)
+                    cls_instance = ed_utils.try_execute_1(self.initialize_component, cls_name, cls, path, np)
+                    # cls_instance = self.initialize_component(cls_name, cls, path, np)
+                    if cls_instance is None:
+                        continue
                     # wrap into a UserModule object
                     module = ed_core.UserModule(path, cls_instance, cls_instance.sort)
                     # and attach it to NodePath
@@ -436,16 +439,21 @@ class LevelEditor(DirectObject):
             render=self.active_scene.render,
             render2d=self.active_scene.render_2d,
             aspect2d=self.active_scene.aspect_2d,
-            game=self,
+            game=self.project.game,
             path=path,
             np=np
         )
         return instance
 
     def reload_components(self, paths: list):
+        class SavedComp:
+            def __init__(self):
+                pass
+
         nps = []
         existing_components = self.project.game.components
         saved = {}
+        x = {}
 
         for np in existing_components.keys():
             components = existing_components[np]
@@ -455,10 +463,15 @@ class LevelEditor(DirectObject):
                 # saved user module data for copying data after reloading
                 saved[cls_instance.path] = comp
 
+                if not x.__contains__(np):
+                    x[np] = []
+                x[np].append(comp.path)
+
             np.clear_components()
             nps.append(np)
 
-        self.register_component(paths, nps=nps)
+        for np in x.keys():
+            self.register_component(x[np], nps=[np])
 
         new_components = self.project.game.components
         for np in new_components.keys():
@@ -570,9 +583,10 @@ class LevelEditor(DirectObject):
         self.gizmo_mgr.ToggleLocal()
 
     def update_gizmo(self):
-        nps = self.selection.selected_nps
-        self.gizmo_mgr.AttachNodePaths(nps)
-        self.gizmo_mgr.RefreshActiveGizmo()
+        if self.active_gizmo is not None:
+            nps = self.selection.selected_nps
+            self.gizmo_mgr.AttachNodePaths(nps)
+            self.gizmo_mgr.RefreshActiveGizmo()
 
     def bind_key_events(self):
         for key in self.key_event_map.keys():
@@ -677,14 +691,12 @@ class LevelEditor(DirectObject):
         self.hidden_np.remove_node()
         self.hidden_np = None
 
-        self.bind_key_events()
         editor.observer.trigger("OnEnableEditorState")  # for any cleanup operations
 
     def enable_game_state(self):
         print("[LevelEditor] Game state enabled.")
 
         self.ed_state = constants.GAME_STATE
-        self.unbind_key_events()
         self.deselect_all()  # call to deselect all, triggers OnDeselectAllNps event which properly handles
         # UI updates (inspector, scene graph etc.)
         self.app.command_manager.clear()
@@ -714,7 +726,7 @@ class LevelEditor(DirectObject):
                     if not type(child) == p3d_core.NodePath:
                         continue
                     # print("child: {0} type: {1}".format(child, type(child)))
-                    child = ed_nodepaths.BaseNodePath(child)
+                    child = ed_nodepaths.ModelNodePath(child, path=path)
                     child.setColor(p3d_core.LColor(1, 1, 1, 1))
                     child.setPythonTag(constants.TAG_GAME_OBJECT, child)
                     if child.get_name() == "":
@@ -724,19 +736,14 @@ class LevelEditor(DirectObject):
         np = ed_utils.try_execute_1(self.__loader.loadModel, path)
         if not np:
             return
-        np = self.__loader.loadModel(path)
+
         np = ed_nodepaths.ModelNodePath(np, path=path)
         np.setColor(p3d_core.LColor(1, 1, 1, 1))
         np.setPythonTag(constants.TAG_GAME_OBJECT, np)
 
         add_children(np)
 
-        if self.ed_state is constants.EDITOR_STATE:
-            np.reparent_to(self.active_scene.render)
-
-        elif self.ed_state is constants.GAME_STATE:
-            pass
-
+        np.reparent_to(self.active_scene.render)
         editor.observer.trigger("OnAddNPs", [np])
         self.set_selected([np])
         return np
@@ -852,7 +859,7 @@ class LevelEditor(DirectObject):
             self.traverse_scene_graph(x,
                                       light_func=self.active_scene.render.set_light if self.scene_lights_on else None,
                                       recreate=True)
-            new_selections.append(x)
+            new_selections.append(x.getPythonTag(constants.TAG_GAME_OBJECT))
 
         editor.observer.trigger("OnAddNPs", new_selections)
         return new_selections

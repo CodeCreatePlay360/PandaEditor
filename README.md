@@ -63,9 +63,9 @@ It's located in current working directory and should not be deleted. You can use
 * **control + z** to undo
 
 ## Editor states
-At any given moment, PandaEditor  **EditorMode** and **GameMode**, at any given time editor can only be in one of two modes.  
-The **EditorState** is your scene creation state, this is where you would set up your 2D or 3D scenes, 
-The game logic and object behaviors defined during editor mode are executed in game mode, the game mode is also what you would expect as final game view.  
+PandaEditor has two states **Editor** and **Game** state.  
+The **Editor** state is your scene creation state, this is where you would set up your 2D or 3D scenes, write scripts and define object behaviours.  
+The game logic and object behaviors defined during editor mode are executed in **Game** state, the game state is also what you would expect as final view.  
 
 ## Editor resources
 In PandaEditor a resource is defined as the **"building blocks of your project, every editor resource is a file located on your computer"** commonly they include files such as images, audio, 3d model files or python scripts etc.  

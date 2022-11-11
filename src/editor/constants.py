@@ -1,6 +1,5 @@
 import panda3d.core as p3d_core
 
-
 # -----------------------------------------------------------------------------------------------
 EDITOR_STATE = 0
 GAME_STATE = 1
@@ -56,7 +55,7 @@ CAMERA_NODEPATH = "__CameraNodePath__"
 
 # -----------------------------------------------------------------------------------------------
 # All Supported file types
-MODEL_EXTENSIONS = ["egg", "bam", "pz"]
-TEXTURE_EXTENSIONS = []
+MODEL_EXTENSIONS = ["egg", "bam", "pz", "glb", "gltf"]
+TEXTURE_EXTENSIONS = ["tiff", "tga", "jpg", "png"]
 OTHER_EXTENSIONS = []
 # **********************************************************************************************

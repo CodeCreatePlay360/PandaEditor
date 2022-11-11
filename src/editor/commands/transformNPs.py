@@ -20,7 +20,7 @@ class TransformNPs(Command):
 
         editor.level_editor.set_selected(nps)
         editor.scene_graph.select(nps)
-        editor.inspector.set_object(nps[0], nps[0].get_name(), nps[0].get_properties())
+        editor.inspector.layout(nps[0], nps[0].get_name(), nps[0].get_properties())
 
     def clean(self, **kwargs):
         pass

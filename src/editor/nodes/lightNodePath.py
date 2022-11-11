@@ -130,6 +130,7 @@ class EdPointLight(LightNp):
         self.properties.append(attenuation)
 
     def set_attenuation(self, val):
+        self.__attenuation = val
         self.node().setAttenuation(self.__attenuation_map[val])
 
     def get_attenuation(self):
@@ -140,6 +141,7 @@ class EdSpotLight(LightNp):
     def __init__(self, np, path, uid=None):
         # np = NodePath(Spotlight("SpotLight"))
         LightNp.__init__(self, np, path, id_="__SpotLight__", uid=uid)
+        self.set_scale(10)
 
         self.__attenuation = 0
         self.attenuation_map = {
@@ -152,10 +154,6 @@ class EdSpotLight(LightNp):
         if self.node().getAttenuation() in self.attenuation_map.values():
             value = [i for i in self.attenuation_map if self.attenuation_map[i] == self.node().getAttenuation()]
             self.__attenuation = value[0]
-
-        # if np_other and np.hasPythonTag("PICKABLE"):
-        #     np = np.getPythonTag("PICKABLE")
-        #     self.set_attenuation(np.get_attenuation())
 
         self.create_properties()
 
@@ -182,6 +180,7 @@ class EdSpotLight(LightNp):
         self.properties.extend(lens_props)
 
     def set_attenuation(self, val):
+        self.__attenuation = val
         self.node().setAttenuation(self.attenuation_map[val])
 
     def get_attenuation(self):
@@ -193,6 +192,7 @@ class EdAmbientLight(LightNp):
         # np = NodePath(AmbientLight("AmbientLight"))
         LightNp.__init__(self, np, path, id_="__AmbientLight__", uid=uid)
         self.create_properties()
+        self.set_scale(10)
 
     def create_properties(self):
         super(EdAmbientLight, self).create_properties()

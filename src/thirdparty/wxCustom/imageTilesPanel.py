@@ -273,12 +273,12 @@ class ImageTile(wx.Panel):
             remove()
 
     def load_model(self):
-        path = self.path
-        editor.command_mgr.do(commands.LoadModel(editor.p3d_app, path=path, is_actor=False))
+        path = self.path[len(editor.level_editor.project.project_path) + 1:]
+        editor.command_mgr.do(commands.LoadModel(path=path))
 
     def load_actor(self):
         path = self.path
-        editor.command_mgr.do(commands.LoadModel(editor.p3d_app, path=path, is_actor=True))
+        editor.command_mgr.do(commands.LoadModel(path=path))
 
 
 class ImageTilesPanel(ScrolledPanel):
@@ -374,9 +374,8 @@ class ImageTilesPanel(ScrolledPanel):
             "egg": ModelFile_icon,
             "bam": ModelFile_icon,
             "pz": ModelFile_icon,
-            # "fbx":  MODEL_ICON,
-            # "obj": Model_icon,
-            # "gltf": MODEL_ICON,
+            "gltf": ModelFile_icon,
+            "glb": ModelFile_icon,
 
             # image files
             "tiff": ImageFile_icon,
