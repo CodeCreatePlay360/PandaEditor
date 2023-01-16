@@ -140,6 +140,8 @@ class WxFrame(wx.Frame):
         icon = wx.Icon(icon_file, wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
+        self.panels = []
+
         self.panda_app = wx.GetApp()
         self.freeze()
         self.load_resources()
@@ -171,13 +173,13 @@ class WxFrame(wx.Frame):
         self.resource_browser = ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
 
-        self.pages = [(self.ed_viewport_panel, "ViewPort"),
-                      (self.inspector_panel, "Inspector"),
-                      (self.console_panel, "LogPanel"),
-                      (self.resource_browser, "ResourceBrowser"),
-                      (self.scene_graph_panel, "SceneGraph")]
+        self.panels = [(self.ed_viewport_panel, "ViewPort"),
+                       (self.inspector_panel, "Inspector"),
+                       (self.console_panel, "LogPanel"),
+                       (self.resource_browser, "ResourceBrowser"),
+                       (self.scene_graph_panel, "SceneGraph")]
 
-        self.notebook.add_pages(self.pages)  # add panels to notebook
+        self.notebook.add_pages(self.panels)  # add panels to notebook
 
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -368,7 +370,7 @@ class WxFrame(wx.Frame):
         # check if layout exists
         self.freeze()
         if self.saved_layouts.__contains__(layout):
-            for i in range(len(self.pages)):
+            for i in range(len(self.panels)):
                 self.notebook.RemovePage(0)
 
             saved_data = self.saved_layouts[layout][0]
@@ -382,7 +384,7 @@ class WxFrame(wx.Frame):
         self.thaw()
 
     def add_page(self, page: str):
-        for item in self.pages:
+        for item in self.panels:
             if item[1] == page:
                 if not self.notebook.is_page_active(item[1]):
                     self.notebook.AddPage(item[0], item[1], False)
@@ -406,9 +408,13 @@ class WxFrame(wx.Frame):
         event.Skip()
 
     def freeze(self):
-        if not self.IsFrozen():
-            self.Freeze()
+        for item in self.panels:
+            panel = item[0]
+            if not panel.IsFrozen():
+                panel.Freeze()
 
     def thaw(self):
-        if self.IsFrozen():
-            self.Thaw()
+        for item in self.panels:
+            panel = item[0]
+            if panel.IsFrozen():
+                panel.Thaw()

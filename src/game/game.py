@@ -181,7 +181,7 @@ class Game:
         """:returns all component modules attached to nodepaths in active_scene as a dictionary
          (components[np] = list of component_modules), the actual component is wrapped in module.class_instance"""
 
-        components = {}  # np: list of component
+        components = {}  # np: components
 
         def traverse(np_):
             np = np_.getPythonTag("__TAG_GAME_OBJECT__")

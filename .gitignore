@@ -129,3 +129,8 @@ dmypy.json
 .pyre/
 *.backup
 .idea/
+Exclude/ColorMap.jpg
+Exclude/ico_sphere.blend
+Exclude/ico_sphere.blend1
+Exclude/terrain.blend
+Exclude/terrain.glb

@@ -209,6 +209,7 @@ class LevelEditor(DirectObject):
     def register_user_modules(self, modules_paths):
         """Imports, instantiates, reload and registers RuntimeModules and EditorPlugins
         modules_paths = all python modules in project"""
+
         def init_runtime_module(name, runtime_module, path_):
             instance = runtime_module(
                 name=name,
@@ -446,39 +447,46 @@ class LevelEditor(DirectObject):
         return instance
 
     def reload_components(self, paths: list):
-        class SavedComp:
-            def __init__(self):
-                pass
+        saved_components = {}  # np: [components_paths]
 
-        nps = []
-        existing_components = self.project.game.components
-        saved = {}
-        x = {}
-
+        # get all existing components and save them
+        # TODO make sure saved comp exists in incoming paths
+        existing_components = self.project.game.components  # game.component return as a dict (np: components)
         for np in existing_components.keys():
-            components = existing_components[np]
-            for comp in components:
-                cls_instance = comp.class_instance
-                cls_instance.ignore_all()
-                # saved user module data for copying data after reloading
-                saved[cls_instance.path] = comp
+            for comp in existing_components[np]:
 
-                if not x.__contains__(np):
-                    x[np] = []
-                x[np].append(comp.path)
+                comp.save_data()
+                comp.class_instance.ignore_all()
+
+                if comp.path not in paths:
+                    continue
+
+                if not saved_components.__contains__(np):
+                    saved_components[np] = []
+
+                saved_components[np].append(comp)
 
             np.clear_components()
-            nps.append(np)
 
-        for np in x.keys():
-            self.register_component(x[np], nps=[np])
+        # now reload the saved_components
+        for np in saved_components.keys():
 
-        new_components = self.project.game.components
-        for np in new_components.keys():
-            components = new_components[np]
-            for comp in components:
-                if comp.path in saved:
-                    comp.copy_data(saved[comp.path])
+            paths = []
+            for comp in saved_components[np]:
+                paths.append(comp.path)
+
+            new_comp = self.register_component(paths=paths, nps=[np])[0]
+
+            old_comp_idx = -1
+            for i in range(len(saved_components[np])):
+                old_comp = saved_components[np][i]
+                if old_comp.path == new_comp.path:
+                    old_comp_idx = i
+
+            old_saved_data = saved_components[np][old_comp_idx].saved_data
+
+            new_comp.saved_data = old_saved_data
+            new_comp.reload_data()
 
     def get_module(self, file_path):
         """returns a user module by path"""
@@ -601,10 +609,10 @@ class LevelEditor(DirectObject):
         # self.app.show_base.ed_camera.disabled = False
 
     def unbind_key_events(self):
-        pass
         # for key in self.key_event_map.keys():
         #     self.ignore(key)
         # self.app.show_base.ed_camera.disabled = True
+        pass
 
     def on_mouse1_down(self, shift):
         self.mouse_1_down = True

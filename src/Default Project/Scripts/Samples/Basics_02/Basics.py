@@ -2,7 +2,7 @@ import math
 import panda3d.core as p3d_core
 from editor.core.component import Component
 
-
+ 
 class Basics(Component):
     def __init__(self, *args, **kwargs):
         Component.__init__(self, *args, **kwargs)
