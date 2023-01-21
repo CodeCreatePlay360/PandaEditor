@@ -1,3 +1,4 @@
+import os.path
 import pickle
 import wx
 import editor.edPreferences as edPreferences
@@ -92,7 +93,11 @@ class BaseInspectorPanel(wx.Panel):
             def OnData(self, x, y, d):
                 if self.GetData():
                     data = pickle.loads(self.custom_data_obj.GetData())
-                    editor.level_editor.register_component(data.path)
+
+                    # only include paths with ".py" extension
+                    files = [path for path in data.path if os.path.splitext(path)[1] == ".py"]
+
+                    editor.level_editor.register_component(files)
                 else:
                     return wx.DragNone
 
