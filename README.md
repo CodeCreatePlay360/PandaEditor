@@ -17,7 +17,11 @@ It has all the basic features of a level editor including
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-> It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to 
+> It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your work scripts, report bugs or support financially by subscribing to PandaEditor patreon page.  
+
+## Links
+1. [Discord](https://discord.gg/Ttp9zU28uh)
+2. [Patreon](https://www.patreon.com/PandaEditor_)
 
 ## Dependencies
 1. Panda3d
