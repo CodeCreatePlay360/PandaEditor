@@ -6,7 +6,7 @@ class Scene:
     def __init__(self, game, name, *args, **kwargs):
         self.game = game
         self.name = name
-        self.main_camera = None  # this is main rendering camera
+        self.__main_camera = None  # this is main rendering camera
 
         # create a 3d rendering setup
         self.render = p3d_core.NodePath(self.name)
@@ -23,6 +23,7 @@ class Scene:
         # -----------------------------------------
         self.__scene_lights = []   # all scene lights in one repository
         self.__scene_cameras = []    # all scene camera in one repository
+        self.actors = {}
 
     def setup_2d_render(self):
         """setup a 2d rendering"""
@@ -44,29 +45,23 @@ class Scene:
         self.camera_2d.node().setLens(lens)
         self.camera_2d.reparent_to(self.render_2d)
 
-        self.game.display_region_2d.setCamera(self.camera_2d)
-
-    def setup_3d_render(self):
-        pass
+        self.game.dr_2d.setCamera(self.camera_2d)
 
     def set_active_camera(self, cam):
-        self.main_camera = cam
+        self.__main_camera = cam
         self.game.set_active_cam(cam)
 
-    def clear_model(self, model):
-        pass
+    def clear_active_cam(self, cam=None):
+        if cam is None:
+            cam = self.__main_camera
 
-    def clear_actor(self, actor):
-        pass
-
-    def clear_cam(self, cam):
-        """should be called after a camera object has been removed from scene graph"""
-        if cam == self.main_camera:
-            self.main_camera = None
+        if cam:
+            self.__main_camera = None
             self.game.clear_active_dr_3d()
 
-    def clear_light(self):
-        pass
+    @property
+    def main_camera(self):
+        return self.__main_camera
 
     @property
     def scene_lights(self):

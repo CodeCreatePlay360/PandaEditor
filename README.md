@@ -2,7 +2,7 @@
 
 ![Image](images//01.png)
 
-**Panda3d is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3d more intuitive to use for artists and game developers by providing an editor centric workflow**.  
+**Panda3d is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3d more intuitive to use for  artists and game developers by providing an editor centric workflow**.  
 It has all the basic features of a level editor including
 
 * Object manipulation
@@ -16,6 +16,8 @@ It has all the basic features of a level editor including
 * To extend the editor, there is a complete support for editor plugins, the developers can create ( or maybe even sell ) their tools.
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
+
+> It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to 
 
 ## Dependencies
 1. Panda3d
@@ -51,7 +53,7 @@ It has all the basic features of a level editor including
 
 ## Starting a new project
 PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is setup for you.
-It's located in current working directory and should not be deleted. You can use default project for any purpose, to create a new project
+It's located in current working directory and should not be deleted. You can use default project for any purpose, however to create a new project
 **Menubar > Project > Start New Project** and choose a valid name and path.
 
 ## Object manipulation
@@ -63,19 +65,19 @@ It's located in current working directory and should not be deleted. You can use
 * **control + z** to undo
 
 ## Editor states
-PandaEditor has two states **Editor** and **Game** state.  
-The **Editor** state is your scene creation state, this is where you would set up your 2D or 3D scenes, write scripts and define object behaviours.  
-The game logic and object behaviors defined during editor mode are executed in **Game** state, the game state is also what you would expect as final view.  
+PandaEditor has two states **Editor** and **Game**.  
+The **Editor** state is your scene creation state, this is where you would set up your 2D or 3D scenes, write scripts, object behaviors and define game logic.  
+The game logic and object behaviors defined during editor state are executed in **Game** state, the game state is also what you would expect as final view.  
 
 ## Editor resources
-In PandaEditor a resource is defined as the **"building blocks of your project, every editor resource is a file located on your computer"** commonly they include files such as images, audio, 3d model files or python scripts etc.  
-Some resources can be created from right inside the editor for example **editor plugins, runtime modules or NodePath Components**, other resources like audio or 3d models can be imported into your project.
+In PandaEditor a resource is defined as the **"building blocks of your project"**, every editor resource is a file located on your computer, commonly they include files such as images, audio, 3D models or python scripts etc.  
+Some resources can be created from right inside the editor for example **editor plugins, run-time modules or Node-path Components**, other resources like audio or 3D models can be imported into your project.
 
-* To import resources ( models, textures, shaders etc. ) in your project go to **Resource browser > (select any folder, right click open context menu) > Import Resources**.
+* To import resources in your project, go to **Resource browser > (select any folder, right click open context menu) > Import Resources**.
 * You can also append an external folder containing resources, **Menubar > Project > AppendLibrary (and select the folder containing resources you want to append for your project)**, editor will start monitoring changes to any appended directory, the appended folder / resources exists in you project like regular editor resources, however they are not directly imported in the project folder.
 * Some resources can be created from right inside the editor, **Resource browser > (select any folder, right click open context menu) > Add**.
 
-## Runtime modules
+## RunTime modules
 
 ![Image](images//02.png)
 
@@ -87,46 +89,42 @@ One of the ways to program in PandaEditor is by using **RuntimeModules**, these 
 Basic syntax of a **PandaEditor's RuntimeModule**.
 
 ```
-from editor.core.runtimeModule import RuntimeModule
+from editor.core import RuntimeModule
 
 
-class CharacterController(RuntimeModule):
+class TestModule(RuntimeModule):
     def __init__(self, *args, **kwargs):
         RuntimeModule.__init__(self, *args, **kwargs)
-        # __init__ should not contain anything except for variable declaration...!
 
     def on_start(self):
-        # this method is called only once
+        # on_start is called once
         pass
 
     def on_update(self):
-        # this method is called every frame
+        # on_update is called every frame
         pass
 ```
 
 The **RuntimeModule** also defines some base methods and attributes which act as the link between PandaEditor and Panda3D engine. 
 
 ```
-from editor.core.runtimeModule import RuntimeModule
+from editor.core import RuntimeModule
 
 
-class CharacterController(RuntimeModule):
+class TestModule(RuntimeModule):
     def __init__(self, *args, **kwargs):
         RuntimeModule.__init__(self, *args, **kwargs)
-        # __init__ should not contain anything except for variable declaration...!
-        
-        win = self._win                                # the window we are rendering into currently
-        mouse_watcher_node = self._mouse_watcher_node  # mouse watcher node
-        render = self._render                          # this is the current scene's parent node-path
-        game = self._game                              # instance of current running game
-        self.accept("x", self.on_x)                    # basic Panda3d event handling
         
     def on_start(self):
-        # this method is called only once
-        pass
+        # on_start is called once
+        win = self.win                                # the window we are rendering into currently
+        mouse_watcher_node = self.mouse_watcher_node  # mouse watcher node
+        render = self.render                          # this is the current scene's parent node-path
+        game = self.game                              # instance of current running game
+        self.accept("x", self.on_x)                   # basic Panda3D event handling
 
     def on_update(self):
-        # this method is called every frame
+        # on_update is called every frame
         pass
         
 ```
@@ -137,7 +135,7 @@ To see some example usages of user modules, see samples programs also included w
 
 ## Editor plugins
 
-To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **RuntimeModules** editor plugins are executed only in **EditorMode**.
+To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **RuntimeModules** editor plugins are executed only in editor state.
 Same as with **RuntimeModules**, **the EditorPlugins** are python scripts and for the editor to consider any python script as an **EditorPlugin**,
 
 * The class name should be exactly same as that of python file.
@@ -146,38 +144,39 @@ Same as with **RuntimeModules**, **the EditorPlugins** are python scripts and fo
 Basic syntax of an editor plugin.
 
 ```
-from editor.core.editorPlugin import EditorPlugin
+from editor.core import EditorPlugin
 
 
 class EdPlugin(EditorPlugin):
     def __init__(self, *args, **kwargs):
         EditorPlugin.__init__(self, *args, **kwargs)
 
-    # on_start method is called once
     def on_start(self):
+        # on_start is called once
         pass
 
-    # update method is called every frame
     def on_update(self):
+        # on_update is called every frame
         pass
 ```
  
 And just like **RuntimeModule** base class, the **EditorPlugin** base class also defines some base attributes and methods which act as a link between **PandaEditor**, **wxPython (the PandaEditor's UI framework)** and the **Panda3D engine**. 
 
 ```
-from editor.core.editorPlugin import EditorPlugin
+from editor.core import EditorPlugin
 
 
 class EdPlugin(EditorPlugin):
     def __init__(self, *args, **kwargs):
         EditorPlugin.__init__(self, *args, **kwargs)
 
-    # on_start method is called once
     def on_start(self):
-        win = self._win
-        mouse_watcher_node = self._mouse_watcher_node
-        render = self._render
-        le = self._le  # level editor
+        # on_start is called once
+        win = self.win                                # the window we are rendering into currently
+        mouse_watcher_node = self.mouse_watcher_node  # mouse watcher node
+        render = self.render                          # this is the current scene's parent node-path
+        le = self.le                                  # instance of level editor
+        self.accept("x", self.on_x)                   # basic Panda3D event handling
 ```
 
 To see an example usage of **EditorPlugins**, see **SamplePlugin.py** included with sample programs.
@@ -188,7 +187,7 @@ PandaEditor also loads plain text files as a resource and the text can be viewed
 ![Image](images//03.png)
 
 ## Nodepath component
-A **Component** is another way to program in PandaEditor and provide similar functionality to that of a **RuntimeModule**, however they are not automatically executed, instead they must be attached to a NodePath in the scene graph and just like a **RuntimeModule** they are executed only in **GameMode**.  
+A **Component** is another way to program in PandaEditor and provide similar functionality to that of a **RuntimeModule**, however they are not automatically executed, instead they must be attached to a NodePath in the scene graph and just like a **RuntimeModule** they are executed only in game state.  
 The Component has one neat property though, is that it provides a direct reference to the NodePath it is attached to which makes it better suited for defining per object behaviors, for example a character controller.  
 For PandaEditor to consider a python script as a **Component** 
 * The class name should be exactly same as that of python file.
@@ -196,20 +195,24 @@ For PandaEditor to consider a python script as a **Component**
 
 Basic syntax of a component,
 ```
-from editor.core.component import Component
+from editor.core import Component
 
 
-class EdPlugin(Component):
+class Component(Component):
     def __init__(self, *args, **kwargs):
         Component.__init__(self, *args, **kwargs)
 
-    # on_start method is called once
     def on_start(self):
-        self.set_pos(5, 0, 0)  # offset this nodepath by 5 units along x
+        # on_start is called once
+        self.set_pos((5, 0, 0))  # offset this nodepath by 5 units along x
+
+    def on_update(self):
+        # on_update is called every frame
+        pass
 ```
 
 * To attach a component to a NodePath, select the NodePath in the scene and simply drag the component script from file browser to the InspectorPanel.
-* You can have multiple components attached to a NodePath as well.  
+* You can attach multiple components to a NodePath as well.  
 
 ## User Commands
 The PandaEditor provide a way to automate repeated tasks through the **CommandManager** interface.  
@@ -221,7 +224,6 @@ To create a new command
 ```
 from editor.commandManager import Command
 
-
 class MyCommand(Command):
     def __init__(self, *args, **kwargs):
         Command.__init__(self, *args, **kwargs)
@@ -230,28 +232,99 @@ class MyCommand(Command):
         print("do something")
 
     def undo(self):
-        print("undo something")
+        print("undo it")
 ```
 
-2. Finally, from the **__ init __** method of your editor plugin, create an instance of your command and add the command.
+2. Finally, from the **on_start** method of your editor plugin, add the command to command stack,
 
 ```
-        command = MyCommand()
-        self.add_command("DoSomething", command)
+class EdPlugin(EditorPlugin):
+    def __init__(self, *args, **kwargs):
+        EditorPlugin.__init__(self, *args, **kwargs)
+
+    def on_start(self):
+        # on_update is called every frame
+        command = MyCommand
+        self.add_command("MyCommand", command))
 ```
 
 You can also nest and group together similar commands for example,
 
 ```
-        self.add_command("Math/Vector/Add", add)
-        self.add_command("Math/Vector/Multiply", multiply)
-        self.add_command("Math/Vector/Dot", dot)
+        self.add_command("Math/Vector/Add", Add)
+        self.add_command("Math/Vector/Multiply", Multiply)
+        self.add_command("Math/Vector/Dot", Dot)
 ```
 
 Here is an sample code for a simple command that randomly offsets position of a NodePath.
 
 ```
+class OffsetCube(Command):
+    def __init__(self, *args, **kwargs):
+        Command.__init__(self, *args, **kwargs)
+        self.np = args[0]
+        self.last_pos = p3d_core.LVecBase3f()
+
+    def do(self):
+        # record the last position
+        self.last_pos = self.np.getPos()
+
+        # randomly offset the node-path
+        x = random.randrange(0, 500)
+        y = random.randrange(0, 500)
+        z = random.randrange(0, 500)
+        self.np.setPos(p3d_core.LVecBase3f(x, y, z))
+
+    def undo(self):
+        self.np.setPos(self.last_pos)
 ```
+
+When creating commands involving NodePaths, there is catch tough, when you remove NodePath in the scene, PandaEditor does not removes them from the scene-graph, instead it reparents them to a hidden NodePath until max undo count is reached (by default it is 50) after that it permanently removes them and you cannot undo the remove operation.  
+
+So if your command stack look something like this
+1. Add Cube
+2. Offset_Cube  (User Command)
+3. Remove Cube
+4. Offset_Cube  (User Command)
+
+In this case the last offset command will definitely execute since the NodePath is not removed and it is being referenced in the command object, however it will have no visual effect.  
+So as a sanity check make sure the NodePath always exists in the scene, otherwise you can return False (the command will not execute if **do** method returns False), the above Command can be better written as,
+
+```
+from editor.commandManager import Command
+from editor.globals import editor
+
+
+class OffsetCube(Command):
+    def __init__(self, *args, **kwargs):
+        Command.__init__(self, *args, **kwargs)
+        self.np = None
+        self.last_pos = p3d_core.LVecBase3f()
+
+    def do(self):
+        render = editor.game.active_scene.render  # get the active scene render
+        np = render.find("**/Cube")  # get the NodePath
+
+        # make sure NodePath exists otherwise return False
+        if np:
+            self.np = np
+        else:
+            return False
+
+        # record the last position
+        self.last_pos = self.np.getPos()
+
+        # randomly offset the node-path
+        x = random.randrange(0, 500)
+        y = random.randrange(0, 500)
+        z = random.randrange(0, 500)
+        self.np.setPos(p3d_core.LVecBase3f(x, y, z))
+
+    def undo(self):
+        self.np.setPos(self.last_pos)
+```
+
+![Image](images//CommandInAction.gif)
 
 ## Editor UI
 The editor's user interface is divided into 5 main panels,
@@ -264,19 +337,18 @@ The editor's user interface is divided into 5 main panels,
 When you first start Editor a default layout (arrangement of panels) is created for you but you can also drag panels around and create custom layouts from **menu_bar > Layout > SaveLayout**.
 
 ## Known issues
-1. Due to a known bug undo / redo cache has to be cleared as soon as GameMode is enabled, this is something that will be fixed as soon as possible.
-
 ## Roadmap
 **(For version 1.0)**
 1. Add system to save and reload project and individual scenes.
 2. Object manipulation Gizmos need overhauling.
+3. Add snapping support for gizmo tool.
 
 ## Getting started
 To get started, there are samples included with the default project, for a more step by step instructions go to tutorials section. 
 
 *****
 ## Tutorials
-1. [Hello world]()
-2. [Scripting basics]()
+1. [Hello World]()
+2. [Scripting Basics]()
 
 ****

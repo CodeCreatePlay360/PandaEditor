@@ -13,6 +13,8 @@ from editor.wxUI.custom import ControlGroup, SelectionButton
 from editor.wxUI.custom import SearchBox
 from editor.globals import editor
 from editor.core import RuntimeModule, EditorPlugin, Component
+from pathlib import Path
+from panda3d.core import Filename
 
 # event ids for different event types
 EVT_RENAME_ITEM = wx.NewId()
@@ -107,10 +109,15 @@ class ImageTile(wx.Panel):
         self.image_ctrl = wx.StaticBitmap(self)
 
         font = wx.Font(7, wx.DEFAULT, wx.NORMAL, wx.FONTWEIGHT_BOLD)
+        if len(label) > 12:
+            style = wx.ALIGN_CENTRE_VERTICAL
+            label = self.label[:10] + "..."  # otherwise, it would overflow
+        else:
+            style = wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_CENTRE_HORIZONTAL
 
         self.text_ctrl = wx.StaticText(self,
-                                       label=self.label,
-                                       style=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTRE_VERTICAL)
+                                       label=label,
+                                       style=style)
         self.text_ctrl.SetFont(font)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -273,12 +280,22 @@ class ImageTile(wx.Panel):
             remove()
 
     def load_model(self):
-        path = self.path[len(editor.level_editor.project.project_path) + 1:]
-        editor.command_mgr.do(commands.LoadModel(path=path))
+        # convert to os specific path
+        os_path = Path(self.path)
+        os_path = os_path.__str__()
+        # convert to panda specific
+        panda_path = Filename.fromOsSpecific(os_path)
+        #
+        editor.command_mgr.do(commands.LoadModel(path=panda_path))
 
     def load_actor(self):
-        path = self.path
-        editor.command_mgr.do(commands.LoadModel(path=path))
+        # convert to os specific path
+        os_path = Path(self.path)
+        os_path = os_path.__str__()
+        # convert to panda specific
+        panda_path = Filename.fromOsSpecific(os_path)
+        #
+        editor.command_mgr.do(commands.AddActor(path=panda_path))
 
 
 class ImageTilesPanel(ScrolledPanel):
@@ -287,7 +304,7 @@ class ImageTilesPanel(ScrolledPanel):
             """Class representing state of ImageTilesPanel"""
             self.selected_tiles = selected_tiles
 
-    class Options(wx.Window):
+    class ToolBar(wx.Window):
         """Class containing various settings and options for image_tiles_panel"""
 
         def __init__(self, parent, *args, **kwargs):
@@ -350,14 +367,13 @@ class ImageTilesPanel(ScrolledPanel):
     Tile_offset_y = 42
     TILE_SIZE = 64
 
-    def __init__(self, parent, resource_tree=None):
+    def __init__(self, parent):
         ScrolledPanel.__init__(self, parent)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
 
-        self.options = self.Options(parent)
-        self.options.SetMaxSize((-1, 36))
+        self.tool_bar = self.ToolBar(parent)
+        self.tool_bar.SetMaxSize((-1, 36))
 
-        self.resource_tree = resource_tree
         self.parent = parent
         self.__tiles = []
         self.__selected_tiles = []
@@ -477,7 +493,7 @@ class ImageTilesPanel(ScrolledPanel):
                         tiles[i].on_select()
                     self.__selected_tiles.append(tiles[i])
 
-            self.options.set_item_info_text(tiles[0].path)
+            self.tool_bar.set_item_info_text(tiles[0].path)
 
     def select_tiles_from_paths(self, paths, select=True):
         if len(paths) > 0:
@@ -493,12 +509,12 @@ class ImageTilesPanel(ScrolledPanel):
                         tile.on_select()
                     self.__selected_tiles.append(tile)
 
-                self.options.set_item_info_text(tile.path)
+                self.tool_bar.set_item_info_text(tile.path)
 
     def deselect_all(self):
         for tile in self.__tiles:
             tile.on_deselect()
-        self.options.set_item_info_text("No item selected.")
+        self.tool_bar.set_item_info_text("No item selected.")
         self.__selected_tiles.clear()
 
     def update_tiles(self):
