@@ -1,5 +1,6 @@
 import editor.constants as constants
 import editor.utils as ed_utils
+
 from direct.showbase.DirectObject import DirectObject
 from editor.globals import editor
 
@@ -11,7 +12,7 @@ def execute(*args, **kwargs):
 
 
 def stop_execution(module):
-    if module.type == constants.EditorPlugin:
+    if module.module_type == constants.EditorPlugin:
         editor.observer.trigger("PluginFailed", module)
     else:
         editor.observer.trigger("SwitchEdState", 0)
@@ -91,7 +92,7 @@ class PModBase(DirectObject):
                                           priority=priority)
 
             # start the object's late update loop
-            if self.type == constants.RuntimeModule and not self.is_running(1):
+            if self.module_type == constants.RuntimeModule and not self.is_running(1):
                 self.__late_task = taskMgr.add(self.late_update,
                                                "{0} LateUpdate".format(self.__name),
                                                sort=self.__late_update_sort,
@@ -327,7 +328,7 @@ class PModBase(DirectObject):
         return self.__hidden_attributes
 
     @property
-    def type(self):
+    def module_type(self):
         return self.__module_type
 
     @hidden_attrs.setter
@@ -346,6 +347,6 @@ class PModBase(DirectObject):
         if hasattr(self, attr) and not self.__discarded_attributes.__contains__(attr):
             self.__discarded_attributes.append(attr)
 
-    @type.setter
-    def type(self, val):
+    @module_type.setter
+    def module_type(self, val):
         self.__module_type = val

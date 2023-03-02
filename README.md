@@ -17,7 +17,7 @@ It has all the basic features of a level editor including
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-> It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your work scripts, report bugs or support financially by subscribing to PandaEditor patreon page.  
+> It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.  
 
 ## Links
 1. [Discord](https://discord.gg/Ttp9zU28uh)
@@ -283,7 +283,7 @@ class OffsetCube(Command):
         self.np.setPos(self.last_pos)
 ```
 
-When creating commands involving NodePaths, there is catch tough, when you remove NodePath in the scene, PandaEditor does not removes them from the scene-graph, instead it reparents them to a hidden NodePath until max undo count is reached (by default it is 50) after that it permanently removes them and you cannot undo the remove operation.  
+When creating commands involving NodePaths, there is catch tough, when you remove NodePath in the scene, PandaEditor does not removes them from the scene-graph, instead it reparents them to a hidden NodePath, until max undo count is reached (by default it is 50) after that it permanently removes them and you cannot undo the remove operation.  
 
 So if your command stack look something like this
 1. Add Cube
@@ -292,7 +292,7 @@ So if your command stack look something like this
 4. Offset_Cube  (User Command)
 
 In this case the last offset command will definitely execute since the NodePath is not removed and it is being referenced in the command object, however it will have no visual effect.  
-So as a sanity check make sure the NodePath always exists in the scene, otherwise you can return False (the command will not execute if **do** method returns False), the above Command can be better written as,
+So as a sanity check make sure the NodePath always exists in the scene, otherwise raise an exception or use the assertion (the command will not execute if an exception is raised), the above Command can be better written as,
 
 ```
 from editor.commandManager import Command
@@ -307,13 +307,13 @@ class OffsetCube(Command):
 
     def do(self):
         render = editor.game.active_scene.render  # get the active scene render
-        np = render.find("**/Cube")  # get the NodePath
+        np = render.find("**/cube.fbx")  # get the NodePath
 
         # make sure NodePath exists otherwise return False
         if np:
             self.np = np
-        else:
-            return False
+        else:  # np is None, raise assertion
+            assert np is None
 
         # record the last position
         self.last_pos = self.np.getPos()
@@ -328,7 +328,7 @@ class OffsetCube(Command):
         self.np.setPos(self.last_pos)
 ```
 
-![Image](images//CommandInAction.gif)
+![Image](images//04.gif)
 
 ## Editor UI
 The editor's user interface is divided into 5 main panels,

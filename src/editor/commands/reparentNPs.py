@@ -24,12 +24,10 @@ class ReparentNPs(Command):
 
         np = self.src_nps[0]
         editor.inspector.layout(np, np.get_name(), np.get_properties())
+        return True
 
     def undo(self):
         editor.level_editor.reparent_np(self.src_nps, self.original_src_np_parents)
         editor.scene_graph.rebuild()
         editor.scene_graph.select(self.src_nps)
         editor.level_editor.set_selected(self.src_nps)
-
-    def clean(self, **kwargs):
-        pass

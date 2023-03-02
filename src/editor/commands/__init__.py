@@ -2,6 +2,7 @@ from editor.commands.objectAdd import ObjectAdd
 from editor.commands.addLight import AddLight
 from editor.commands.addCamera import AddCamera
 from editor.commands.loadModel import LoadModel
+from editor.commands.addActor import AddActor
 from editor.commands.removeObjects import RemoveObjects
 from editor.commands.selectObjects import SelectObjects
 from editor.commands.renameNPs import RenameNPs

@@ -1,7 +1,6 @@
 import panda3d.core as pm
 from editor.selection.marquee import Marquee
 from editor.selection.mousePicker import MousePicker
-from editor.globals import editor
 from editor.constants import TAG_GAME_OBJECT
 
 

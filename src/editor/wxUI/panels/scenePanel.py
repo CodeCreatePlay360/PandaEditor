@@ -36,7 +36,6 @@ class Viewport(wx.Panel):
 
         size = self.GetSize()
         wp.setSize(size.x, size.y)
-
         wp.setParentWindow(self.GetHandle())
 
         if self._win is None:
@@ -90,7 +89,7 @@ class App(wx.App, DirectObject):
         self.event_loop = wx.GUIEventLoop()
         self.old_loop = wx.EventLoop.GetActive()
         wx.EventLoop.SetActive(self.event_loop)
-        taskMgr.add(self.wx_step, 'evtLoopTask')
+        taskMgr.add(funcOrTask=self.wx_step, name='EvtLoopTask')
 
     def on_destroy(self, event=None):
         self.wx_step()
@@ -113,5 +112,5 @@ class App(wx.App, DirectObject):
             self.event_loop.Dispatch()
             self.event_loop.ProcessIdle()
 
-        if task is not None:
-            return task.cont
+        # if task is not None:
+        #     return task.cont

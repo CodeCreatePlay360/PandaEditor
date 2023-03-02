@@ -23,6 +23,7 @@ class SelectObjects(Command):
             editor.scene_graph.select(self.selected_nps)
 
         editor.wx_main.thaw()
+        return True
 
     def undo(self):
         editor.wx_main.freeze()
@@ -41,6 +42,3 @@ class SelectObjects(Command):
             editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
 
         editor.wx_main.thaw()
-
-    def clean(self, **kwargs):
-        pass

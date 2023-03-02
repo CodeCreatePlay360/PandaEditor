@@ -7,7 +7,7 @@ class RuntimeModule(PModBase):
         PModBase.__init__(self, *args, **kwargs)
 
         self.__game = kwargs.pop("game", None)
-        self.type = constants.RuntimeModule
+        self.module_type = constants.RuntimeModule
         self.discarded_attrs = "_RuntimeModule__game"
 
     @property

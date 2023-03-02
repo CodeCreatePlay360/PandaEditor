@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from editor.utils import try_execute as safe_execute
+from editor.utils import safe_execute
 
 
 class Command(ABC):
@@ -16,7 +16,6 @@ class Command(ABC):
     def undo(self, *args, **kwargs):
         return
 
-    @abstractmethod
     def clean(self, **kwargs):
         pass
 
@@ -63,12 +62,13 @@ class CommandManager(object):
         return last_redo_command
 
     def do(self, command, *args, **kwargs):
-        """Execute the given command. Exceptions raised from the command are
-        not caught."""
-
-        if safe_execute(command.do, *args, **kwargs):
+        """Execute the given command"""
+        res = safe_execute(command.do, *args, **kwargs)
+        if res:
             self.push_undo_command(command)
             self.redo_commands[:] = []  # clear the redo stack when a new command was executed
+        else:
+            print("[CommandManager] Unable to execute command.")
 
     def undo(self, n=1):
         """Undo the last n commands. The default is to undo only the last

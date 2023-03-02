@@ -88,10 +88,6 @@ class BaseNodePath(NodePath):
         self.__components.clear()
 
     @property
-    def np(self):
-        return self.__np
-
-    @property
     def id(self):
         return self.__id
 

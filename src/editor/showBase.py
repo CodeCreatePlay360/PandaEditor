@@ -121,6 +121,7 @@ class ShowBase(sb.ShowBase):
         self.ed_camera = EditorCamera(
             win=self.main_win,
             mouse_watcher_node=self.ed_mouse_watcher_node,
+            render=self.edRender,
             render2d=self.__ed_aspect2d,
             default_pos=(300, 150 + 300, 100 + 300),
         )

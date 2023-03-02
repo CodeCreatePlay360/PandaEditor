@@ -8,10 +8,8 @@ class AddCamera(Command):
 
     def do(self, *args, **kwargs):
         self.camera_np = editor.p3d_app.level_editor.add_camera()
+        return True
 
     def undo(self):
         editor.p3d_app.level_editor.remove_nps([self.camera_np])
         # editor.observer.trigger("OnRemoveNPs", [self.camera_np])
-
-    def clean(self, **kwargs):
-        pass

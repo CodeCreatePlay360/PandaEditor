@@ -1,6 +1,6 @@
-import random
 import panda3d.core as p3dCore
 import direct.gui.DirectGui as gui
+
 from editor.core import RuntimeModule
 from editor.utils import EdProperty
 

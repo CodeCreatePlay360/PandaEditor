@@ -7,7 +7,16 @@ class Component(RuntimeModule, NodePath):
     def __init__(self, np, *args, **kwargs):
         NodePath.__init__(self, np)
         RuntimeModule.__init__(self, *args, **kwargs)
-        self.type = constants.Component
+        self.module_type = constants.Component
+        self.__status = constants.SCRIPT_STATUS_OK
+        self.discarded_attrs = "_Component__status"
 
-    def __detach__(self):
-        pass
+    def set_status(self, status: int):
+        if status not in [constants.SCRIPT_STATUS_OK, constants.SCRIPT_STATUS_ERROR]:
+            print("Unknown script status {0}".format(status))
+            return
+        self.__status = status
+
+    @property
+    def status(self):
+        return self.__status

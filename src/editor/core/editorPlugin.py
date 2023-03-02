@@ -1,6 +1,5 @@
 import editor.constants as constants
 from editor.core.pModBase import PModBase
-from editor.commandManager import Command
 
 
 class EditorPlugin(PModBase):
@@ -11,7 +10,7 @@ class EditorPlugin(PModBase):
         self.__command_manager = kwargs.pop("command_manager", None)
         self.__commands = {}
 
-        self.type = constants.EditorPlugin
+        self.module_type = constants.EditorPlugin
 
         self.discarded_attrs = "_EditorPlugin__le"
         self.discarded_attrs = "_EditorPlugin__commands"
@@ -25,15 +24,8 @@ class EditorPlugin(PModBase):
     def commands(self):
         return self.__commands
 
-    def add_command(self, name, command):
-        if isinstance(command, Command) and name not in self.__commands.values():
-            self.__commands[name] = command
+    def add_command(self, name, command, *args, **kwargs):
+        if name not in self.le.user_commands.values():
+            self.__commands[name] = (command, args, kwargs)
         else:
             print("[{0}] Failed to add command {1}".format(self.name, name))
-
-    def clear_commands(self, command):
-        pass
-
-    def clear_ui(self):
-        """"""
-        pass

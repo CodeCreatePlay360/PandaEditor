@@ -12,11 +12,9 @@ class RenameNPs(Command):
     def do(self, *args, **kwargs):
         self.np.set_name(self.new_name)
         editor.inspector.layout(self.np, self.np.get_name(), self.np.get_properties())
+        return True
 
     def undo(self):
         self.np.set_name(self.old_name)
         editor.scene_graph.rename_item(self.np, self.np.get_name())
         editor.inspector.layout(self.np, self.np.get_name(), self.np.get_properties())
-
-    def clean(self, **kwargs):
-        pass

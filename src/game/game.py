@@ -15,8 +15,8 @@ class Game:
 
         self.show_base = kwargs.pop("show_base", None)
         self.win = kwargs.pop("win", None)
-        self.display_region = None
-        self.display_region_2d = None
+        self.__dr = None
+        self.__dr_2D = None
         self.mouse_watcher_node = None
         self.mouse_watcher_node_2d = None
 
@@ -42,8 +42,8 @@ class Game:
         return scene
 
     def clear_active_dr_3d(self):
-        self.display_region.setActive(False)
-        self.display_region.setCamera(p3d_core.NodePath())
+        self.__dr.setActive(False)
+        self.__dr.setCamera(p3d_core.NodePath())
 
     def start(self):
         self.__all_modules = {}
@@ -134,29 +134,29 @@ class Game:
         pass
 
     def setup_dr_2d(self):
-        self.display_region_2d = self.win.makeDisplayRegion()
-        self.display_region_2d.setSort(20)
-        self.display_region_2d.setActive(True)
-        self.display_region_2d.set_dimensions((0, 0.4, 0, 0.4))
+        self.__dr_2D = self.win.makeDisplayRegion()
+        self.__dr_2D.setSort(20)
+        self.__dr_2D.setActive(True)
+        self.__dr_2D.set_dimensions((0, 0.4, 0, 0.4))
 
     def setup_mouse_watcher_2d(self):
         self.mouse_watcher_node_2d = p3d_core.MouseWatcher()
         self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node_2d)
-        self.mouse_watcher_node_2d.set_display_region(self.display_region_2d)
+        self.mouse_watcher_node_2d.set_display_region(self.__dr_2D)
 
     def setup_dr_3d(self):
-        self.display_region = self.win.makeDisplayRegion(0, 0.4, 0, 0.4)
-        self.display_region.setClearColorActive(True)
-        self.display_region.setClearColor((0.8, 0.8, 0.8, 1.0))
+        self.__dr = self.win.makeDisplayRegion(0, 0.4, 0, 0.4)
+        self.__dr.setClearColorActive(True)
+        self.__dr.setClearColor((0.8, 0.8, 0.8, 1.0))
 
     def setup_mouse_watcher_3d(self):
         self.mouse_watcher_node = p3d_core.MouseWatcher()
         self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node)
-        self.mouse_watcher_node.set_display_region(self.display_region)
+        self.mouse_watcher_node.set_display_region(self.__dr)
 
     def set_active_cam(self, cam):
-        self.display_region.set_active(True)
-        self.display_region.set_camera(cam)
+        self.__dr.set_active(True)
+        self.__dr.set_camera(cam)
         cam.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
 
     def get_module(self, module_name):
@@ -177,10 +177,15 @@ class Game:
         self.active_scene.aspect_2d.set_scale(1.0 / self.show_base.getAspectRatio(self.win), 1.0, 1.0)
 
     @property
-    def components(self):
-        """:returns all component modules attached to nodepaths in active_scene as a dictionary
-         (components[np] = list of component_modules), the actual component is wrapped in module.class_instance"""
+    def dr(self):
+        return self.__dr
 
+    @property
+    def dr_2D(self):
+        return self.__dr_2D
+
+    @property
+    def components(self):
         components = {}  # np: components
 
         def traverse(np_):

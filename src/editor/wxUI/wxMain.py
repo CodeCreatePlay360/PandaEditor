@@ -1,11 +1,19 @@
 import wx
+import wx.aui
 import wx.lib.agw.aui as aui
+import editor.edPreferences as edPreferences
 
 from editor.wxUI.wxMenuBar import WxMenuBar
 from editor.wxUI.panels import *
-from editor.wxUI.wxDialogs import DialogManager
 from editor.constants import ICONS_PATH
 from editor.globals import editor
+from editor.wxUI.custom import BasicButton
+
+from direct.showbase.ShowBase import taskMgr
+
+
+# resources
+REFRESH_ICON = ICONS_PATH + "/StatusBar/arrow_refresh.png"
 
 # scene events
 Evt_Open_Project = wx.NewId()
@@ -44,52 +52,67 @@ Event_Map = {
 }
 
 # resources
-ICON_FILE = ICONS_PATH + "\\" + "pandaIcon.ico"
-NEW_SESSION_ICON = ICONS_PATH + "\\" + "fileNew_32.png"
-OPEN_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
-SAVE_SESSION_ICON = ICONS_PATH + "\\" + "fileSave_32.png"
-SAVE_SESSION_AS_ICON = ICONS_PATH + "\\" + "fileSaveAs_32.png"
-PROJ_OPEN_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
+ICON_FILE = ICONS_PATH + "/pandaIcon.ico"
+#
+NEW_SESSION_ICON = ICONS_PATH + "/fileNew_32.png"
+OPEN_ICON = ICONS_PATH + "/fileOpen_32.png"
+SAVE_SESSION_ICON = ICONS_PATH + "/fileSave_32.png"
+SAVE_SESSION_AS_ICON = ICONS_PATH + "/fileSaveAs_32.png"
+#
+PROJ_OPEN_ICON = ICONS_PATH + "/fileOpen_32.png"
 PROJ_SAVE_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
-IMPORT_LIBRARY_ICON = ICONS_PATH + "\\" + "importLib_32.png"
-IMPORT_PACKAGE_ICON = ICONS_PATH + "\\" + "add_package.png"
-OPEN_STORE_ICON = ICONS_PATH + "\\" + "shop_network.png"
-
-ED_REFRESH_ICON = ICONS_PATH + "\\" + "Refresh_Icon_32.png."
-
-ED_MODE_ICON = ICONS_PATH + "\\" + "game_mode.png."
-PLAY_ICON = ICONS_PATH + "\\" + "playIcon_32x.png"
-STOP_ICON = ICONS_PATH + "\\" + "stopIcon_32.png"
-
-ALL_LIGHTS_ON_ICON = ICONS_PATH + "\\" + "lightbulb_32x_on.png"
-ALL_LIGHTS_OFF_ICON = ICONS_PATH + "\\" + "lightbulb_32x_off.png"
-SOUND_ICON = ICONS_PATH + "\\" + "soundIcon.png"
-NO_SOUND_ICON = ICONS_PATH + "\\" + "noSoundIcon.png"
-
-DISABLED_ICON = ICONS_PATH + "\\" + "disabled_icon.png"
-
-SELECT_ICON = ICONS_PATH + "\\" + "hand_point_090.png"
+IMPORT_LIBRARY_ICON = ICONS_PATH + "/importLib_32.png"
+IMPORT_PACKAGE_ICON = ICONS_PATH + "/add_package.png"
+OPEN_STORE_ICON = ICONS_PATH + "/shop_network.png"
+#
+ALL_LIGHTS_ON_ICON = ICONS_PATH + "/lightbulb_32x_on.png"
+ALL_LIGHTS_OFF_ICON = ICONS_PATH + "/lightbulb_32x_off.png"
+SOUND_ICON = ICONS_PATH + "/soundIcon.png"
+NO_SOUND_ICON = ICONS_PATH + "/noSoundIcon.png"
+#
+ED_REFRESH_ICON = ICONS_PATH + "/Refresh_Icon_32.png."
+#
+ED_MODE_ICON = ICONS_PATH + "/game_mode.png."
+PLAY_ICON = ICONS_PATH + "/playIcon_32x.png"
+STOP_ICON = ICONS_PATH + "/stopIcon_32.png"
+#
+DISABLED_ICON = ICONS_PATH + "/disabled_icon.png"
+#
+SELECT_ICON = ICONS_PATH + "/hand_point_090.png"
+#
+# notebook page icons
+VIEWPORT_ICON = ICONS_PATH + "/Panel_Icons/image_16x.png"
+INSPECTOR_ICON = ICONS_PATH + "/Panel_Icons/gear_16x.png"
+CONSOLE_ICON = ICONS_PATH + "/Panel_Icons/monitor_16x.png"
+RESOURCE_BROWSER = ICONS_PATH + "/Panel_Icons/folder_16x.png"
+SCENE_GRAPH_ICON = ICONS_PATH + "/Panel_Icons/structure_16x.png"
 
 # default layout for notebook tabs
-xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4" \
-     "|panel631603e60000001c00000006=+2|panel631603ec0000002200000006=+3@layout2|name=dummy;caption=;state" \
-     "=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=180;besth=180;minw=180;minh=180;maxw=-1;maxh=-1" \
-     ";floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name" \
-     "=panel631603ca0000000000000002;caption=;state=67372028;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=0" \
-     ";besth=0;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1" \
-     ";transparent=255|name=panel631603d60000000c00000003;caption=;state=67372028;dir=2;layer=0;row=1;pos=0" \
-     ";prop=100000;bestw=392;besth=237;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath" \
-     "=-1;notebookid=-1;transparent=255|name=panel631603de0000001400000004;caption=;state=67372028;dir=4" \
-     ";layer=0;row=1;pos=0;prop=100000;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty" \
-     "=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=panel631603e60000001c00000006;caption=;state" \
-     "=67372028;dir=3;layer=0;row=1;pos=0;prop=70984;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1" \
-     ";floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name" \
-     "=panel631603ec0000002200000006;caption=;state=67372028;dir=3;layer=0;row=1;pos=1;prop=129015;bestw=180" \
-     ";besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1" \
-     ";transparent=255|dock_size(5,0,0)=10|dock_size(2,0,1)=332|dock_size(4,0,1)=182|dock_size(3,0,1)=228|"
+xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4|" \
+     "panel631603e60000001c00000006=+2|panel631603ec0000002200000006=+3@layout2|" \
+     "name=dummy;caption=;state=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=180;besth=180;minw=180;" \
+     "minh=180;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|" \
+     "name=panel631603ca0000000000000002;caption=;state=67372028;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=0;" \
+     "besth=0;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;" \
+     "transparent=255|name=panel631603d60000000c00000003;caption=;state=67372028;dir=2;layer=0;row=1;pos=0;" \
+     "prop=100000;bestw=392;besth=237;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;" \
+     "notebookid=-1;transparent=255|name=panel631603de0000001400000004;caption=;state=67372028;dir=4;layer=0;" \
+     "row=1;pos=0;prop=100000;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;" \
+     "floath=-1;notebookid=-1;transparent=255|name=panel631603e60000001c00000006;caption=;state=67372028;dir=3;" \
+     "layer=0;row=1;pos=0;prop=70984;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;" \
+     "floatw=-1;floath=-1;notebookid=-1;transparent=255|name=panel631603ec0000002200000006;caption=;" \
+     "state=67372028;dir=3;layer=0;row=1;pos=1;prop=129015;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;" \
+     "floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|dock_size(5,0,0)=10|" \
+     "dock_size(2,0,1)=332|dock_size(4,0,1)=182|dock_size(3,0,1)=228|"
 
 
 class AUINotebook(aui.AuiNotebook):
+    class NotebookPageAndIdx:
+        def __init__(self, idx, page, label):
+            self.idx = idx
+            self.page = page
+            self.label = label
+
     def __init__(self, parent):
         aui.AuiNotebook.__init__(self, parent=parent)
         self.__active_pages = []  # keep track of all active pages
@@ -124,14 +147,57 @@ class AUINotebook(aui.AuiNotebook):
         return self.__active_pages.__contains__(name)
 
 
-class IndexAndPage:
-    def __init__(self, idx, page, label):
-        self.idx = idx
-        self.page = page
-        self.label = label
-
-
 class WxFrame(wx.Frame):
+    class StatusPanel(wx.Panel):
+        def __init__(self, *args):
+            wx.Panel.__init__(self, *args)
+            self.SetWindowStyleFlag(wx.SUNKEN_BORDER)
+            self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+            self.SetMaxSize((-1, 20))
+            self.parent = args[0]
+            #
+            self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.SetSizer(self.main_sizer)
+            #
+            self.refresh_btn = self.create_refresh_btn()
+            #
+            self.bold_font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_MAX)
+            self.bg_tasks_text_ctrl = wx.StaticText(self)
+            self.bg_tasks_text_ctrl.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+            self.bg_tasks_text_ctrl.SetForegroundColour(wx.Colour(225, 225, 225, 255))
+            self.bg_tasks_text_ctrl.SetFont(self.bold_font)
+            self.bg_tasks_text_ctrl.SetLabelText("[PandaEditor]")
+            #
+            self.selected_item_text_info = wx.StaticText(self)
+            self.selected_item_text_info.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+            self.selected_item_text_info.SetForegroundColour(wx.Colour(225, 225, 225, 255))
+            self.selected_item_text_info.SetFont(self.bold_font)
+            self.selected_item_text_info.SetLabelText("(SelectedItemInfo: no info available)")
+            #
+            self.main_sizer.Add(self.refresh_btn, 0, wx.EXPAND | wx.RIGHT, border=1)
+            self.main_sizer.Add(self.bg_tasks_text_ctrl, 0, wx.EXPAND | wx.RIGHT, border=1)
+            self.main_sizer.Add(self.selected_item_text_info, 0, wx.EXPAND, border=0)
+            self.main_sizer.Layout()
+
+        def create_refresh_btn(self):
+            refresh_btn = BasicButton(self,
+                                      0,
+                                      label_text=None,
+                                      image_path=REFRESH_ICON,
+                                      image_flags=wx.EXPAND | wx.RIGHT,
+                                      image_border=3)
+            refresh_btn.SetWindowStyleFlag(wx.BORDER_SIMPLE)
+            return refresh_btn
+
+        def write_tasks_info(self, count):
+            # bg running tasks info
+            info = "(Background running tasks count = {0})".format(len(taskMgr.getAllTasks()))
+            self.bg_tasks_text_ctrl.SetLabelText(info)
+            self.main_sizer.Layout()
+
+        def write_selected_item_info(self):
+            self.main_sizer.Layout()
+
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
 
@@ -140,7 +206,9 @@ class WxFrame(wx.Frame):
         icon = wx.Icon(icon_file, wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
-        self.panels = []
+        # main sizer
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.main_sizer)
 
         self.panda_app = wx.GetApp()
         self.freeze()
@@ -149,66 +217,68 @@ class WxFrame(wx.Frame):
         # set menu bar
         self.menu_bar = WxMenuBar(self)
         self.SetMenuBar(self.menu_bar)
+        #
+        self.status_panel = WxFrame.StatusPanel(self)
 
-        # create a status bar
-        self.status_bar = self.CreateStatusBar()
-        self.status_bar.SetStatusText("Welcome to PandaEditor")
-
-        # create the notebook
+        # notebook
         self.notebook = AUINotebook(self)
         self.saved_layouts = {}  # saved perspectives for aui notebook
-
-        # create aui toolbars
-        self.build_file_menu_tb()
-        self.build_proj_menus_tb()
-        self.build_scene_ctrls_tb()
-        self.build_ed_ctrls_tb()
-        self.build_play_ctrls_tb()
-
-        self.dialogue_manager = DialogManager()
 
         self.ed_viewport_panel = Viewport(self)
         self.inspector_panel = InspectorPanel(self)
         self.console_panel = LogPanel(self)
         self.resource_browser = ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
+        # page icons
 
         self.panels = [(self.ed_viewport_panel, "ViewPort"),
                        (self.inspector_panel, "Inspector"),
-                       (self.console_panel, "LogPanel"),
+                       (self.console_panel, "ConsolePanel"),
                        (self.resource_browser, "ResourceBrowser"),
                        (self.scene_graph_panel, "SceneGraph")]
 
         self.notebook.add_pages(self.panels)  # add panels to notebook
-
-        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        #
+        self.notebook.SetPageBitmap(0, wx.Bitmap(VIEWPORT_ICON))
+        self.notebook.SetPageBitmap(1, wx.Bitmap(INSPECTOR_ICON))
+        self.notebook.SetPageBitmap(2, wx.Bitmap(CONSOLE_ICON))
+        self.notebook.SetPageBitmap(3, wx.Bitmap(RESOURCE_BROWSER))
+        self.notebook.SetPageBitmap(4, wx.Bitmap(SCENE_GRAPH_ICON))
+        #
+        # toolbar
+        # create aui toolbars
+        self.build_file_menu_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
+        self.build_proj_menus_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
+        self.build_scene_ctrls_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
+        self.build_ed_ctrls_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
+        self.build_play_ctrls_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
+        #
+        # toolbar sizer
         self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SetSizer(self.main_sizer)
-
-        self.toolbar_sizer.Add(self.file_menu_tb, 0)
-        self.toolbar_sizer.Add(self.proj_meuns_tb, 0)
-        self.toolbar_sizer.Add(self.scene_ctrls_tb, 0)
-        self.toolbar_sizer.Add(self.ed_ctrls_tb, 0)
-        self.toolbar_sizer.Add(self.playctrls_tb, 0)
-
-        self.main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
-        self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
-
+        #
+        self.toolbar_sizer.Add(self.file_menu_tb, 0, wx.RIGHT, 1)
+        self.toolbar_sizer.Add(self.proj_meuns_tb, 0, wx.RIGHT, 1)
+        self.toolbar_sizer.Add(self.scene_ctrls_tb, 0, wx.RIGHT, 1)
+        self.toolbar_sizer.Add(self.ed_ctrls_tb, 0, wx.RIGHT, 1)
+        self.toolbar_sizer.Add(self.playctrls_tb, 0, wx.RIGHT, 1)
+        #
         self.notebook.LoadPerspective(xx)
         self.save_layout("Default")
-        self.Maximize(True)
+        #
+        self.main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
+        self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
+        self.main_sizer.Add(self.status_panel, 1, wx.EXPAND)
 
-        # self.Bind(wx.EVT_SIZE, self.on_evt_resize)
-        # self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
-        # self.notebook.Bind(wx.EVT_MOVE, self.on_move)
-        # self.notebook.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_UP, self.on_evt_nb_right_up)
 
     def do_after(self):
-        self.Show()
+        self.Maximize(True)
         self.thaw()
+        self.Layout()
+        self.Show()
 
     def load_resources(self):
+        # toolbar
         self.new_session_icon = wx.Bitmap(NEW_SESSION_ICON)
         self.save_session_icon = wx.Bitmap(SAVE_SESSION_ICON)
         self.save_session_as_icon = wx.Bitmap(SAVE_SESSION_AS_ICON)
@@ -230,10 +300,13 @@ class WxFrame(wx.Frame):
         self.sound_icon = wx.Bitmap(SOUND_ICON)
         self.no_sound_icon = wx.Bitmap(NO_SOUND_ICON)
 
+        # other
         self.select_icon = wx.Cursor(wx.Image(SELECT_ICON))
 
-    def build_file_menu_tb(self):
+    def build_file_menu_tb(self, win_style, agw_style):
         self.file_menu_tb = aui.AuiToolBar(self)
+        self.file_menu_tb.SetWindowStyle(win_style)
+        self.file_menu_tb.SetAGWWindowStyleFlag(agw_style)
 
         new_btn = self.file_menu_tb.AddTool(Evt_New_Scene,
                                             '',
@@ -263,8 +336,10 @@ class WxFrame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, save_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, save_as_btn)
 
-    def build_proj_menus_tb(self):
+    def build_proj_menus_tb(self, win_style, agw_style):
         self.proj_meuns_tb = aui.AuiToolBar(self)
+        self.proj_meuns_tb.SetWindowStyle(win_style)
+        self.proj_meuns_tb.SetAGWWindowStyleFlag(agw_style)
 
         open_proj_btn = self.proj_meuns_tb.AddTool(Evt_Open_Project,
                                                    '',
@@ -298,8 +373,10 @@ class WxFrame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, open_proj_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, import_lib_btn)
 
-    def build_scene_ctrls_tb(self):
+    def build_scene_ctrls_tb(self, win_style, agw_style):
         self.scene_ctrls_tb = aui.AuiToolBar(self)
+        self.scene_ctrls_tb.SetWindowStyle(win_style)
+        self.scene_ctrls_tb.SetAGWWindowStyleFlag(agw_style)
 
         self.lights_toggle_btn = self.scene_ctrls_tb.AddToggleTool(Evt_Toggle_Scene_Lights,
                                                                    bitmap=self.lights_off_icon,
@@ -318,8 +395,10 @@ class WxFrame(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.sound_toggle_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.lights_toggle_btn)
 
-    def build_ed_ctrls_tb(self):
+    def build_ed_ctrls_tb(self, win_style, agw_style):
         self.ed_ctrls_tb = aui.AuiToolBar(self)
+        self.ed_ctrls_tb.SetWindowStyle(win_style)
+        self.ed_ctrls_tb.SetAGWWindowStyleFlag(agw_style)
 
         self.refresh_btn = self.ed_ctrls_tb.AddTool(Evt_Refresh,
                                                     "",
@@ -331,8 +410,10 @@ class WxFrame(wx.Frame):
         self.ed_ctrls_tb.Realize()
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.refresh_btn)
 
-    def build_play_ctrls_tb(self):
+    def build_play_ctrls_tb(self, win_style, agw_style):
         self.playctrls_tb = aui.AuiToolBar(self)
+        self.playctrls_tb.SetWindowStyle(win_style)
+        self.playctrls_tb.SetAGWWindowStyleFlag(agw_style)
 
         self.ed_viewport_mode_btn = self.playctrls_tb.AddToggleTool(Evt_Ed_Viewport_style,
                                                                     bitmap=self.ed_mode_icon,
@@ -359,7 +440,9 @@ class WxFrame(wx.Frame):
     def save_layout(self, name):
         data = []
         for i in range(self.notebook.GetPageCount()):
-            save_obj = IndexAndPage(idx=i, page=self.notebook.GetPage(i), label=self.notebook.GetPageText(i))
+            save_obj = AUINotebook.NotebookPageAndIdx(idx=i,
+                                                      page=self.notebook.GetPage(i),
+                                                      label=self.notebook.GetPageText(i))
             data.append(save_obj)
 
         self.saved_layouts[name] = (data, self.notebook.SavePerspective())
@@ -391,9 +474,6 @@ class WxFrame(wx.Frame):
                 else:
                     print("Page {0} already exists".format(item[1]))
 
-    def set_status_bar_text(self, txt: str):
-        self.status_bar.SetStatusText(txt)
-
     def on_evt_toolbar(self, evt):
         if evt.GetId() in Event_Map:
             evt_name = Event_Map[evt.GetId()][0]
@@ -408,6 +488,9 @@ class WxFrame(wx.Frame):
         event.Skip()
 
     def freeze(self):
+        if not hasattr(self, "panels"):
+            return
+
         for item in self.panels:
             panel = item[0]
             if not panel.IsFrozen():

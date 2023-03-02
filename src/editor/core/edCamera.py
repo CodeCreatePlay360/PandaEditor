@@ -1,24 +1,25 @@
 import math
-import panda3d.core as p3d_core
 import editor.core as ed_core
+from panda3d.core import NodePath, Camera, PerspectiveLens, LVecBase3f, LVecBase2f, BoundingSphere, Point3, Quat
 from direct.showbase.ShowBase import taskMgr
 from editor.p3d.geometry import Axes
 from editor.utils import common_maths
 
 
-class EditorCamera(p3d_core.NodePath):
+class EditorCamera(NodePath):
     """Class representing a camera"""
 
-    class Target(p3d_core.NodePath):
+    class Target(NodePath):
         """Class representing the camera's point of interest"""
-        def __init__(self, pos=p3d_core.Vec3(0, 0, 0)):
-            p3d_core.NodePath.__init__(self, 'EdCamTarget')
+        def __init__(self, pos=LVecBase3f(0, 0, 0)):
+            NodePath.__init__(self, 'EdCamTarget')
             self.defaultPos = pos
 
-    def __init__(self, mouse_watcher_node, render2d, win, default_pos):
+    def __init__(self, win, mouse_watcher_node, render, render2d, default_pos):
         base.disableMouse()
 
         self.win = win
+        self.render = render
         self.mouse_watcher_node = mouse_watcher_node
         self.default_pos = default_pos
         self.speed = 0.5
@@ -26,22 +27,22 @@ class EditorCamera(p3d_core.NodePath):
         self.mouse = ed_core.Mouse(self.mouse_watcher_node, win)
 
         # create a new camera
-        self.cam = p3d_core.NodePath(p3d_core.Camera("EditorCamera"))
+        self.cam = NodePath(Camera("EditorCamera"))
 
         # create a new lens
-        lens = p3d_core.PerspectiveLens()
+        lens = PerspectiveLens()
         lens.set_fov(60)
         lens.setAspectRatio(800 / 600)
         self.cam.node().setLens(lens)
 
         # wrap the camera in this NodePath class
-        p3d_core.NodePath.__init__(self, self.cam)
+        NodePath.__init__(self, self.cam)
 
         # create a target to orbit around
         self.target = EditorCamera.Target()
 
         # create axes
-        self.axes = p3d_core.NodePath(Axes())
+        self.axes = NodePath(Axes())
         self.axes.set_name("CameraAxes")
         self.axes.reparentTo(render2d)
         self.axes.set_scale(0.008)
@@ -62,7 +63,7 @@ class EditorCamera(p3d_core.NodePath):
 
     def start(self):
         # start the update task
-        self.task = taskMgr.add(self.update, "EdCameraUpdate", sort=0, priority=None)
+        self.task = taskMgr.add(self.update, "_ed_task_LECameraUpdate", sort=0, priority=None)
 
     def update(self, task):
         self.mouse.update()
@@ -73,27 +74,76 @@ class EditorCamera(p3d_core.NodePath):
 
         # orbit - If left mouse down
         if self.mouse.buttons[0]:
-            self.orbit(p3d_core.Vec2(self.mouse.dx * self.speed, self.mouse.dy * self.speed))
+            self.orbit(LVecBase2f(self.mouse.dx * self.speed, self.mouse.dy * self.speed))
 
         # dolly - If middle mouse down
         elif self.mouse.buttons[1]:
-            self.move(p3d_core.Vec3(self.mouse.dx * self.speed, 0, -self.mouse.dy * self.speed))
+            self.move(LVecBase3f(self.mouse.dx * self.speed, 0, -self.mouse.dy * self.speed))
 
         # zoom - If right mouse down
         elif self.mouse.buttons[2]:
-            self.move(p3d_core.Vec3(0, -self.mouse.dx * self.speed, 0))
+            self.move(LVecBase3f(0, -self.mouse.dx * self.speed, 0))
 
         self.update_axes()
 
         return task.cont
+
+    def frame(self, nps: list, direction=0):
+        """frame the nps into camera view and optionally camera in any one direction left, right or top
+        as specified by direction parameter.
+        direction= 1: align-right, -1: align-left, 2: align top"""
+
+        if len(nps) == 0:
+            return
+
+        # Get a list of bounding spheres for each NodePath in world space.
+        allBnds = []
+        allCntr = LVecBase3f()
+        for np in nps:
+            bnds = np.getBounds()
+            if bnds.isInfinite():
+                continue
+            mat = np.getParent().getMat(self.render)
+            bnds.xform(mat)
+            allBnds.append(bnds)
+            allCntr += bnds.getCenter()
+
+        # Now create a bounding sphere at the center point of all the
+        # NodePaths and extend it to encapsulate each one.
+        bnds = BoundingSphere(Point3(allCntr / len(nps)), 0)
+        for bnd in allBnds:
+            bnds.extendBy(bnd)
+
+        # Move the camera and the target the bounding sphere's center.
+        self.target.setPos(bnds.getCenter())
+        self.setPos(bnds.getCenter())
+
+        # Now move the camera back so the view accommodate all NodePaths.
+        # Default the bounding radius to something reasonable if the object
+        # has no size.
+        fov = self.node().getLens().getFov()
+        radius = bnds.getRadius() or 0.5
+        dist = radius / math.tan(math.radians(min(fov[0], fov[1]) * 0.5))
+
+        if direction == 0:
+            self.setY(self, -dist)
+        elif direction == 2:
+            self.setPos(self.getPos()+LVecBase3f(0, 0, dist))
+            self.setHpr(0, 270, 0)
+        elif direction == 1:
+            self.setPos(self.getPos()+LVecBase3f(dist, 0, 0))
+            self.setHpr(90, 0, 0)
+        elif direction == -1:
+            self.setPos(self.getPos()+LVecBase3f(-dist, 0, 0))
+            self.setHpr(-90, 0, 0)
 
     def update_axes(self):
         # update axes
         # Set rotation to inverse of camera rotation
         y_pos = common_maths.map_to_range(0, self.win.getYSize(), 0, 1, self.win.getYSize())
         aspect = self.win.getXSize() / self.win.getYSize()
-        self.axes.set_pos(p3d_core.Vec3(aspect - 0.25, 0, y_pos - 0.25))
-        camera_quat = p3d_core.Quat(self.getQuat())
+        self.axes.set_pos(LVecBase3f(aspect - 0.25, 0, y_pos - 0.25))
+        camera_quat = Quat(self.getQuat())
         camera_quat.invertInPlace()
         self.axes.setQuat(camera_quat)
 
@@ -109,12 +159,12 @@ class EditorCamera(p3d_core.NodePath):
 
         # Move the target so it stays with the camera
         self.target.setQuat(self.getQuat())
-        test = p3d_core.Vec3(move_vec.getX(), 0, move_vec.getZ())
+        test = LVecBase3f(move_vec.getX(), 0, move_vec.getZ())
         self.target.setPos(self.target, test)
 
     def orbit(self, delta):
         # Get new hpr
-        hpr = p3d_core.Vec3()
+        hpr = LVecBase3f()
         hpr.setX(self.getH() + delta.getX())
         hpr.setY(self.getP() + delta.getY())
         hpr.setZ(self.getR())
@@ -131,7 +181,7 @@ class EditorCamera(p3d_core.NodePath):
         cam_vec_dist = camera_vec.length()
 
         # Get new camera pos
-        new_pos = p3d_core.Vec3()
+        new_pos = LVecBase3f()
         new_pos.setX(cam_vec_dist * math.sin(rad_x) * math.cos(rad_y))
         new_pos.setY(-cam_vec_dist * math.cos(rad_x) * math.cos(rad_y))
         new_pos.setZ(-cam_vec_dist * math.sin(rad_y))

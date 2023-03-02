@@ -45,13 +45,13 @@ class Scene:
         self.camera_2d.node().setLens(lens)
         self.camera_2d.reparent_to(self.render_2d)
 
-        self.game.dr_2d.setCamera(self.camera_2d)
+        self.game.dr_2D.setCamera(self.camera_2d)
 
     def set_active_camera(self, cam):
         self.__main_camera = cam
         self.game.set_active_cam(cam)
 
-    def clear_active_cam(self, cam=None):
+    def clear_cam(self, cam=None):
         if cam is None:
             cam = self.__main_camera
 

@@ -11,6 +11,10 @@ from editor.globals import editor
 EVT_RENAME_ITEM = wx.NewId()
 EVT_REMOVE_ITEM = wx.NewId()
 
+CAMERA_ICON = constants.ICONS_PATH + "/SceneGraph/video.png"
+LIGHT_ICON = constants.ICONS_PATH + "/SceneGraph/lightbulb.png"
+OBJECT_ICON = constants.ICONS_PATH + "/SceneGraph/cube.png"
+
 
 class SceneBrowserPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
@@ -44,7 +48,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
-        agw_win_styles |= wx.TR_TWIST_BUTTONS | wx.TR_NO_LINES
+        agw_win_styles |= wx.TR_TWIST_BUTTONS
 
         self.SetAGWWindowStyleFlag(agw_win_styles)
         self.SetIndent(10)
@@ -55,6 +59,34 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         self.SetGradientStyle(True)
         self.SetFirstGradientColour(wx.Colour(46, 46, 46))
         self.SetSecondGradientColour(wx.Colour(123, 123, 123))
+
+        # ---------------------------------------------------------------------------- #
+        self.image_list = wx.ImageList(16, 16)  # create an image list for tree control to use
+
+        self.camera_icon = wx.Bitmap(CAMERA_ICON)
+        self.light_icon = wx.Bitmap(LIGHT_ICON)
+        self.np_icon = wx.Bitmap(OBJECT_ICON)
+
+        self.image_list.Add(self.camera_icon)
+        self.image_list.Add(self.light_icon)
+        self.image_list.Add(self.np_icon)
+
+        self.SetImageList(self.image_list)
+
+        self.image_to_item_map = {
+
+            constants.CAMERA_NODEPATH: 0,
+
+            constants.AMBIENT_LIGHT: 1,
+            constants.POINT_LIGHT: 1,
+            constants.DIRECTIONAL_LIGHT: 1,
+            constants.SPOT_LIGHT: 1,
+
+            constants.NODEPATH: 2,
+
+            constants.ACTOR_NODEPATH: 2
+        }
+        # ---------------------------------------------------------------------------- #
 
         self.saved_state = None
 
@@ -168,8 +200,14 @@ class SceneBrowser(customtree.CustomTreeCtrl):
             for child in np_.getChildren():
                 tree_item_ = None
                 if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
-                    tree_item_ = self.AppendItem(tree_item, child.get_name(),
-                                                 data=child.getPythonTag(constants.TAG_GAME_OBJECT))
+
+                    obj = child.getPythonTag(constants.TAG_GAME_OBJECT)
+                    image = self.image_to_item_map[obj.id]
+                    tree_item_ = self.AppendItem(tree_item,
+                                                 child.get_name(),
+                                                 data=obj,
+                                                 image=image)
+
                     self.np_id_to_tree_item_map[child] = tree_item_
 
                 if tree_item_ is not None:
@@ -187,7 +225,8 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
         if not only_children:
             np = np.getPythonTag(constants.TAG_GAME_OBJECT)
-            parent_item_ = self.AppendItem(parent_item_, np.get_name(), data=np)
+            image = self.image_to_item_map[np.id]
+            parent_item_ = self.AppendItem(parent_item_, np.get_name(), data=np, image=image)
             self.np_id_to_tree_item_map[np] = parent_item_
 
         add_(np, parent_item_)
@@ -262,7 +301,9 @@ class SceneBrowser(customtree.CustomTreeCtrl):
             except ValueError:
                 pass
 
-            tree_item = self.AppendItem(target_item, src_np.get_name(), data=src_np)
+            obj = src_np.getPythonTag(constants.TAG_GAME_OBJECT)
+            image = self.image_to_item_map[obj.id]
+            tree_item = self.AppendItem(target_item, src_np.get_name(), data=src_np, image=image)
             self.np_id_to_tree_item_map[src_np] = tree_item
 
             self.add(src_np, tree_item, only_children=True)

@@ -2,12 +2,14 @@ import sys
 import wx
 import editor.edPreferences as edPreferences
 import editor.constants as constants
-from editor.wxUI.custom import ControlGroup, SelectionButton, ToggleButton
+from editor.wxUI.custom.controlGroup import BasicButton, ToggleButton
 
-Models_icon = constants.ICONS_PATH + "//" + "3D-objects-icon.png"
-Textures_icon = constants.ICONS_PATH + "//" + "images.png"
-Sounds_icon = constants.ICONS_PATH + "//" + "music.png"
-Scripts_icon = constants.ICONS_PATH + "//" + "script_code.png"
+Models_icon = constants.ICONS_PATH + "/3D-objects-icon.png"
+Textures_icon = constants.ICONS_PATH + "/images.png"
+Sounds_icon = constants.ICONS_PATH + "/music.png"
+Scripts_icon = constants.ICONS_PATH + "/script_code.png"
+
+Image_Clear = constants.ICONS_PATH + "/Console/trashBin.png"
 
 
 class LogPanel(wx.Panel):
@@ -16,8 +18,60 @@ class LogPanel(wx.Panel):
     stderr streams.
     """
 
-    class RedirectText(object):
+    class ToolBar(wx.Panel):
+        def __init__(self, *args, **kwargs):
+            wx.Panel.__init__(self, *args)
+            self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+            self.SetWindowStyleFlag(wx.BORDER_DOUBLE)
 
+            self.parent = args[0]
+
+            self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.SetSizer(self.sizer)
+
+            # add controls to sizer
+            self.toggle_clear_on_reload = ToggleButton(self, 0,
+                                                       "ClearOnReload ",
+                                                       start_offset=1,
+                                                       text_flags=wx.RIGHT | wx.EXPAND,
+                                                       text_border=3,
+
+                                                       select_func=self.on_toggle,
+                                                       deselect_func=self.on_toggle_off)
+
+            self.toggle_clear_on_play = ToggleButton(self, 1,
+                                                     "ClearOnPlay ",
+                                                     start_offset=1,
+
+                                                     select_func=self.on_toggle,
+                                                     deselect_func=self.on_toggle_off)
+
+            self.clear_console_btn = BasicButton(self, 0,
+                                                 "ClearConsole ",
+                                                 start_offset=1,
+                                                 select_func=self.on_button)
+
+            # add controls to sizer
+            self.sizer.Add(self.toggle_clear_on_reload, 0)
+            self.sizer.Add(self.toggle_clear_on_play, 1, wx.EXPAND | wx.LEFT, 1)
+            self.sizer.Add(self.clear_console_btn, 0, wx.LEFT, 1)
+
+        def on_toggle(self, idx, data):
+            if idx == 0:
+                self.parent.clear_on_reload = True
+            elif idx == 1:
+                self.parent.clear_on_play = True
+
+        def on_toggle_off(self, idx):
+            if idx == 0:
+                self.parent.clear_on_reload = False
+            elif idx == 1:
+                self.parent.clear_on_play = False
+
+        def on_button(self, idx, data):
+            self.parent.clear_console()
+
+    class RedirectText(object):
         def __init__(self, terminal, text_ctrl):
             self.terminal = terminal
             self.textCtrl = text_ctrl
@@ -49,33 +103,19 @@ class LogPanel(wx.Panel):
 
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
+        self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        # self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
 
-        # build top controls bar
-        # create control buttons
-        # self.control_group = ControlGroup(self, self.on_control_btn_select, max_size=wx.Size(-1, 14))
-        # self.control_group.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        #
-        # clear_on_play_btn = ToggleButton(parent=self.control_group, btn_index=1, label_text="ClearOnPlay",
-        #                                  text_pos=(15, -1), center_text=True,
-        #                                  select_func=self.on_control_btn_select,
-        #                                  deselect_func=self.on_control_btn_deselect)
-        #
-        # clear_on_reload_btn = ToggleButton(parent=self.control_group, btn_index=1, label_text="ClearOnReload",
-        #                                    text_pos=(2, -1), center_text=True,
-        #                                    select_func=self.on_control_btn_select,
-        #                                    deselect_func=self.on_control_btn_deselect)
-        #
-        # clear_on_play_btn.deselect()
-        # clear_on_reload_btn.deselect()
-        #
-        # self.control_group.add_button(clear_on_play_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
-        # self.control_group.add_button(clear_on_reload_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
+        self.clear_on_reload = False
+        self.clear_on_play = False
+
+        # toolbar
+        self.tool_bar = LogPanel.ToolBar(self)
 
         # build log text control
         self.tc = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.NO_BORDER)
-        self.tc.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+        self.tc.SetWindowStyleFlag(wx.BORDER_NONE)
+        self.tc.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
         self.tc.SetForegroundColour(edPreferences.Colors.Console_Text)
 
         # redirect text here
@@ -84,12 +124,18 @@ class LogPanel(wx.Panel):
 
         # build sizer
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        # self.sizer.Add(self.control_group, 1, wx.EXPAND | wx.BOTTOM, border=1)
-        self.sizer.Add(self.tc, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
-    def on_control_btn_select(self, index):
-        pass
+        self.sizer.Add(self.tool_bar, 0, wx.EXPAND | wx.BOTTOM, border=2)
+        self.sizer.Add(self.tc, 1, wx.EXPAND)
 
-    def on_control_btn_deselect(self, index):
-        pass
+    def on_ed_reload(self):
+        if self.clear_on_reload:
+            self.tc.Clear()
+
+    def on_enter_game_state(self):
+        if self.clear_on_play:
+            self.tc.Clear()
+
+    def clear_console(self):
+        self.tc.Clear()

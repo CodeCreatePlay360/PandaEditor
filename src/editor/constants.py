@@ -1,6 +1,5 @@
 import panda3d.core as p3d_core
 
-# -----------------------------------------------------------------------------------------------
 EDITOR_STATE = 0
 GAME_STATE = 1
 
@@ -16,7 +15,6 @@ MAX_COMMANDS_COUNT = 20  # maximum number of undo redo commands
 
 ED_GEO_MASK = p3d_core.BitMask32.bit(0)
 GAME_GEO_MASK = p3d_core.BitMask32.bit(1)
-# **********************************************************************************************
 
 
 # -----------------------------------------------------------------------------------------------
@@ -38,7 +36,6 @@ CUBE_PATH = MODELS_PATH + "/" + "models/cube.fbx"
 CAPSULE_PATH = MODELS_PATH + "/" + "models/capsule.fbx"
 CONE_PATH = MODELS_PATH + "/" + "models/cone.fbx"
 PLANE_PATH = MODELS_PATH + "/" + "models/plane.fbx"
-# **********************************************************************************************
 
 
 # -----------------------------------------------------------------------------------------------
@@ -50,12 +47,18 @@ DIRECTIONAL_LIGHT = "__DirectionalLight__"
 SPOT_LIGHT = "__SpotLight__"
 AMBIENT_LIGHT = "__AmbientLight__"
 CAMERA_NODEPATH = "__CameraNodePath__"
-# **********************************************************************************************
 
+# -----------------------------------------------------------------------------------------------
+# SCRIPTS STATUS
+SCRIPT_STATUS_OK = 1
+SCRIPT_STATUS_ERROR = -1
 
 # -----------------------------------------------------------------------------------------------
 # All Supported file types
 MODEL_EXTENSIONS = ["egg", "bam", "pz", "glb", "gltf"]
 TEXTURE_EXTENSIONS = ["tiff", "tga", "jpg", "png"]
 OTHER_EXTENSIONS = []
-# **********************************************************************************************
+
+# -----------------------------------------------------------------------------------------------
+# wx-ui update delay
+UI_UPDATE_DELAY = 1

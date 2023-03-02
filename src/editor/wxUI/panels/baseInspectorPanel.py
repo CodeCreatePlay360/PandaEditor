@@ -5,6 +5,7 @@ import editor.edPreferences as edPreferences
 import editor.constants as constants
 import editor.wxUI.custom as wx_custom
 
+from editor.core import PModBase
 from editor.utils import EdProperty as edProperty
 from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.foldPanel import FoldPanelManager
@@ -13,19 +14,45 @@ from editor.globals import editor
 from panda3d.core import NodePath
 
 # icon paths
-World_settings_icon = constants.ICONS_PATH + "//" + "globe.png"
-Ed_settings_icon = constants.ICONS_PATH + "//" + "gear.png"
-Object_settings_icon = constants.ICONS_PATH + "//" + "box_closed.png"
-Plugin_icon = constants.ICONS_PATH + "//" + "plugin.png"
+Object_settings_icon = constants.ICONS_PATH + "/box_closed.png"
+World_settings_icon = constants.ICONS_PATH + "/globe.png"
+Ed_settings_icon = constants.ICONS_PATH + "/gear.png"
+Plugin_icon = constants.ICONS_PATH + "/plugin.png"
 
-PIN_ICON = constants.ICONS_PATH + "//" + "pin.png"
-REMOVE_ICON = constants.ICONS_PATH + "//" + "close.png"
-# REFRESH_BTN_ICON = constants.ICONS_PATH + "//" + "arrow_refresh.png"
+#
+Object_Icon = constants.ICONS_PATH + "/Inspector" + "/cube.png"
+Camera_Icon = constants.ICONS_PATH + "/Inspector" + "/video.png"
+Light_Icon = constants.ICONS_PATH + "/Inspector" + "/lightbulb.png"
+Script_Icon = constants.ICONS_PATH + "/Inspector" + "/script_code.png"
+Component_Icon = constants.ICONS_PATH + "/Inspector" + "/script_gear.png"
+Plugin_icon_Small = constants.ICONS_PATH + "/Inspector" + "/script_code_red.png"
 
-Object_Inspector = 0
-World_Inspector = 1
-EditorSettings_Inspector = 2
-PluginSettings_Inspector = 3
+#
+PIN_ICON = constants.ICONS_PATH + "/pin.png"
+REMOVE_ICON = constants.ICONS_PATH + "/close.png"
+INFO_ICON = constants.ICONS_PATH + "/Inspector" + "/information.png"
+
+#
+OBJECT_INSPECTOR_ID = 0
+WORLD_INSPECTOR_ID = 1
+ED_INSPECTOR_ID = 2
+PLUGIN_INSPECTOR_ID = 3
+
+# map_ = object_type: (bitmap_path, flags(for box sizer), border(for box sizer))
+OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 2),
+                     constants.RuntimeModule: (Script_Icon, wx.EXPAND | wx.TOP, 2),
+                     constants.EditorPlugin: (Plugin_icon_Small, wx.EXPAND | wx.TOP, 2),
+
+                     constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2),
+
+                     constants.ACTOR_NODEPATH: "",
+
+                     constants.POINT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
+                     constants.DIRECTIONAL_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
+                     constants.SPOT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
+                     constants.AMBIENT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
+
+                     constants.CAMERA_NODEPATH: (Camera_Icon, wx.EXPAND | wx.TOP, 2)}
 
 
 class TextPanel(wx.Panel):
@@ -52,6 +79,84 @@ class TextPanel(wx.Panel):
 
 
 class BaseInspectorPanel(wx.Panel):
+    class InspectorTypeSelectionPanel(wx.Panel):
+        def __init__(self, *args, **kwargs):
+            wx.Panel.__init__(self, *args, **kwargs)
+            self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+            self.inspector = args[0]
+
+            self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.SetSizer(self.sizer)
+
+            inspector_panel_btn = wx_custom.SelectionButton(self,
+                                                            0,
+                                                            "Inspector",
+                                                            start_offset=2,
+                                                            text_flags=wx.EXPAND | wx.TOP,
+                                                            text_border=1,
+
+                                                            image_path=Object_settings_icon,
+                                                            image_flags=wx.EXPAND | wx.RIGHT,
+                                                            image_border=3,
+                                                            select_func=self.on_btn_select)
+            inspector_panel_btn.SetMinSize((-1, 16))
+
+            world_settings_btn = wx_custom.SelectionButton(self,
+                                                           1,
+                                                           "World",
+                                                           start_offset=3,
+
+                                                           text_flags=wx.EXPAND | wx.TOP,
+                                                           text_border=1,
+
+                                                           image_path=World_settings_icon,
+                                                           image_flags=wx.EXPAND | wx.RIGHT,
+                                                           image_border=3,
+                                                           image_scale=13,
+
+                                                           select_func=self.on_btn_select)
+            world_settings_btn.SetMinSize((-1, 16))
+
+            ed_settings_btn = wx_custom.SelectionButton(self,
+                                                        2,
+                                                        "Editor",
+                                                        start_offset=2,
+                                                        text_flags=wx.EXPAND | wx.TOP,
+                                                        text_border=1,
+
+                                                        image_path=Ed_settings_icon,
+                                                        image_flags=wx.EXPAND | wx.RIGHT,
+                                                        image_border=3,
+
+                                                        select_func=self.on_btn_select)
+            ed_settings_btn.SetMinSize((-1, 16))
+
+            plugins_panel_btn = wx_custom.SelectionButton(self,
+                                                          3,
+                                                          "Plugins",
+                                                          start_offset=2,
+                                                          text_flags=wx.EXPAND | wx.TOP,
+                                                          text_border=1,
+
+                                                          image_path=Plugin_icon,
+                                                          image_flags=wx.EXPAND | wx.RIGHT,
+                                                          image_border=3,
+
+                                                          select_func=self.on_btn_select)
+            plugins_panel_btn.SetMinSize((-1, 16))
+
+            self.buttons_list = [inspector_panel_btn, world_settings_btn, ed_settings_btn, plugins_panel_btn]
+
+            self.sizer.Add(inspector_panel_btn, 1, wx.EXPAND | wx.RIGHT, border=1)
+            self.sizer.Add(world_settings_btn, 1, wx.EXPAND | wx.RIGHT, border=1)
+            self.sizer.Add(ed_settings_btn, 1, wx.EXPAND | wx.RIGHT, border=1)
+            self.sizer.Add(plugins_panel_btn, 1, wx.EXPAND | wx.RIGHT, border=1)
+
+        def on_btn_select(self, idx, data):
+            for btn in self.buttons_list:
+                btn.deselect()
+            self.inspector.on_inspector_select(idx)
+
     class FoldManagerPanel(ScrolledPanel):
         """a sub scrolled-panel for adding the FoldManager"""
 
@@ -116,7 +221,7 @@ class BaseInspectorPanel(wx.Panel):
 
             self.font = wx.Font(12, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.BOLD)
 
-            self.ctrl_label = wx.StaticText(self, label="DRAG COMPONENTS HERE.")
+            self.ctrl_label = wx.StaticText(self, label="DRAG COMPONENTS HERE__")
             self.ctrl_label.SetFont(self.font)
             self.ctrl_label.SetForegroundColour(edPreferences.Colors.Inspector_properties_label)
 
@@ -152,108 +257,26 @@ class BaseInspectorPanel(wx.Panel):
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.main_sizer)
 
-        self.inspector_type_btns_id_map = {}
-        self.sel_btn_index = -1  # the index of selected button of selection grid.
-        self.inspector_type_btns = self.create_inspector_type_buttons()
+        self.inspector_type_id_map = {0: OBJECT_INSPECTOR_ID, 1: WORLD_INSPECTOR_ID, 2: ED_INSPECTOR_ID,
+                                      3: PLUGIN_INSPECTOR_ID}
+        self.sel_inspector_index = -1  # the index of selected button of selection grid.
+        self.inspector_type_sel_panel = BaseInspectorPanel.InspectorTypeSelectionPanel(self)
 
         self.__is_dirty = False
 
         self.static_line = wx.StaticLine(self, style=wx.SL_HORIZONTAL)
-        # self.v_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=0)
 
-        self.main_sizer.Add(self.inspector_type_btns, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border=5)
+        self.main_sizer.Add(self.inspector_type_sel_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM,
+                            border=5)
         self.main_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=1)
         self.main_sizer.Add(self.fold_manager_panel, 1, wx.EXPAND)
 
-    def create_inspector_type_buttons(self):
-        # create selection buttons
-        self.inspector_type_btns = wx_custom.ControlGroup(self, size=(-1, 18))
-
-        inspector_panel_btn = wx_custom.SelectionButton(self.inspector_type_btns,
-                                                        0,
-                                                        "Inspector",
-                                                        image_path=Object_settings_icon,
-                                                        select_func=self.on_inspector_select)
-
-        world_settings_btn = wx_custom.SelectionButton(self.inspector_type_btns,
-                                                       1,
-                                                       "World",
-                                                       text_pos=(21, 2),
-                                                       image_path=World_settings_icon,
-                                                       image_pos=(3, 2),
-                                                       image_scale=13,
-                                                       select_func=self.on_inspector_select)
-
-        ed_settings_btn = wx_custom.SelectionButton(self.inspector_type_btns,
-                                                    2,
-                                                    "Editor",
-                                                    image_path=Ed_settings_icon,
-                                                    select_func=self.on_inspector_select)
-
-        plugins_panel_btn = wx_custom.SelectionButton(self.inspector_type_btns,
-                                                      3,
-                                                      "Plugins",
-                                                      image_path=Plugin_icon,
-                                                      select_func=self.on_inspector_select)
-
-        self.inspector_type_btns.add_button(inspector_panel_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
-        self.inspector_type_btns.add_button(world_settings_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
-        self.inspector_type_btns.add_button(ed_settings_btn, flags=wx.EXPAND | wx.RIGHT, border=1)
-        self.inspector_type_btns.add_button(plugins_panel_btn, flags=wx.EXPAND)
-
-        # map objects to selection buttons
-        self.inspector_type_btns_id_map[inspector_panel_btn.button_index] = Object_Inspector
-        self.inspector_type_btns_id_map[world_settings_btn.button_index] = World_Inspector
-        self.inspector_type_btns_id_map[ed_settings_btn.button_index] = EditorSettings_Inspector
-        self.inspector_type_btns_id_map[plugins_panel_btn.button_index] = PluginSettings_Inspector
-
-        return self.inspector_type_btns
-
-    def create_fold_panel_controls(self, parent,
-                                   pin_btn=False, pin_btn_data=None,
-                                   remove_btn=False, remove_btn_data=None):
-        control_group = wx_custom.ControlGroup(parent, size=(-1, 18))
-
-        """creates wx_custom.ControlGroup for a fold_panel"""
-
-        idx = 0
-
-        if pin_btn:
-            pin_btn = wx_custom.ToggleButton(
-                parent=control_group,
-                btn_index=idx,
-                label_text="",
-                image_path=PIN_ICON,
-                image_pos=(1, 2),
-                image_scale=16,
-                select_func=self.set_pinned,
-                deselect_func=self.clear_pinned,
-                bg_color=parent.GetBackgroundColour(),
-                data=pin_btn_data,
-            )
-            control_group.add_button(pin_btn, border=0)
-            idx += 1
-
-        if remove_btn:
-            remove_btn = wx_custom.BasicButton(
-                parent=control_group,
-                btn_index=idx,
-                label_text="",
-                image_path=REMOVE_ICON,
-                image_pos=(0, 4),
-                image_scale=8,
-                select_func=self.remove_component,
-                bg_color=parent.GetBackgroundColour(),
-                data=remove_btn_data,
-            )
-            control_group.add_button(remove_btn, flags=wx.EXPAND, border=0)
-            idx += 1
-
-        return control_group
+    def select_inspector(self, idx):
+        self.inspector_type_sel_panel.buttons_list[idx].on_click()
 
     def on_inspector_select(self, index, data=None):
-        self.sel_btn_index = index
-        inspector = self.inspector_type_btns_id_map[index]  # get the inspector to layout properties for
+        self.sel_inspector_index = index
+        inspector = self.inspector_type_id_map[index]  # get the inspector to layout properties for
 
         # reset everything
         self.object = self.properties = self.label = None
@@ -264,7 +287,7 @@ class BaseInspectorPanel(wx.Panel):
         le = editor.level_editor
         resource_tree = editor.resource_browser
 
-        if inspector == Object_Inspector:
+        if inspector == OBJECT_INSPECTOR_ID:
             if len(le.selection.selected_nps) > 0:
                 obj = le.selection.selected_nps[0]
                 self.object = obj
@@ -286,7 +309,7 @@ class BaseInspectorPanel(wx.Panel):
 
         is_scene_obj = False
 
-        if inspector == Object_Inspector:
+        if inspector == OBJECT_INSPECTOR_ID:
             if layout_object and name and properties:
                 is_scene_obj = True
             elif is_text:
@@ -298,17 +321,17 @@ class BaseInspectorPanel(wx.Panel):
                 self.set_text(txt)
                 return
 
-        elif inspector == World_Inspector:
+        elif inspector == WORLD_INSPECTOR_ID:
             txt = "This section is incomplete, support PandaEditor on Patreon to help speed up its development."
             self.set_text(txt)
             return
 
-        elif inspector == EditorSettings_Inspector:
+        elif inspector == ED_INSPECTOR_ID:
             layout_object = le.editor_settings
             name = "Editor Settings"
             properties = layout_object.get_properties()
 
-        elif inspector == PluginSettings_Inspector:
+        elif inspector == PLUGIN_INSPECTOR_ID:
             txt = "This section is incomplete, support PandaEditor on Patreon to help speed up its development."
             self.set_text(txt)
             return
@@ -318,11 +341,11 @@ class BaseInspectorPanel(wx.Panel):
     def layout_auto(self):
         """automatically create inspector based on selected inspector and selected scene object"""
         # get the inspector
-        if self.sel_btn_index == -1:
+        if self.sel_inspector_index == -1:
             return
 
-        inspector = self.inspector_type_btns_id_map[self.sel_btn_index]
-        if inspector in [World_Inspector, EditorSettings_Inspector, PluginSettings_Inspector]:
+        inspector = self.inspector_type_id_map[self.sel_inspector_index]
+        if inspector in [WORLD_INSPECTOR_ID, ED_INSPECTOR_ID, PLUGIN_INSPECTOR_ID]:
             return
 
         # get the selected scene object or resource item
@@ -334,7 +357,7 @@ class BaseInspectorPanel(wx.Panel):
 
         le = editor.level_editor
         resource_tree = editor.resource_browser
-        if inspector == Object_Inspector:
+        if inspector == OBJECT_INSPECTOR_ID:
             if len(le.selection.selected_nps) > 0:
                 obj = le.selection.selected_nps[0]
                 self.object = obj
@@ -363,16 +386,16 @@ class BaseInspectorPanel(wx.Panel):
             txt = "Select an object in scene to view its inspector."
             self.set_text(txt)
 
-    def layout(self, obj=None, name=None, properties=None, scene_obj=True, reset=True):
+    def layout(self, obj=None, name=None, properties=None, is_editor_item=True, reset=True):
         """Layout properties for a python class.
         1. obj = the python class,
         2. name = name of class,
         3. properties = editor properties of this class (see editor.utils.property),
-        4. scene_object = if this is a user defined object for example a node-path or a user module etc."""
+        4. is_editor_item = if this is an editor object e.g. node-path or a user module etc."""
 
         def get_toggle_property(parent):
             if hasattr(obj, "_PModBase__module_type"):
-                if obj.type in [constants.RuntimeModule, constants.Component]:
+                if obj.module_type in [constants.RuntimeModule, constants.Component]:
                     # create a toggle property object
                     property_ = edProperty.FuncProperty(name="",
                                                         value=obj.get_active_status(),
@@ -390,10 +413,53 @@ class BaseInspectorPanel(wx.Panel):
 
             return None
 
+        def get_object_bitmap(obj_):
+            obj_type = None
+            if isinstance(obj_, PModBase):
+                obj_type = obj_.module_type
+            elif isinstance(obj_, NodePath):
+                obj_type = obj_.id
+
+            bitmap_path = OBJ_TYPE_ICON_MAP[obj_type][0]
+            sizer_flags = OBJ_TYPE_ICON_MAP[obj_type][1]
+            border_ = OBJ_TYPE_ICON_MAP[obj_type][2]
+
+            return bitmap_path, sizer_flags, border_
+
+        def get_pin_btn(parent):
+            pin_btn = wx_custom.ToggleButton(
+                parent,
+                0,
+                "",
+                image_path=PIN_ICON,
+                image_flags=wx.EXPAND,
+                image_border=0,
+                select_func=self.set_pinned,
+                deselect_func=self.clear_pinned,
+                deselected_color=parent.GetBackgroundColour(),
+                data=None,
+            )
+            xx = (pin_btn, wx.EXPAND | wx.RIGHT, 4)
+            return xx
+
+        def get_remove_btn(parent, btn_data):
+            remove_btn = wx_custom.BasicButton(
+                parent,
+                0,
+                "",
+                image_path=REMOVE_ICON,
+                image_scale=8,
+                select_func=self.remove_component,
+                bg_color=parent.GetBackgroundColour(),
+                data=btn_data,
+            )
+            xx = (remove_btn, wx.EXPAND | wx.RIGHT | wx.TOP, 4)
+            return xx
+
         # only create inspector for scene object if inspector_type == ObjectInspector
-        inspector = self.inspector_type_btns_id_map[self.sel_btn_index]
-        if scene_obj:
-            if inspector != Object_Inspector:
+        inspector_id = self.inspector_type_id_map[self.sel_inspector_index]
+        if is_editor_item:
+            if inspector_id != OBJECT_INSPECTOR_ID:
                 return
 
         if reset:
@@ -410,34 +476,57 @@ class BaseInspectorPanel(wx.Panel):
             if isinstance(obj, NodePath):
                 if self.components_dnd_panel is None:
                     self.components_dnd_panel = BaseInspectorPanel.DragDropCompPanel(self.fold_manager_panel)
-                    self.fold_manager_panel.sizer.Add(self.components_dnd_panel, 1, wx.EXPAND | wx.LEFT | wx.TOP,
+                    self.fold_manager_panel.sizer.Add(self.components_dnd_panel,
+                                                      1,
+                                                      wx.EXPAND | wx.LEFT | wx.TOP,
                                                       border=8)
-
         else:
             self.properties.extend(properties)
             obj_label = name[0].upper() + name[1:]
 
         # add a fold panel for the top object
-        fold_panel = self.fold_manager.add_panel(obj_label, False)
+        fold_panel = self.fold_manager.add_panel(obj_label)
         fold_panel.Hide()
 
-        # the first fold_panel will always contain the object (NodePath or any other resource item), so only
+        # the first fold_panel will always contain the object (NodePath or any other resource item), so
         # create a pin button for it
+
         if len(self.fold_manager.panels) == 1:
-            fold_panel.create_buttons(
-                toggle_btn=get_toggle_property(fold_panel),
-                control_group=self.create_fold_panel_controls(fold_panel, pin_btn=True))
-        else:
-            if obj.type == constants.Component:
+            try:
+                # get object bitmaps
+                obj_bitmap, flags, border = get_object_bitmap(obj)
                 fold_panel.create_buttons(
                     toggle_btn=get_toggle_property(fold_panel),
-                    control_group=self.create_fold_panel_controls(fold_panel,
-                                                                  remove_btn=True,
-                                                                  remove_btn_data=(self.object, obj.path)))
+                    obj_bitmap_path=obj_bitmap,
+                    obj_bitmap_args=(flags, border),
+                    other_controls=[(get_pin_btn(fold_panel))])
+            except KeyError:
+                # else create it without object specific bitmaps
+                fold_panel.create_buttons(
+                    toggle_btn=get_toggle_property(fold_panel),
+                    other_controls=[(get_pin_btn(fold_panel))])
+        else:
+            if obj.module_type == constants.Component:
+                obj_bitmap, flags, border = get_object_bitmap(obj)
+
+                if obj.status == constants.SCRIPT_STATUS_ERROR:
+                    info_bitmap_path = INFO_ICON
+                    info_icon_args = (wx.EXPAND | wx.TOP, 1)
+                else:
+                    info_bitmap_path = None
+                    info_icon_args = ()
+
+                fold_panel.create_buttons(
+                    toggle_btn=get_toggle_property(fold_panel),
+                    info_bitmap_path=info_bitmap_path,
+                    info_bitmap_args=info_icon_args,
+                    obj_bitmap_path=obj_bitmap,
+                    obj_bitmap_args=(flags, border),
+                    other_controls=[(get_remove_btn(fold_panel, btn_data=(self.object, obj.path)))]
+                )
 
         #
         properties = self.create_wx_properties(properties, fold_panel)
-        #
         fold_panel.set_controls(properties)
         fold_panel.switch_expanded_state(False)
         fold_panel.Show()
@@ -450,7 +539,7 @@ class BaseInspectorPanel(wx.Panel):
                     self.layout(comp,
                                 obj.components[key].class_instance.name,
                                 comp.get_properties(),
-                                scene_obj=True,
+                                is_editor_item=True,
                                 reset=False)
 
         self.fold_manager_panel.SetupScrolling(scroll_x=False)

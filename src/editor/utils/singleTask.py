@@ -20,12 +20,16 @@ class SingleTask(Object):
 
         # Start the object's task if it hasn't been already
         if not self.IsRunning(0):
-            self._task = taskMgr.add(self.Update, "%sUpdate" % self._name, sort=sort,
+            self._task = taskMgr.add(funcOrTask=self.Update,
+                                     name="_ed_task_" + "%sUpdate" % self._name,
+                                     sort=sort,
                                      priority=priority)
 
         if not self.IsRunning(1):
-            self._late_task = taskMgr.add(self.LateUpdate, "%sLateUpdate" % self._name,
-                                          sort=last_update_sort, priority=None)
+            self._late_task = taskMgr.add(funcOrTask=self.LateUpdate,
+                                          name="_ed_task_" + "%sLateUpdate" % self._name,
+                                          sort=last_update_sort,
+                                          priority=None)
 
     def Update(self, task):
         """Run on_update method - return task.cont if there was no return value"""

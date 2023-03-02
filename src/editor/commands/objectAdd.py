@@ -11,11 +11,7 @@ class ObjectAdd(Command):
 
     def do(self, *args, **kwargs):
         self.object = editor.level_editor.add_object(self.path)
-        # editor.observer.trigger("OnAddNPs", [self.object])
+        return True
 
     def undo(self):
         editor.level_editor.remove_nps([self.object])
-        # editor.observer.trigger("OnRemoveNPs", [self.object])
-
-    def clean(self, **kwargs):
-        pass

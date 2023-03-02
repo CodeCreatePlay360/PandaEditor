@@ -9,9 +9,7 @@ class LoadModel(Command):
 
     def do(self, *args, **kwargs):
         self.model = editor.level_editor.load_model(self.path)
+        return True
 
     def undo(self):
         editor.level_editor.remove_nps([self.model])
-
-    def clean(self, **kwargs):
-        pass

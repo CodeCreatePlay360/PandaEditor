@@ -9,6 +9,7 @@ class AddActor(Command):
 
     def do(self, *args, **kwargs):
         self.model = editor.level_editor.add_actor(self.path)
+        return True
 
     def undo(self):
         editor.level_editor.remove_nps([self.model])

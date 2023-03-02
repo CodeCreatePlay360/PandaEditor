@@ -214,10 +214,10 @@ class Utils:
                                     getter=lambda: LVecBase2f(lens.get_near(), lens.get_far()))
 
             fov = FuncProperty(name="Field Of View",
-                               value=lens.get_fov(),
-                               value_limit=LVecBase2f(0.01, 0.01),
-                               setter=lens.set_fov,
-                               getter=lens.get_fov)
+                               value=lens.get_fov().x,
+                               value_limit=3,
+                               setter=lambda x: lens.set_fov(x),
+                               getter=lambda: lens.get_fov().x)
 
             return [near_far, fov]
 

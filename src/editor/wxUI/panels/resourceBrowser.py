@@ -3,7 +3,6 @@ import pickle
 import shutil
 import wx
 import wx.lib.agw.customtreectrl as customtree
-import editor.constants as constants
 import editor.edPreferences as edPreferences
 import editor.wxUI.globals as wxGlobals
 import editor.resources.globals as resourceGlobals
@@ -70,9 +69,9 @@ class ResourceTiles(wx.Panel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        self.tiles_panel = ImageTilesPanel(self, parent)
+        self.tiles_panel = ImageTilesPanel(self)
         static_line = wx.StaticLine(self)
-        self.sizer.Add(self.tiles_panel.options, 0, wx.EXPAND)
+        self.sizer.Add(self.tiles_panel.tool_bar, 0, wx.EXPAND)
         self.sizer.Add(static_line, 0, wx.EXPAND)
         self.sizer.Add(self.tiles_panel, 1, wx.EXPAND)
 

@@ -17,7 +17,6 @@ class Viewport(wx.Panel):
 
         self.wx_main = args[0]
         self._win = None
-        # self.SetBackgroundColour("blue")
 
     def get_window(self):
         return self._win
@@ -36,7 +35,6 @@ class Viewport(wx.Panel):
 
         size = self.GetSize()
         wp.setSize(size.x, size.y)
-
         wp.setParentWindow(self.GetHandle())
 
         if self._win is None:
@@ -90,23 +88,15 @@ class App(wx.App, DirectObject):
         self.event_loop = wx.GUIEventLoop()
         self.old_loop = wx.EventLoop.GetActive()
         wx.EventLoop.SetActive(self.event_loop)
-        taskMgr.add(self.wx_step, 'evtLoopTask')
+        taskMgr.add(self.wx_step, '_ed_task_WxStep')
 
-    def on_destroy(self, event=None):
+    def on_destroy(self):
         self.wx_step()
         wx.EventLoop.SetActive(self.old_loop)
 
-    def quit(self, event=None):
-        self.on_destroy(event)
-        try:
-            base
-        except NameError:
-            sys.exit()
-        base.userExit()
-
-    def start(self):
-        while True:
-            self.wx_step()
+    def quit(self):
+        self.on_destroy()
+        sys.exit()
 
     def wx_step(self, task=None):
         while self.event_loop.Pending():

@@ -9,11 +9,8 @@ class AddLight(Command):
 
     def do(self, *args, **kwargs):
         self.light_np = editor.level_editor.add_light(self.light_type)
-        # editor.observer.trigger("OnAddNPs", [self.light_np])
+        return True
 
     def undo(self):
         # editor.observer.trigger("OnRemoveNPs", [self.light_np])
         editor.level_editor.remove_nps([self.light_np])
-
-    def clean(self, **kwargs):
-        pass

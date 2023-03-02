@@ -1,7 +1,9 @@
 import webbrowser
 import wx
+
 from editor.globals import editor
 from editor.constants import GAME_STATE, TAG_GAME_OBJECT
+from editor.utils import safe_execute
 
 
 obs = editor.observer
@@ -97,10 +99,10 @@ def create_asset(asset_type, path):
             file_.write("def __init__(self, *args, **kwargs):\n")
 
             indent_file(file_, 8)
-            file_.write(base_class + ".__init__(self, *args, **kwargs)\n")
+            file_.write(base_class + ".__init__(self, *args, **kwargs)\n\n")
 
-            indent_file(file_, 8)
-            file_.write("# __init__ should not contain anything except for variable declaration...!\n\n")
+            # indent_file(file_, 8)
+            # file_.write("# __init__ should not contain anything except for variable declaration...!\n\n")
 
             # write start method
             indent_file(file_, 4)
@@ -181,7 +183,7 @@ def on_scene_start():
     wx_main.freeze()
 
     # set a default active object for inspector
-    inspector.inspector_type_btns.select_button(0)
+    inspector.select_inspector(0)
     cube = level_editor.active_scene.render.find("**/cube.fbx")
     cube = cube.getPythonTag(TAG_GAME_OBJECT)
     # inspector.set_object(cube, cube.get_name(), cube.get_properties())
@@ -199,6 +201,36 @@ def on_scene_clean(scene):
 
 # ---------------------------------------- ** ---------------------------------------- #
 # Events related to LevelEditor
+@obs.on("ViewportEvent")
+def viewport_event(evt_type: str, *args):
+    if evt_type == "FrameSelectedNPs":
+        align_dir = args[0]
+        nps = editor.level_editor.selection.selected_nps
+        editor.p3d_app.show_base.ed_camera.frame(nps, align_dir)
+    elif evt_type == "ResetView":
+        editor.p3d_app.show_base.ed_camera.reset()
+
+
+@obs.on("EditorEvent")
+def viewport_event(evt_type: str, *args):
+    if evt_type == "ToggleHotkeysText":
+        editor.level_editor.toggle_hot_keys_text()
+    elif evt_type == "ReloadEditor":
+        reload_editor()
+    elif evt_type == "UndoLastCommand":
+        undo_last_command()
+
+
+@obs.on("AlignToEdView")
+def align_game_view_to_ed_view(*args):
+    ed_cam = editor.p3d_app.show_base.ed_camera
+    game_cam = editor.level_editor.active_scene.main_camera
+    if game_cam:
+        game_cam.setPos(ed_cam.getPos())
+        game_cam.setHpr(ed_cam.getHpr())
+        game_cam.setY(game_cam, -15)
+
+
 @obs.on("XFormTask")
 def on_xform_task(force_update_all=False):
     """updates properties panel according to currently selected object"""
@@ -279,6 +311,7 @@ def on_enable_ed_state():
 @obs.on("OnEnableGameState")
 def on_enable_game_state():
     editor.scene_graph.UnselectAll()
+    editor.console.on_enter_game_state()
 
 
 @obs.on("ToggleSceneLights")
@@ -296,7 +329,7 @@ def toggle_lights(value=None):
         wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_off_icon)
         wx_main.scene_ctrls_tb.ToggleTool(wx_main.lights_toggle_btn.GetId(), False)
 
-    wx_main.scene_ctrls_tb.Realize()
+    wx_main.scene_ctrls_tb.Refresh()
 
 
 @obs.on("PluginFailed")
@@ -306,13 +339,7 @@ def plugin_execution_failed(plugin):
 
 @obs.on("CleanUnusedLoadedNPs")
 def clean_unused_loaded_nps(nps_to_remove):
-    # TODO explanation
     editor.level_editor.remove_nps(nps_to_remove, permanent=True)
-
-
-@obs.on("PrintTaskMgr")
-def print_task_mgr(*args):
-    print(editor.p3d_app.show_base.taskMgr)
 
 
 @obs.on("EditorReload")
@@ -323,9 +350,9 @@ def reload_editor(*args):
     resource_tree = editor.resource_browser
     scene_graph = editor.scene_graph
 
-    # save editor state
+    editor.console.on_ed_reload()
+
     resource_tree.save_state()
-    # scene_graph.save_state()
     selected_nps = le.selection.selected_nps
     #
     obs.trigger("DeselectAll")
@@ -353,6 +380,11 @@ def reload_editor(*args):
     wx_main.thaw()
 
 
+@obs.on("UndoLastCommand")
+def undo_last_command():
+    editor.p3d_app.command_manager.undo()
+
+
 # ---------------------------------------- Wx EVENTs ---------------------------------------- #
 @obs.on("SwitchEdViewportStyle")
 def switch_ed_viewport_style():
@@ -375,7 +407,7 @@ def on_resource_tile_selected(file_path):
 
     wx_main.freeze()
 
-    # deselect all nodepaths
+    # deselect all node-paths
     # ** do not trigger "OnDeselectAllNPs" event, otherwise it
     # will cause the inspector layout event **
     le.deselect_all(trigger_deselect_event=False)
@@ -394,15 +426,21 @@ def on_resource_tile_selected(file_path):
 
 
 @obs.on("OnSelUserCommandMenuEntry")
-def on_sel_user_command_menu_entry(menu_name):
+def on_user_cmd(cmd_name):
     # find the user command and execute it
     le = editor.level_editor
     app = editor.p3d_app
+
     for cmd_name in le.user_commands.keys():
-        if cmd_name == menu_name:
-            cmd = le.user_commands[cmd_name]
-            app.command_manager.do(cmd)
-            # print("Selected user command [{0}]".format(cmd_name))
+        if cmd_name == cmd_name:
+            # get the command
+            cmd_data = le.user_commands[cmd_name]
+            cmd = cmd_data[0]
+            args = cmd_data[1]
+            #
+            cmd = safe_execute(cmd, *args, return_func_val=True)
+            if cmd:
+                safe_execute(app.command_manager.do, cmd)
 
 
 @obs.on("DeselectAll")
@@ -449,6 +487,7 @@ def resize_event(*args):
         for module in level_editor.user_modules:
             module.on_resize_event()
 
+        level_editor.on_evt_size()
         level_editor.project.game.resize_event()
 
 
