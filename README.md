@@ -19,6 +19,11 @@ It has all the basic features of a level editor including
 
 > It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.  
 
+| ![Image](images//RoamingRalph_00.png) |
+| -- |
+| ![Image](images//RoamingRalph_01.gif) |
+| Roaming Ralph from official Panda3D sample programs running in PandaEditor using Runtime modules and Components based approach. ( _Note, jitter in above GIF is due to screen screen recording software._ ) |
+
 ## Links
 1. [Discord](https://discord.gg/Ttp9zU28uh)
 2. [Patreon](https://www.patreon.com/PandaEditor_)
@@ -50,6 +55,7 @@ It has all the basic features of a level editor including
   * [Nodepath Component](https://github.com/CodeCreatePlay360/PandaEditor#nodepath-component "")
 * [User commands](https://github.com/CodeCreatePlay360/PandaEditor#user-commands "")
 * [Editor UI](https://github.com/CodeCreatePlay360/PandaEditor/#editor-ui "")
+* [PandaEditor for existing Panda3D users]()
 * [Known issues](https://github.com/CodeCreatePlay360/PandaEditor#known-issues "")
 * [Roadmap](https://github.com/CodeCreatePlay360/PandaEditor#roadmap "")
 * [Getting started](https://github.com/CodeCreatePlay360/PandaEditor#getting-started "")
@@ -340,6 +346,9 @@ The editor's user interface is divided into 5 main panels,
 
 When you first start Editor a default layout (arrangement of panels) is created for you but you can also drag panels around and create custom layouts from **menu_bar > Layout > SaveLayout**.
 
+## PandaEditor for existing Panda3D users
+**_This section is incomplete and will soon be updated._** 
+
 ## Known issues
 ## Roadmap
 **(For version 1.0)**
@@ -352,7 +361,7 @@ To get started, there are samples included with the default project, for a more 
 
 *****
 ## Tutorials
-1. [Hello World]()
-2. [Scripting Basics]()
+1. [Your first day at PandaEditor]()
 
 ****
+

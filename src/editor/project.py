@@ -31,6 +31,7 @@ class Project(object):
         get_model_path().prependDirectory(panda_path)
 
         self.game = Game(
+            ProjectPath=self.project_path,
             show_base=self.app.show_base,
             win=self.app.show_base.main_win,
             render=self.app.show_base.render,

@@ -256,8 +256,8 @@ class LevelEditor(DirectObject):
                 dr2d=self.project.game.dr_2D,
                 mouse_watcher_node=self.project.game.mouse_watcher_node,
                 render=self.active_scene.render,
-                render2d=self.active_scene.render_2d,
-                aspect2d=self.active_scene.aspect_2d,
+                render2d=self.active_scene.render_2D,
+                aspect2d=self.active_scene.aspect_2D,
                 game=self.project.game,
                 path=path_
             )
@@ -362,7 +362,6 @@ class LevelEditor(DirectObject):
                 elif module_type == constants.EditorPlugin:
                     # it's an editor plugin
                     ed_plugin = self.__user_modules[path].class_instance
-                    ed_plugin._sort = 1
                     ed_plugins.append(ed_plugin)
 
         # finally, register editor tools
@@ -424,7 +423,7 @@ class LevelEditor(DirectObject):
             print("[{0}] Loaded TextFile {1}.".format(self.today, name))
 
     def register_runtime_modules(self, runtime_modules):
-        self.project.game.runtime_modules = runtime_modules
+        self.project.game.set_runtime_modules(runtime_modules)
 
     def register_editor_plugins(self, plugins: list):
         """load all editor plugins"""
@@ -479,8 +478,8 @@ class LevelEditor(DirectObject):
             dr2d=self.project.game.dr_2D,
             mouse_watcher_node=self.project.game.mouse_watcher_node,
             render=self.active_scene.render,
-            render2d=self.active_scene.render_2d,
-            aspect2d=self.active_scene.aspect_2d,
+            render2d=self.active_scene.render_2D,
+            aspect2d=self.active_scene.aspect_2D,
             game=self.project.game,
             path=path,
             np=np
@@ -875,26 +874,30 @@ class LevelEditor(DirectObject):
             x = LIGHT_MAP[light]
 
             name = light.split("_")[2]
-            light_node = x[0](name)
+            light_node = x[0]
             ed_handle = x[1]
             model = x[2]
 
-            # create the panda3d light object
+            # initialize
+            light_node = light_node(name)
+            # no shadows for ambient lights
+            if not isinstance(light_node, AmbientLight):
+                light_node.setShadowCaster(True, 512, 512)
+
+            # create a np for it
             np = NodePath(name)
             np = np.attachNewNode(light_node)
             np.reparent_to(self.active_scene.render)
 
-            # wrap it into an editor nodepath
+            # wrap it into an editor node-path
             np = ed_handle(np=np, path="")
             np.setPythonTag(constants.TAG_GAME_OBJECT, np)
 
-            # defaults for light object
-            np.setLightOff()
-            np.show(constants.ED_GEO_MASK)
-            np.hide(constants.GAME_GEO_MASK)
-
-            # re-parent nodepath to a model for visual representation in editor mode
+            # re-parent node-path to a model for visual representation in editor mode
             model = self.__loader.loadModel(model, noCache=True)
+            model.setLightOff()
+            model.show(constants.ED_GEO_MASK)
+            model.hide(constants.GAME_GEO_MASK)
             model.reparentTo(np)
 
             if self.scene_lights_on:
@@ -911,17 +914,24 @@ class LevelEditor(DirectObject):
         selections = self.selection.selected_nps if selections is None else selections
         new_selections = []
 
-        if render is None:
-            render = self.active_scene.render
-
         for np in selections:
-            if not np.hasPythonTag(constants.TAG_GAME_OBJECT):
-                print("[LevelEditor] Warning attempt to duplicate a NodePath with no GameWrapper.")
 
-            x = np.copyTo(np.get_parent())
+            is_shadow_caster = False
+            if isinstance(np.node(), PointLight) or \
+                    isinstance(np.node(), Spotlight) or \
+                    isinstance(np.node(), DirectionalLight):
+                np.node().setShadowCaster(False)
+                is_shadow_caster = True
+
+            x = np.copyTo(self.active_scene.render)
             self.traverse_scene_graph(x,
                                       light_func=self.active_scene.render.set_light if self.scene_lights_on else None,
                                       recreate=True)
+
+            if is_shadow_caster:
+                x.node().setShadowCaster(True)
+                np.node().setShadowCaster(True)
+
             new_selections.append(x.getPythonTag(constants.TAG_GAME_OBJECT))
 
         editor.observer.trigger("OnAddNPs", new_selections)

@@ -45,7 +45,7 @@ OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 2
 
                      constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2),
 
-                     constants.ACTOR_NODEPATH: "",
+                     constants.ACTOR_NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2),
 
                      constants.POINT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
                      constants.DIRECTIONAL_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),

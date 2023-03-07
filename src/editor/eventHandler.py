@@ -86,11 +86,11 @@ def create_asset(asset_type, path):
         for i in range(spaces):
             _file.write(" ")
 
-    def write_p3d_module(base_module, base_class, new_class_name):
+    def write_p3d_module(base_class, new_class_name):
         with open(path, "w") as file_:
             file_.write("import math\n")
             file_.write("import panda3d.core as p3d_core\n")
-            file_.write("from editor.core.{0} import {1}\n\n\n".format(base_module, base_class))
+            file_.write("from editor.core import {0}\n\n\n".format(base_class))
 
             # class header and init method
             file_.write("class {0}({1}):".format(new_class_name, base_class))
@@ -101,8 +101,8 @@ def create_asset(asset_type, path):
             indent_file(file_, 8)
             file_.write(base_class + ".__init__(self, *args, **kwargs)\n\n")
 
-            # indent_file(file_, 8)
-            # file_.write("# __init__ should not contain anything except for variable declaration...!\n\n")
+            indent_file(file_, 8)
+            file_.write("# __init__ should not contain anything except for variable declaration\n\n")
 
             # write start method
             indent_file(file_, 4)
@@ -168,7 +168,7 @@ def create_asset(asset_type, path):
     if base_mod_name == "object":
         write_py_module(cls_name, base_class_name)
     else:
-        write_p3d_module(base_mod_name, base_class_name, cls_name)
+        write_p3d_module(base_class_name, cls_name)
 
 
 @obs.on("OnSceneStart")

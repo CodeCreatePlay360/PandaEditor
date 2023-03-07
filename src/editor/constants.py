@@ -9,7 +9,7 @@ Viewport_Mode_Game = 1
 EditorPlugin = "__EditorPlugin__"
 RuntimeModule = "__RuntimeModule__"
 Component = "__Component__"
-TAG_GAME_OBJECT = "__TAG_GAME_OBJECT__"
+TAG_GAME_OBJECT = "__GAME_OBJECT__"
 
 MAX_COMMANDS_COUNT = 20  # maximum number of undo redo commands
 

@@ -1,6 +1,7 @@
 import panda3d.core as p3d_core
 from game.scene import Scene
 from panda3d.core import WindowProperties
+from editor.core.component import Component
 
 # some static globals constants
 DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or Component regular UpdateTask
@@ -11,16 +12,16 @@ class Game:
 
     def __init__(self, *args, **kwargs):
         # global data for whole game
-        # TODO game should init its own systems
 
-        self.show_base = kwargs.pop("show_base", None)
-        self.win = kwargs.pop("win", None)
+        self.__path = kwargs.pop("ProjectPath", None)
+        self.__show_base = kwargs.pop("show_base", None)
+        self.__win = kwargs.pop("win", None)
         self.__dr = None
         self.__dr_2D = None
-        self.mouse_watcher_node = None
-        self.mouse_watcher_node_2d = None
+        self.__mouse_watcher_node = None
+        self.__mouse_watcher_node_2d = None
 
-        self.render = kwargs.pop("render", None)  # top level game render, individual
+        self.__render = kwargs.pop("render", None)  # top level game render, individual
         # scene renders should be re-parented to this.
 
         self.setup_dr_2d()
@@ -29,16 +30,16 @@ class Game:
         self.setup_dr_3d()
         self.setup_mouse_watcher_3d()
 
-        self.runtime_modules = {}  # loaded runtime modules
+        self.__runtime_modules = {}  # loaded runtime modules
         self.__all_modules = {}  # runtime modules + components
-        self.scenes = []  # all scenes in this game
-        self.active_scene = None
+        self.__scenes = []  # all scenes in this game
+        self.__active_scene = None
 
     def create_new_scene(self, name: str):
         """creates a new scene, the active should be first cleared by the level editor"""
         scene = Scene(self, name)
-        self.active_scene = scene
-        self.scenes.append(scene)
+        self.__active_scene = scene
+        self.__scenes.append(scene)
         return scene
 
     def clear_active_dr_3d(self):
@@ -47,13 +48,15 @@ class Game:
 
     def start(self):
         self.__all_modules = {}
-        for key, value in self.runtime_modules.items():
+        # get all runtime modules
+        for key, value in self.__runtime_modules.items():
             self.__all_modules[key] = value
 
+        # get all components
         components = self.components
         for np in components.keys():
             for component in components[np]:
-                self.__all_modules[component.path+component.class_instance.getPythonTag("__TAG_GAME_OBJECT__").uid] =\
+                self.__all_modules[component.path+component.class_instance.getPythonTag("__GAME_OBJECT__").uid] =\
                     component
 
         # classify all modules according to task sort values
@@ -61,9 +64,7 @@ class Game:
 
         for key in self.__all_modules:
             mod = self.__all_modules[key]
-
             sort_value = mod.class_instance.sort
-
             if mod_exec_order.__contains__(sort_value):
                 mod_exec_order[sort_value].append(mod)
             else:
@@ -92,10 +93,8 @@ class Game:
 
         # late updates are to be executed after all updates have been executed
         # the sort order of all updates should be set in a way, that messenger executes them after all updates
-        # TODO proper explanation
         start = lst[0]
         stop = lst[len(lst) - 1]
-
         late_update_sort = stop + 1
 
         for i in range(start, stop + 1):
@@ -113,13 +112,13 @@ class Game:
 
             self.hide_cursor(False)
 
-        for np in self.active_scene.render_2d.getChildren():
-            if np.get_name() == "__aspect_2d__" or np.get_name() == "Camera2d":
+        for np in self.__active_scene.render_2D.getChildren():
+            if np.get_name() == "__aspect_2D__" or np.get_name() == "__camera2D__":
                 pass
             else:
                 np.remove_node()
 
-        for np in self.active_scene.aspect_2d.getChildren():
+        for np in self.__active_scene.aspect_2D.getChildren():
             np.remove_node()
 
         self.__all_modules.clear()
@@ -128,53 +127,98 @@ class Game:
         if type(value) is bool:
             wp = WindowProperties()
             wp.setCursorHidden(value)
-            self.win.requestProperties(wp)
+            self.__win.requestProperties(wp)
 
     def set_mouse_mode(self, mode):
         pass
 
     def setup_dr_2d(self):
-        self.__dr_2D = self.win.makeDisplayRegion()
-        self.__dr_2D.setSort(20)
+        self.__dr_2D = self.__win.makeDisplayRegion()
+        self.__dr_2D.setSort(2)
         self.__dr_2D.setActive(True)
         self.__dr_2D.set_dimensions((0, 0.4, 0, 0.4))
 
     def setup_mouse_watcher_2d(self):
-        self.mouse_watcher_node_2d = p3d_core.MouseWatcher()
-        self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node_2d)
-        self.mouse_watcher_node_2d.set_display_region(self.__dr_2D)
+        self.__mouse_watcher_node_2d = p3d_core.MouseWatcher()
+        self.__show_base.mouseWatcher.get_parent().attachNewNode(self.__mouse_watcher_node_2d)
+        self.__mouse_watcher_node_2d.set_display_region(self.__dr_2D)
 
     def setup_dr_3d(self):
-        self.__dr = self.win.makeDisplayRegion(0, 0.4, 0, 0.4)
+        self.__dr = self.__win.makeDisplayRegion(0, 0.4, 0, 0.4)
+        self.__dr.setSort(1)
         self.__dr.setClearColorActive(True)
+        self.__dr.setClearDepthActive(True)
         self.__dr.setClearColor((0.8, 0.8, 0.8, 1.0))
 
     def setup_mouse_watcher_3d(self):
-        self.mouse_watcher_node = p3d_core.MouseWatcher()
-        self.show_base.mouseWatcher.get_parent().attachNewNode(self.mouse_watcher_node)
-        self.mouse_watcher_node.set_display_region(self.__dr)
+        self.__mouse_watcher_node = p3d_core.MouseWatcher()
+        self.__show_base.mouseWatcher.get_parent().attachNewNode(self.__mouse_watcher_node)
+        self.__mouse_watcher_node.set_display_region(self.__dr)
 
     def set_active_cam(self, cam):
         self.__dr.set_active(True)
         self.__dr.set_camera(cam)
-        cam.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
+        cam.node().getLens().setAspectRatio(self.__show_base.getAspectRatio(self.__win))
 
-    def get_module(self, module_name):
-        if self.runtime_modules.__contains__(module_name):
-            return self.runtime_modules[module_name].class_instance
+    def set_runtime_modules(self, modules: dict):
+        # for mod in modules.keys():
+        #     print("[PATH] {0} [MODULE] {1}".format(mod, modules[mod]))
+        # {path: modules}
+        self.__runtime_modules = modules
+
+    def get_module(self, module_path: str):
+        for key in self.__runtime_modules.keys():
+            if key == module_path:
+                return self.__runtime_modules[key].class_instance
         return None
 
+    def get_all_modules(self):
+        """returns all runtime user modules including NodePaths as list"""
+
+        modules = []
+
+        # append all runtime modules
+        for path in self.__runtime_modules:
+            modules.append(self.__runtime_modules[path].class_instance)
+
+        # append all np-components
+        for np in self.components:
+            for comp in self.components[np]:
+                modules.append(comp.class_instance)
+
+        return modules
+
+    def user_modules_sort_orders(self):
+        all_modules = self.get_all_modules()
+        for mod in all_modules:
+            if isinstance(mod, Component):
+                print("[Module] {0} -- [Sort] {1}".format(mod.get_name(), mod.sort))
+            else:
+                print("[Module] {0} -- [Sort] {1}".format(mod.name, mod.sort))
+
     def is_runtime_module(self, path):
-        if self.runtime_modules.__contains__(path):
+        if self.__runtime_modules.__contains__(path):
             return True
         return False
 
     def resize_event(self):
         """should be called after a window has been resized"""
-        if self.active_scene.main_camera:
-            self.active_scene.main_camera.node().getLens().setAspectRatio(self.show_base.getAspectRatio(self.win))
+        if self.__active_scene.main_camera:
+            self.__active_scene.main_camera.node().getLens().setAspectRatio(self.__show_base.getAspectRatio(self.__win))
 
-        self.active_scene.aspect_2d.set_scale(1.0 / self.show_base.getAspectRatio(self.win), 1.0, 1.0)
+        self.__active_scene.aspect_2D.set_scale(1.0 / self.__show_base.getAspectRatio(self.__win), 1.0, 1.0)
+
+    @property
+    def path(self):
+        return self.__path
+
+    @property
+    def show_base(self):
+        return self.__show_base
+
+    @property
+    def win(self):
+        return self.__win
 
     @property
     def dr(self):
@@ -185,11 +229,23 @@ class Game:
         return self.__dr_2D
 
     @property
+    def mouse_watcher_node(self):
+        return self.__mouse_watcher_node
+
+    @property
+    def mouse_watcher_node_2D(self):
+        return self.__mouse_watcher_node_2d
+
+    @property
+    def render(self):
+        return self.__render
+
+    @property
     def components(self):
-        components = {}  # np: components
+        components = {}  # np: [components,...]
 
         def traverse(np_):
-            np = np_.getPythonTag("__TAG_GAME_OBJECT__")
+            np = np_.getPythonTag("__GAME_OBJECT__")
             if np:
                 for path in np.components.keys():
                     if not components.__contains__(np):
@@ -199,5 +255,5 @@ class Game:
             for child in np_.getChildren():
                 traverse(child)
 
-        traverse(self.active_scene.render)
+        traverse(self.__active_scene.render)
         return components

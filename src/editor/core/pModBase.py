@@ -92,7 +92,8 @@ class PModBase(DirectObject):
                                           priority=priority)
 
             # start the object's late update loop
-            if self.module_type == constants.RuntimeModule and not self.is_running(1):
+            if (self.module_type == constants.RuntimeModule or self.module_type == constants.Component) and\
+                    not self.is_running(1):
                 self.__late_task = taskMgr.add(self.late_update,
                                                "{0} LateUpdate".format(self.__name),
                                                sort=self.__late_update_sort,

@@ -242,7 +242,12 @@ class FloatProperty(WxCustomProperty):
 
     def on_event_text(self, evt):
         if is_valid_float(self.text_ctrl.GetValue()):
-            self.set_value(float(self.text_ctrl.GetValue()))
+            value = float(self.text_ctrl.GetValue())
+            if self.property.value_limit is not None:
+                if value < self.property.value_limit:
+                    value = self.property.value_limit
+
+            self.set_value(value)
             self.old_value = self.text_ctrl.GetValue()
         else:
             # self.text_ctrl_x.SetValue will call this method, so
@@ -516,6 +521,11 @@ class Vector2Property(WxCustomProperty):
         self.Refresh()
 
     def set_control_value(self, val):
+        # apply value limit
+        if self.property.value_limit is not None:
+            if val < self.property.value_limit:
+                val = self.property.value_limit
+
         x = get_rounded_value(val.x)
         y = get_rounded_value(val.y)
 
@@ -681,11 +691,11 @@ class Vector3Property(WxCustomProperty):
                 if h < self.property.value_limit.x:
                     h = self.property.value_limit.x
 
-                if p < self.property.value_limit.x:
-                    p = self.property.value_limit.x
+                if p < self.property.value_limit.y:
+                    p = self.property.value_limit.y
 
-                if r < self.property.value_limit.x:
-                    r = self.property.value_limit.x
+                if r < self.property.value_limit.z:
+                    r = self.property.value_limit.z
 
             self.set_value(LVecBase3f(h, p, r))
             self.old_value = LVecBase3f(h, p, r)

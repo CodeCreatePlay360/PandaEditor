@@ -11,6 +11,8 @@ class ShowBase(sb.ShowBase):
     def __init__(self, ed_wx_win):
         sb.ShowBase.__init__(self)
 
+        base.cTrav = None
+
         self.scene_win = ed_wx_win  # wx python window
         self.main_win = None  # Panda3d editor window we will render into
 
@@ -58,12 +60,12 @@ class ShowBase(sb.ShowBase):
         self.dr.setClearColorActive(False)
         self.dr.setClearColor(self.getBackgroundColor())
         self.dr.setActive(False)
-        self.dr.setSort(20)
+        self.dr.setSort(0)
 
         # clear existing / default 2d display regions
         self.dr2d = self.cam2d.node().getDisplayRegion(0)
         self.dr2d.setActive(False)
-        self.dr2d.setSort(21)
+        self.dr2d.setSort(0)
         # ------------------------------------------- #
 
         self.main_win = self.scene_win.get_window()
@@ -71,7 +73,7 @@ class ShowBase(sb.ShowBase):
         # ------------------ 2d rendering setup ------------------
         # create new 2d display region
         self.edDr2d = self.win.makeDisplayRegion(0, 1, 0, 1)
-        self.edDr2d.setSort(0)
+        self.edDr2d.setSort(1)
         self.edDr2d.setActive(True)
 
         # create a 2d mouse watcher
@@ -112,7 +114,7 @@ class ShowBase(sb.ShowBase):
 
         # create new 3d display region
         self.edDr = self.main_win.makeDisplayRegion(0, 1, 0, 1)
-        self.edDr.setSort(-1)
+        self.edDr.setSort(0)
         self.edDr.setClearColorActive(True)
         self.edDr.setClearColor((0.6, 0.6, 0.6, 1.0))
 

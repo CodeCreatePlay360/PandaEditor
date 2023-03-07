@@ -287,7 +287,8 @@ class WxMenuBar(wx.MenuBar):
         #
         game_menu = wx.Menu()
         self.Append(game_menu, "Game")
-        menu_items = [(Evt_Align_Game_View_To_Ed_View, "AlignToEditorView")]
+        menu_items = [(Evt_Align_Game_View_To_Ed_View, "AlignToViewportCam"),
+                      ""]
         build_menu_bar(game_menu, menu_items)
 
         # social media links menu

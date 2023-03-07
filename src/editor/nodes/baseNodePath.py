@@ -84,7 +84,7 @@ class BaseNodePath(NodePath):
             del self.__components[path]
 
     def clear_components(self):
-        print("Cleared all Components on {0}".format(self.name))
+        # print("Cleared all Components on {0}".format(self.name))
         self.__components.clear()
 
     @property
