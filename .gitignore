@@ -134,3 +134,9 @@ Exclude/ico_sphere.blend
 Exclude/ico_sphere.blend1
 Exclude/terrain.blend
 Exclude/terrain.glb
+Exclude/Actor/Actor.py
+Exclude/Actor/Girl.glb
+Exclude/Basics_02/Basics.py
+Exclude/Basics_02/Readme.txt
+Exclude/Basics_02/smiley.egg.pz
+Exclude/Panda3D_BasicProgram/main.py

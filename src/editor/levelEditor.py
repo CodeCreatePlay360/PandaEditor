@@ -712,7 +712,7 @@ class LevelEditor(DirectObject):
             print("[LevelEditor] Undefined editor state {0}".format(state))
 
     def enable_editor_state(self):
-        print("[LevelEditor] Editor state enabled.")
+        # print("[LevelEditor] Editor state enabled.")
 
         self.ed_state = constants.EDITOR_STATE
         self.project.game.stop()
@@ -720,10 +720,7 @@ class LevelEditor(DirectObject):
         # UI updates (inspector, scene graph etc.)
         self.app.command_manager.clear()
 
-        if self.__game_viewport_maximized:
-            self.app.show_base.edDr.setActive(True)
-            self.project.game.dr.set_dimensions((0, 0.4, 0, 0.4))
-            self.project.game.dr_2D.set_dimensions((0, 0.4, 0, 0.4))
+        self.update_game_view_port_style()
 
         # -----------------------------------------------
         # clear the runtime scene graph
@@ -747,7 +744,7 @@ class LevelEditor(DirectObject):
         editor.observer.trigger("OnEnableEditorState")  # for any cleanup operations
 
     def enable_game_state(self):
-        print("[LevelEditor] Game state enabled.")
+        # print("[LevelEditor] Game state enabled.")
 
         self.ed_state = constants.GAME_STATE
         self.deselect_all()  # call to deselect all, triggers OnDeselectAllNps event which properly handles
@@ -760,11 +757,7 @@ class LevelEditor(DirectObject):
         self.hidden_np = self.active_scene.render.copy_to(self.hidden_np)
         self.traverse_scene_graph(self.hidden_np, recreate=True)
 
-        # toggle on maximized game display region
-        if self.__game_viewport_maximized:
-            self.app.show_base.edDr.setActive(False)
-            self.project.game.dr.set_dimensions((0, 1, 0, 1))
-            self.project.game.dr_2D.set_dimensions((0, 1, 0, 1))
+        self.update_game_view_port_style()
 
         editor.observer.trigger("OnEnableGameState")
         editor.observer.trigger("ResizeEvent")
@@ -880,9 +873,10 @@ class LevelEditor(DirectObject):
 
             # initialize
             light_node = light_node(name)
-            # no shadows for ambient lights
-            if not isinstance(light_node, AmbientLight):
-                light_node.setShadowCaster(True, 512, 512)
+
+            # # no shadows for ambient lights
+            # if not isinstance(light_node, AmbientLight):
+            #     light_node.setShadowCaster(True, 512, 512)
 
             # create a np for it
             np = NodePath(name)
@@ -992,6 +986,17 @@ class LevelEditor(DirectObject):
 
     def switch_ed_viewport_style(self):
         self.__game_viewport_maximized = not self.__game_viewport_maximized
+
+    def update_game_view_port_style(self):
+        # toggle on maximized game display region
+        if self.__game_viewport_maximized and self.ed_state == constants.GAME_STATE:
+            self.app.show_base.edDr.setActive(False)
+            self.project.game.dr.set_dimensions((0, 1, 0, 1))
+            self.project.game.dr_2D.set_dimensions((0, 1, 0, 1))
+        else:
+            self.app.show_base.edDr.setActive(True)
+            self.project.game.dr.set_dimensions((0, 0.4, 0, 0.4))
+            self.project.game.dr_2D.set_dimensions((0, 0.4, 0, 0.4))
 
     @property
     def game_viewport_maximized(self):

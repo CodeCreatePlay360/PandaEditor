@@ -110,7 +110,7 @@ def create_asset(asset_type, path):
             indent_file(file_, 8)
             file_.write("# this method is called only once\n")
             indent_file(file_, 8)
-            file_.write("pass\n\n")
+            file_.write("Pass...\n\n")
 
             # write update method
             indent_file(file_, 4)

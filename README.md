@@ -1,8 +1,8 @@
-## An open source level / scene editor for Panda3d
+## An open source level / scene editor for Panda3D
 
 ![Image](images//01.png)
 
-**Panda3d is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3d more intuitive to use for  artists and game developers by providing an editor centric workflow**.  
+**Panda3D is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3D more intuitive to use for  artists and game developers by providing an editor centric workflow**.  
 It has all the basic features of a level editor including
 
 * Object manipulation
@@ -11,9 +11,8 @@ It has all the basic features of a level editor including
 * Project based approach
 * Scene graph browser
 * Resources browser
-* Scripting support
-* Custom components support 
-* To extend the editor, there is a complete support for editor plugins, the developers can create ( or maybe even sell ) their tools.
+* Complete scripting support that exposes full underlying Panda3D API, scripts can be attached to objects in scene graph to define per object behaviors (Entity component system) or you can program in a more traditional way using P3DUserModules.
+* To extend the editor, there is a complete support for editor plugins, the developers can create (or maybe even sell) their tools.
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
@@ -22,11 +21,11 @@ It has all the basic features of a level editor including
 | ![Image](images//RoamingRalph_00.png) |
 | -- |
 | ![Image](images//RoamingRalph_01.gif) |
-| Roaming Ralph from official Panda3D sample programs running in PandaEditor using Runtime modules and Components based approach. ( _Note, jitter in above GIF is due to screen screen recording software._ ) |
+| Roaming Ralph from official Panda3D sample programs running in PandaEditor using Runtime modules and Components based workflow. (_Note, jitter in above GIF is due to screen recording software._) |
 
 ## Links
 1. [Discord](https://discord.gg/Ttp9zU28uh)
-2. [Patreon](https://www.patreon.com/PandaEditor_)
+2. [Patreon](https://www.patreon.com/Panda3D_Editor)
 
 ## Dependencies
 1. Panda3d
@@ -225,8 +224,8 @@ class Component(Component):
 * You can attach multiple components to a NodePath as well.  
 
 ## User Commands
-The PandaEditor provide a way to automate repeated tasks through the **CommandManager** interface.  
-Each command is wrapped in a **Command** abstract class, added to commands stack using the base method **add_command** of an **EditorPlugin** and provide undo redo functionality as well.  
+PandaEditor provide a way to automate repeated tasks through the **CommandManager** interface.  
+Each command is wrapped in a **Command** abstract base class, added to commands stack using the base method **add_command** of an **EditorPlugin** and provide undo redo functionality as well.  
 To user commands are added under the **Command** menu of the menu-bar.  
 To create a new command
 1. First import the Command object and create a new command, actual command execution should be carried out in **do** method,
@@ -357,7 +356,7 @@ When you first start Editor a default layout (arrangement of panels) is created 
 3. Add snapping support for gizmo tool.
 
 ## Getting started
-To get started, there are samples included with the default project, for a more step by step instructions go to tutorials section. 
+To get started, there are sample programs included with the default project, with each sample project there is an accompanying text file, detailing how to setup the sample program.
 
 *****
 ## Tutorials
