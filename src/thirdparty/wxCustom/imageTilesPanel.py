@@ -115,19 +115,18 @@ class ImageTile(wx.Panel):
         else:
             style = wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_CENTRE_HORIZONTAL
 
-        self.text_ctrl = wx.StaticText(self,
-                                       label=label,
-                                       style=style)
+        self.text_ctrl = wx.StaticText(self, label=label, style=style)
         self.text_ctrl.SetFont(font)
 
+        # sizer
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
+        # create layout
         self.sizer.Add(self.image_ctrl, 1, wx.EXPAND)
         self.sizer.Add(self.text_ctrl, 0, wx.EXPAND)
 
-        self.Layout()
-
+        # map events
         self.event_map = {
             EVT_RENAME_ITEM: (self.rename_item, "rename_item"),
             EVT_DUPLICATE_ITEM: (self.duplicate_item, "duplicate"),
@@ -137,10 +136,18 @@ class ImageTile(wx.Panel):
             EVT_LOAD_ACTOR: (self.load_actor, None),
         }
 
+        # bind events
         self.image_ctrl.Bind(wx.EVT_LEFT_UP, self.on_select)
         self.image_ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down)
         self.Bind(wx.EVT_MENU, self.on_select_context)
         self.image_ctrl.Bind(wx.EVT_MOTION, self.on_begin_drag)
+
+        # tooltip
+        tool_tip = wx.ToolTip(self.label)
+        self.image_ctrl.SetToolTip(tool_tip)
+
+        #
+        self.Layout()
 
     def on_begin_drag(self, evt):
         if evt.Dragging():

@@ -8,8 +8,11 @@ class CameraController(Component):
 
         self.__ralph = None
         self.__floater = None
+        self.__world = None
 
     def on_start(self):
+        self.__world = self.game.get_module(self.game.path+"/Samples/RoamingRalph/World.py")
+
         # get the ralph character,
         self.__ralph = self.render.find("Ralph")
 
@@ -23,6 +26,11 @@ class CameraController(Component):
         self.setPos(self.__ralph.getX(), self.__ralph.getY() - 60, 5)
 
     def on_update(self):
+        if self.__world.key_map["cam-left"]:
+            self.setX(self, -20 * self.__world.global_clock.getDt())
+        if self.__world.key_map["cam-right"]:
+            self.setX(self, +20 * self.__world.global_clock.getDt())
+
         cam_vec = self.__ralph.getPos() - self.getPos()
         cam_vec.setZ(0)
         cam_dist = cam_vec.length()
