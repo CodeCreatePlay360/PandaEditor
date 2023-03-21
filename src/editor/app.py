@@ -1,3 +1,5 @@
+import sys
+
 import wx
 
 from panda3d.core import WindowProperties
@@ -18,7 +20,6 @@ class MyApp(wxPanda.App):
     _mouse_mode = None
     level_editor = None
     obs = None
-    globals = None
     command_manager = None
 
     __current_ui_update_interval = 0
@@ -27,10 +28,15 @@ class MyApp(wxPanda.App):
         self.wx_main = WxFrame(parent=None, title="PandaEditor (Default Project)", size=(800, 600))
         self.show_base = ShowBase(self.wx_main.ed_viewport_panel)
         self.replace_event_loop()
-        wx.CallAfter(self.finish_init)
-
-    def finish_init(self):
         self.wx_main.do_after()
+        wx.CallLater(50, self.init_panda)
+
+    def init_panda(self):
+        if self.wx_main.ed_viewport_panel.GetHandle() == 0:
+            wx.CallLater(50, self.init_panda)
+            print("WARNING: Unable to get platform specific handle...!")
+            return
+
         self.show_base.finish_init()
         self.command_manager = CommandManager()
         self.level_editor = LevelEditor(self)
@@ -46,15 +52,20 @@ class MyApp(wxPanda.App):
                     )
         self.level_editor.start()
         editor.do_after()
-        self.set_mouse_mode(WindowProperties.M_absolute)
 
     def wx_step(self, task=None):
         super(MyApp, self).wx_step(task)
 
         if task is not None:
-            if task.time > self.__current_ui_update_interval:
-                # update
 
+            # sometimes on linux/ubuntu panda window looses focus even when in focus so force set it to foreground
+            if sys.platform == "linux" and \
+                    self.wx_main.ed_viewport_panel._initialized and \
+                    self.show_base.ed_mouse_watcher_node.hasMouse() and \
+                    not self.wx_main.ed_viewport_panel._win.getProperties().getForeground():
+                self.wx_main.ed_viewport_panel.set_focus()
+
+            if task.time > self.__current_ui_update_interval:
                 self.wx_main.status_panel.write_tasks_info(len(taskMgr.getAllTasks()))
                 self.__current_ui_update_interval += UI_UPDATE_DELAY
 

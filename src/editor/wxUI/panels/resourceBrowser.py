@@ -1,6 +1,8 @@
 import os
 import pickle
 import shutil
+import sys
+
 import wx
 import wx.lib.agw.customtreectrl as customtree
 import editor.edPreferences as edPreferences
@@ -239,7 +241,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
         custom_data_obj.SetData(picked_data)
 
         # create a source for drag and drop
-        drop_source = TestDropSource(self)
+        drop_source = TestDropSource(self, win=self)
         drop_source.SetData(custom_data_obj)
 
         # Initiate the Drag Operation
@@ -413,7 +415,11 @@ class ResourceTree(customtree.CustomTreeCtrl):
     @staticmethod
     def show_in_explorer(path):
         path = os.path.realpath(path)
-        os.startfile(path)
+        if sys.platform == "linux":
+            os.system('xdg-open "%s"' % path)
+        else:
+            # os.system('xdg-open "%s"' % path)
+            os.startfile(path)
 
     @staticmethod
     def add_dir(curr_directory):
@@ -629,8 +635,8 @@ class ResourceTree(customtree.CustomTreeCtrl):
 
 
 class TestDropSource(wx.DropSource):
-    def __init__(self, tree):
-        wx.DropSource.__init__(self)
+    def __init__(self, tree, win):
+        wx.DropSource.__init__(self, win=win)
         self.tree = tree
         self.data = None
 

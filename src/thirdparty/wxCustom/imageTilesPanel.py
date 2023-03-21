@@ -66,8 +66,8 @@ class ImageTile(wx.Panel):
             self.path = data
 
     class TestDropSource(wx.DropSource):
-        def __init__(self):
-            wx.DropSource.__init__(self)
+        def __init__(self, win):
+            wx.DropSource.__init__(self, win=win)
             self.data = None
 
         def SetData(self, data):
@@ -116,6 +116,7 @@ class ImageTile(wx.Panel):
             style = wx.ALIGN_CENTRE_VERTICAL | wx.ALIGN_CENTRE_HORIZONTAL
 
         self.text_ctrl = wx.StaticText(self, label=label, style=style)
+        self.text_ctrl.SetForegroundColour(wx.Colour(20, 20, 20, 255))
         self.text_ctrl.SetFont(font)
 
         # sizer
@@ -163,7 +164,7 @@ class ImageTile(wx.Panel):
             custom_data_obj.SetData(picked_data)
 
             # create a source for drag and drop
-            drop_source = ImageTile.TestDropSource()
+            drop_source = ImageTile.TestDropSource(win=self)
             drop_source.SetData(custom_data_obj)
 
             # Initiate the Drag Operation
@@ -219,7 +220,7 @@ class ImageTile(wx.Panel):
         if new_width < 1:
             new_width = 1
 
-        self.image = self.image.Scale(new_width, new_height)
+        self.image = self.image.Scale(int(new_width), int(new_height))
         self.image_ctrl.SetBitmap(wx.Bitmap(self.image))
 
     def on_select(self, evt=None):

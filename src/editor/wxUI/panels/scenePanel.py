@@ -17,7 +17,7 @@ class Viewport(wx.Panel):
 
         self.wx_main = args[0]
         self._win = None
-        # self.SetBackgroundColour("blue")
+        self._initialized = False
 
     def get_window(self):
         return self._win
@@ -30,6 +30,7 @@ class Viewport(wx.Panel):
         The panda3d window must be put into the wx-window after it has been
         shown, or it will not size correctly.
         """
+
         assert self.GetHandle() != 0
         wp = WindowProperties()
         wp.setOrigin(0, 0)
@@ -45,18 +46,15 @@ class Viewport(wx.Panel):
             else:
                 self._win = base.openWindow(props=wp, makeCamera=0)
 
+        self._initialized = True
+
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.Bind(wx.EVT_CHAR, self.on_event)
 
-    def on_open(self):
+    def set_focus(self):
         wp = WindowProperties()
-        wp.setOpen(True)
-        self.get_window().requestProperties(wp)
-
-    def on_close(self):
-        wp = WindowProperties()
-        wp.setOpen(False)
-        self.get_window().requestProperties(wp)
+        wp.setForeground(True)
+        self._win.requestProperties(wp)
 
     def on_resize(self, event):
         """When the wx-panel is resized, fit the panda3d window into it."""
@@ -69,12 +67,6 @@ class Viewport(wx.Panel):
 
     def on_event(self, evt):
         evt.Skip()
-
-    def on_hover(self, x, y):
-        """this method is called every frame from showbase.on_hover,
-        x = mouse pos x in screen coordinates and ranges from -1 to 1,
-        y = mouse pos y in screen coordinates and ranges from -1 to 1"""
-        pass
 
 
 class App(wx.App, DirectObject):

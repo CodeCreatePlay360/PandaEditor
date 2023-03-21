@@ -1,3 +1,5 @@
+import sys
+
 import wx
 import wx.aui
 import wx.lib.agw.aui as aui
@@ -106,6 +108,44 @@ xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631
      "dock_size(2,0,1)=332|dock_size(4,0,1)=182|dock_size(3,0,1)=228|"
 
 
+class WxAUINotebook(wx.aui.AuiNotebook):
+    class NotebookPageAndIdx:
+        def __init__(self, idx, page, label):
+            self.idx = idx
+            self.page = page
+            self.label = label
+
+    def __init__(self, parent):
+        wx.aui.AuiNotebook.__init__(self, parent=parent)
+        self.__active_pages = []  # keep track of all active pages
+
+    def AddPage(self, page, caption, select=False):
+        super().AddPage(page, caption, select=False)
+        self.__active_pages.append(caption)
+
+    def DeletePage(self, page_idx):
+        if self.GetPageText(page_idx) == "Viewport":
+            return False
+
+        self.RemovePage(page_idx)
+        return True
+
+    def RemovePage(self, page_idx):
+        self.__active_pages.remove(self.GetPageText(page_idx))
+        super().RemovePage(page_idx)
+
+    def add_pages(self, pages):
+        for page, name in pages:
+            self.AddPage(page, name, True)
+
+    def is_page_active(self, name):
+        return self.__active_pages.__contains__(name)
+
+    @property
+    def active_pages(self):
+        return self.__active_pages
+
+
 class AUINotebook(aui.AuiNotebook):
     class NotebookPageAndIdx:
         def __init__(self, idx, page, label):
@@ -129,14 +169,14 @@ class AUINotebook(aui.AuiNotebook):
                            control=None, tooltip="")
 
     def DeletePage(self, page_idx):
+        if self.GetPageText(page_idx) == "Viewport":
+            return False
+
         self.RemovePage(page_idx)
+        return True
 
     def RemovePage(self, page_idx):
-        try:
-            self.__active_pages.remove(self.GetPageText(page_idx))
-        except ValueError:
-            # print("Unable to remove page {0} at index {1}".format(self.GetPageText(page_idx), page_idx))
-            pass
+        self.__active_pages.remove(self.GetPageText(page_idx))
         super().RemovePage(page_idx)
 
     def add_pages(self, pages):
@@ -145,6 +185,10 @@ class AUINotebook(aui.AuiNotebook):
 
     def is_page_active(self, name):
         return self.__active_pages.__contains__(name)
+
+    @property
+    def active_pages(self):
+        return self.__active_pages
 
 
 class WxFrame(wx.Frame):
@@ -221,7 +265,7 @@ class WxFrame(wx.Frame):
         self.status_panel = WxFrame.StatusPanel(self)
 
         # notebook
-        self.notebook = AUINotebook(self)
+        self.notebook = WxAUINotebook(self) if sys.platform == "linux" else AUINotebook(self)
         self.saved_layouts = {}  # saved perspectives for aui notebook
 
         self.ed_viewport_panel = Viewport(self)
@@ -231,7 +275,7 @@ class WxFrame(wx.Frame):
         self.scene_graph_panel = SceneBrowserPanel(self)
         # page icons
 
-        self.panels = [(self.ed_viewport_panel, "ViewPort"),
+        self.panels = [(self.ed_viewport_panel, "Viewport"),
                        (self.inspector_panel, "Inspector"),
                        (self.console_panel, "ConsolePanel"),
                        (self.resource_browser, "ResourceBrowser"),
@@ -256,14 +300,16 @@ class WxFrame(wx.Frame):
         # toolbar sizer
         self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #
-        self.toolbar_sizer.Add(self.file_menu_tb, 0, wx.RIGHT, 1)
-        self.toolbar_sizer.Add(self.proj_meuns_tb, 0, wx.RIGHT, 1)
-        self.toolbar_sizer.Add(self.scene_ctrls_tb, 0, wx.RIGHT, 1)
-        self.toolbar_sizer.Add(self.ed_ctrls_tb, 0, wx.RIGHT, 1)
-        self.toolbar_sizer.Add(self.playctrls_tb, 0, wx.RIGHT, 1)
+        border = 0 if sys.platform == "linux" else 1
+        self.toolbar_sizer.Add(self.file_menu_tb, 0, wx.RIGHT, border=border)
+        self.toolbar_sizer.Add(self.proj_meuns_tb, 0, wx.RIGHT, border=border)
+        self.toolbar_sizer.Add(self.scene_ctrls_tb, 0, wx.RIGHT, border=border)
+        self.toolbar_sizer.Add(self.ed_ctrls_tb, 0, wx.RIGHT, border=border)
+        self.toolbar_sizer.Add(self.playctrls_tb, 0, wx.RIGHT, border=border)
         #
-        self.notebook.LoadPerspective(xx)
-        self.save_layout("Default")
+        if not sys.platform == "linux":
+            self.notebook.LoadPerspective(xx)
+            self.save_layout("Default")
         #
         self.main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
         self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
@@ -438,6 +484,10 @@ class WxFrame(wx.Frame):
             self.save_layout(name)
 
     def save_layout(self, name):
+        if sys.platform == "linux":
+            print("Not supported on linux")
+            return
+
         data = []
         for i in range(self.notebook.GetPageCount()):
             save_obj = AUINotebook.NotebookPageAndIdx(idx=i,
@@ -450,8 +500,12 @@ class WxFrame(wx.Frame):
         self.saved_layouts.keys()
 
     def load_layout(self, layout):
+        if sys.platform == "linux":
+            print("Not supported on linux")
+            return
+
         # check if layout exists
-        self.freeze()
+        self.Freeze()
         if self.saved_layouts.__contains__(layout):
             for i in range(len(self.panels)):
                 self.notebook.RemovePage(0)
@@ -464,7 +518,7 @@ class WxFrame(wx.Frame):
             self.notebook.Refresh()
             self.notebook.Update()
             self.save_layout(layout)  # update the layout
-        self.thaw()
+        self.Thaw()
 
     def add_page(self, page: str):
         for item in self.panels:

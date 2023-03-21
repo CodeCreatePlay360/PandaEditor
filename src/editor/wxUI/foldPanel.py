@@ -198,6 +198,7 @@ class FoldPanelManager(wx.Panel):
 
     def on_panel_foldout(self, panel):
         self.PostSizeEventToParent()
+        self.parent.Layout()
 
     @property
     def panel_count(self):

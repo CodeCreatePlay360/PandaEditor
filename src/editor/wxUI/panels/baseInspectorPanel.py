@@ -1,5 +1,7 @@
 import os.path
 import pickle
+import sys
+
 import wx
 import editor.edPreferences as edPreferences
 import editor.constants as constants
@@ -39,8 +41,8 @@ ED_INSPECTOR_ID = 2
 PLUGIN_INSPECTOR_ID = 3
 
 # map_ = object_type: (bitmap_path, flags(for box sizer), border(for box sizer))
-OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 2),
-                     constants.RuntimeModule: (Script_Icon, wx.EXPAND | wx.TOP, 2),
+OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
+                     constants.RuntimeModule: (Script_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
                      constants.EditorPlugin: (Plugin_icon_Small, wx.EXPAND | wx.TOP, 2),
 
                      constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2),

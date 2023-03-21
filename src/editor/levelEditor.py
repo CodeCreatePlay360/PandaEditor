@@ -274,7 +274,6 @@ class LevelEditor(DirectObject):
                 render2d=None,
                 aspect2d=self.app.show_base.ed_aspect2d,
                 level_editor=self,
-                globals=self.app.globals,
                 path=path_,
                 command_manager=self.app.command_manager
             )

@@ -1,8 +1,9 @@
 import os
 import sys
 
-current_working_dir = os.getcwd()
-editor_path = current_working_dir + "\\" + "src"
+current_script_path = os.path.realpath(os.path.realpath(__file__))
+current_dir = os.path.dirname(current_script_path)
+editor_path = os.path.join(current_dir, "src")
 
 sys.path.append(editor_path)
 

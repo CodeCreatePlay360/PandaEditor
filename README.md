@@ -16,27 +16,29 @@ It has all the bare minimum level editor features including,
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-> It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.  
+> **PandaEditor should run on all platforms supported by wxPython(the GUI framework used by PandaEditor) and Panda3D, however active maintenance and support is available only for for Microsoft Windows, Mac and Linux / Ubuntu platforms.**
+
+> **It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.**  
 
 | ![Image](images//RoamingRalph_00.png) |
 | -- |
 | ![Image](images//RoamingRalph_01.gif) |
-| Roaming Ralph from official Panda3D sample programs running on PandaEditor using Runtime modules and Components based workflow. (_Note, jitter in above GIF is due to screen recording software._) |
+| Roaming Ralph from official Panda3D sample programs running on PandaEditor using Runtime modules and Components based workflow. (Note, jitter in GIF above is due to screen recording software.) |
 
 ## Links
 1. [Discord](https://discord.gg/eTMcUp2PXF)
 2. [Patreon](https://www.patreon.com/Panda3D_Editor)
 
 ## Dependencies
-1. Panda3d
+1. Panda3D
 2. WxPython
 3. Python WatchDog
 4. TypeEnforce
 
 ## Install
 **Installiation process is fairly simple, first your need to install all dependencies**
-1. Panda3d
-2. pip install WxPython
+1. Panda3D
+2. pip install wxPython (should work out of box for Windows and macOS, for Linux/Ubuntu users, you can follow download instructions from wxPython's website or get compatible wheel from here [linix-wheels](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04/).)
 3. pip install watchdog
 4. pip install type_enforced  
 **Finally, to install PandaEditor**
@@ -223,7 +225,7 @@ class Component(Component):
 * To attach a component to a NodePath, select the NodePath in the scene and simply drag the component script from file browser to the InspectorPanel.
 * You can attach multiple components to a NodePath as well.  
 
-## User Commands
+## User commands
 PandaEditor provide a way to automate repeated tasks through the **CommandManager** interface.  
 Each command is wrapped in a **Command** abstract base class, added to commands stack using the base method **add_command** of an **EditorPlugin** and provide undo redo functionality as well.  
 To user commands are added under the **Command** menu of the menu-bar.  

@@ -25,7 +25,7 @@ Evt_Add_Capsule = wx.NewId()
 Evt_Add_Cone = wx.NewId()
 Evt_Add_Plane = wx.NewId()
 
-Evt_Add_ViewPort_Panel = wx.NewId()
+Evt_Add_Viewport_Panel = wx.NewId()
 Evt_Add_Inspector_Panel = wx.NewId()
 Evt_Add_Resource_Panel = wx.NewId()
 Evt_Add_Scene_Graph_Panel = wx.NewId()
@@ -79,11 +79,11 @@ EVENT_MAP = {
     Evt_Add_Ambient_Light: ("AddLight", "__AmbientLight__"),
 
     # ----------------------------------------------
-    Evt_Add_ViewPort_Panel: ("AddPanel", "ViewPort"),
+    Evt_Add_Viewport_Panel: ("AddPanel", "Viewport"),
     Evt_Add_Inspector_Panel: ("AddPanel", "Inspector"),
     Evt_Add_Resource_Panel: ("AddPanel", "ResourceBrowser"),
     Evt_Add_Scene_Graph_Panel: ("AddPanel", "SceneGraph"),
-    Evt_Add_Console_Panel: ("AddPanel", "LogPanel"),
+    Evt_Add_Console_Panel: ("AddPanel", "ConsolePanel"),
 
     # ----------------------------------------------
     Evt_Save_UI_Layout: ("SaveUILayout", None),
@@ -238,11 +238,11 @@ class WxMenuBar(wx.MenuBar):
         # panels menus
         panels = wx.Menu()
         self.Append(panels, "Panels")
-        menu_items = [(Evt_Add_ViewPort_Panel, "ViewPort", None),
+        menu_items = [(Evt_Add_Viewport_Panel, "Viewport", None),
                       (Evt_Add_Inspector_Panel, "Inspector", None),
                       (Evt_Add_Resource_Panel, "ResourceBrowser", None),
                       (Evt_Add_Scene_Graph_Panel, "SceneGraph", None),
-                      (Evt_Add_Console_Panel, "LogPanel", None)]
+                      (Evt_Add_Console_Panel, "ConsolePanel", None)]
         build_menu_bar(panels, menu_items)
 
         # editor layout menus
@@ -374,7 +374,7 @@ class WxMenuBar(wx.MenuBar):
                 self.wx_main.on_save_current_layout()
 
             elif evt_name == "AddPanel":
-                self.wx_main.add_page(args)
+                self.wx_main.add_page(args[0])
 
             elif evt_name == "ViewportEvent":
                 command = args[0]

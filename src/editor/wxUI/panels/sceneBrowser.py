@@ -174,7 +174,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         custom_data_obj.SetData(picked_data)
 
         # create a source for drag and drop
-        drop_source = TestDropSource(self)
+        drop_source = TestDropSource(self, win=self)
         drop_source.SetData(custom_data_obj)
 
         # Initiate the Drag Operation
@@ -358,8 +358,8 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
 
 class TestDropSource(wx.DropSource):
-    def __init__(self, tree):
-        wx.DropSource.__init__(self)
+    def __init__(self, tree, win):
+        wx.DropSource.__init__(self, win=win)
         self.tree = tree
         self.data = None
         self.cannot_drop = False

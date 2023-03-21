@@ -1,3 +1,5 @@
+import sys
+
 import wx
 import wx.lib.colourchooser.pycolourchooser as colorSelector
 import editor.edPreferences as edPreferences
@@ -327,7 +329,8 @@ class BoolProperty(WxCustomProperty):
             self.ed_property_labels.Destroy()
         else:
             self.sizer.Add(self.ed_property_labels, 0, wx.EXPAND | wx.TOP, border=3)
-        self.sizer.Add(self.toggle, 0, wx.TOP, border=3)
+
+        self.sizer.Add(self.toggle, 0, wx.TOP, border=0 if sys.platform == "linux" else 3)
         self.sizer.AddSpacer(Control_Margin_Right)
 
         self.bind_events()
@@ -454,7 +457,7 @@ class ColorProperty(WxCustomProperty):
         value.y = common_maths.map_to_range(0, 1, 0, 255, value.y)
         value.z = common_maths.map_to_range(0, 1, 0, 255, value.z)
         value.w = common_maths.map_to_range(0, 1, 0, 255, value.w)
-        return wx.Colour(value.x, value.y, value.z, value.w)
+        return wx.Colour(int(value.x), int(value.y), int(value.z), int(value.w))
 
     @staticmethod
     def get_panda3d_color_object(value):
@@ -735,7 +738,11 @@ class EnumProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
 
-        # self.SetSize(0, 28)
+        if sys.platform == "linux":
+            self.SetMinSize((-1, 38))
+            self.SetMaxSize((-1, 38))
+            self.SetSize((-1, 38))
+
         self.choice_control = None
 
     def create_control(self):
@@ -783,6 +790,12 @@ class EnumProperty(WxCustomProperty):
 class SliderProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
+
+        if sys.platform == "linux":
+            self.SetMinSize((-1, 28))
+            self.SetMaxSize((-1, 28))
+            self.SetSize((-1, 28))
+
         self.slider = None
 
     def create_control(self):
