@@ -1,4 +1,4 @@
-import math
+from pathlib import Path
 from panda3d.core import CollisionNode, CollisionHandlerQueue, CollisionRay, CollideMask
 from editor.core import Component
 
@@ -16,7 +16,7 @@ class CharacterCollisionHandler(Component):
         self.__ralph_ground_handler = None  #
 
     def on_start(self):
-        self.__world = self.game.get_module(self.game.path+"/Samples/RoamingRalph/World.py")
+        self.__world = self.game.get_module(self.game.path + str(Path("/Samples/RoamingRalph/World.py")))
 
         # We will detect the height of the terrain by creating a collision
         # ray and casting it downward toward the terrain.  One ray will

@@ -1,5 +1,6 @@
 from editor.utils import EdProperty
 from panda3d.core import LColor
+from editor.globals import editor
 
 
 class EditorSettings:

@@ -181,7 +181,7 @@ class BaseInspectorPanel(wx.Panel):
                 self.drop_location = None
 
                 # specify the data formats to accept
-                self.data_format = wx.DataFormat('ImageTileData')
+                self.data_format = wx.DataFormat('ResourceBrowserData | ImageTileData')
                 self.custom_data_obj = wx.CustomDataObject(self.data_format)
                 self.SetDataObject(self.custom_data_obj)
 
@@ -200,10 +200,7 @@ class BaseInspectorPanel(wx.Panel):
             def OnData(self, x, y, d):
                 if self.GetData():
                     data = pickle.loads(self.custom_data_obj.GetData())
-
-                    # only include paths with ".py" extension
-                    files = [path for path in data.path if os.path.splitext(path)[1] == ".py"]
-
+                    files = [path for path in data.paths if os.path.isfile(path) and os.path.splitext(path)[1] == ".py"]
                     editor.level_editor.register_component(files)
                 else:
                     return wx.DragNone

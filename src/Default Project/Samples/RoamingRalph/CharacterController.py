@@ -1,4 +1,5 @@
-import math
+from pathlib import Path
+from panda3d.core import Filename
 from editor.core import Component
 
 
@@ -11,14 +12,18 @@ class CharacterController(Component):
         self.__world = None
 
     def on_start(self):
-        self.__world = self.game.get_module(self.game.path+"/Samples/RoamingRalph/World.py")
+        self.__world = self.game.get_module(self.game.path + str(Path("/Samples/RoamingRalph/World.py")))
 
         # get the actor, actual Actor node is saved as python tag,
         self.__ralph = self.getPythonTag("__GAME_OBJECT__")
 
         # load animations for ralph characters,
-        walk_anim = self.game.path + "/Samples/RoamingRalph/Art/ralph-walk.egg.pz"
-        run_anim = self.game.path + "/Samples/RoamingRalph/Art/ralph-run.egg.pz"
+        walk_anim = self.game.path + str(Path("/Samples/RoamingRalph/Art/ralph_walk.egg.pz"))
+        walk_anim = Filename.fromOsSpecific(walk_anim)
+
+        run_anim = self.game.path + str(Path("/Samples/RoamingRalph/Art/ralph-run.egg.pz"))
+        run_anim = Filename.fromOsSpecific(run_anim)
+
         anims = {"walk": walk_anim,
                  "run": run_anim}
 

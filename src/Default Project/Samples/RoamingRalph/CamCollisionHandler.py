@@ -1,4 +1,4 @@
-import math
+from pathlib import Path
 from panda3d.core import CollisionNode, CollisionHandlerQueue, CollisionRay, CollideMask
 from editor.core import Component
 
@@ -31,7 +31,7 @@ class CamCollisionHandler(Component):
         # get the ralph character
         self.__ralph = self.render.find("Ralph")
         #
-        world = self.game.get_module(self.game.path+"/Samples/RoamingRalph/World.py")
+        world = self.game.get_module(self.game.path + str(Path("/Samples/RoamingRalph/World.py")))
         #
         # collision solid-ray
         self.__cam_ground_ray = CollisionRay()

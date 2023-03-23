@@ -8,7 +8,6 @@ editor_path = os.path.join(current_dir, "src")
 sys.path.append(editor_path)
 
 from editor.app import MyApp
-
 app = MyApp()
-app.init()
+app.init(path=editor_path)
 app.show_base.run()

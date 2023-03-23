@@ -3,7 +3,11 @@ import importlib
 
 
 def import_module(path):
-    file = path.split("/")[-1]
+    if sys.platform == "win32" or sys.platform == "win64":
+        file = path.split("\\")[-1]
+    else:
+        file = path.split("/")[-1]
+
     # print("LOADED \n FILE--> {0} \n PATH {1} \n".format(file, path))
 
     mod_name = file.split(".")[0]

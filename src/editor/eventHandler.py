@@ -1,12 +1,13 @@
 import webbrowser
 import wx
 
+from thirdparty.event.observable import Observable
 from editor.globals import editor
 from editor.constants import GAME_STATE, TAG_GAME_OBJECT
 from editor.utils import safe_execute
 
 
-obs = editor.observer
+obs = Observable()
 
 
 # Events mostly related to project
@@ -110,7 +111,7 @@ def create_asset(asset_type, path):
             indent_file(file_, 8)
             file_.write("# this method is called only once\n")
             indent_file(file_, 8)
-            file_.write("Pass...\n\n")
+            file_.write("pass\n\n")
 
             # write update method
             indent_file(file_, 4)

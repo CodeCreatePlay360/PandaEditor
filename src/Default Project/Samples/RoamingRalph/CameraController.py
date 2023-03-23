@@ -1,5 +1,6 @@
+from pathlib import Path
 from editor.core import Component
-from panda3d.core import NodePath, PandaNode
+from panda3d.core import NodePath
 
 
 class CameraController(Component):
@@ -11,7 +12,7 @@ class CameraController(Component):
         self.__world = None
 
     def on_start(self):
-        self.__world = self.game.get_module(self.game.path+"/Samples/RoamingRalph/World.py")
+        self.__world = self.game.get_module(self.game.path + str(Path("/Samples/RoamingRalph/World.py")))
 
         # get the ralph character,
         self.__ralph = self.render.find("Ralph")

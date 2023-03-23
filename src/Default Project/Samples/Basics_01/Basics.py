@@ -1,3 +1,4 @@
+from pathlib import Path
 import panda3d.core as p3dCore
 import direct.gui.DirectGui as gui
 
@@ -109,7 +110,7 @@ class Basics(RuntimeModule):
 
         # ------------------------------------------------------------
         # get reference to other runtime modules or NodePath components
-        test_module = self.game.get_module(self.game.path+"/Scripts/Samples/Basics_01/TestModule.py")
+        test_module = self.game.get_module(self.game.path + str(Path("/Samples/Basics_01/TestModule.py")))
         if test_module is not None:
             test_module.foo()  # foo is a method defined TestModule
 

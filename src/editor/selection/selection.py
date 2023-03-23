@@ -1,24 +1,30 @@
-import panda3d.core as pm
+from panda3d.core import GeomNode, CollisionNode, NodePath
 from editor.selection.marquee import Marquee
 from editor.selection.mousePicker import MousePicker
 from editor.constants import TAG_GAME_OBJECT
 
 
 class Selection:
-    def __init__(self, active_scene, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
-        self.active_scene = active_scene
-        self.append = False
+        self.__render = None
+        self.__append = False
         self.__selected_nps = []
         self.previous_matrices = {}
 
         # Create a marquee
-        self.marquee = Marquee('marquee', *args, **kwargs)
+        self.__marquee = Marquee('marquee', *args, **kwargs)
 
-        # Create node picker - set its collision mask to hit both geom nodes
-        # and collision nodes
-        bit_mask = pm.GeomNode.getDefaultCollideMask() | pm.CollisionNode.getDefaultCollideMask()
-        self.picker = MousePicker('picker', *args, fromCollideMask=bit_mask, **kwargs)
+        # Create node picker - set its collision mask to hit both geom nodes and collision nodes
+        bit_mask = GeomNode.getDefaultCollideMask() | CollisionNode.getDefaultCollideMask()
+        self.__picker = MousePicker('picker',
+                                    *args,
+                                    fromCollideMask=bit_mask,
+                                    **kwargs)
+
+    def set_render(self, render):
+        assert type(render) != type(NodePath)
+        self.__render = render
 
     def set_selected(self, nps, append=False):
         if type(nps) is not list:
@@ -43,9 +49,9 @@ class Selection:
         """
         Start the marquee and put the tool into append mode if specified.
         """
-        if self.marquee.mouseWatcherNode.hasMouse():
-            self.append = append
-            self.marquee.Start()
+        if self.__marquee.mouseWatcherNode.hasMouse():
+            self.__append = append
+            self.__marquee.Start()
 
     def stop_drag_select(self, return_py_tags=False):
         """
@@ -54,18 +60,18 @@ class Selection:
         operation.
         """
 
-        self.marquee.Stop()
+        self.__marquee.Stop()
         new_selections = []
 
-        if self.append:
+        if self.__append:
             for np in self.__selected_nps:
                 new_selections.append(np)
         else:
             self.deselect_all()
 
-        for pick_np in self.active_scene.render.findAllMatches('**'):
+        for pick_np in self.__render.findAllMatches('**'):
             if pick_np is not None:
-                if self.marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_GAME_OBJECT):
+                if self.__marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_GAME_OBJECT):
                     np = pick_np.getNetPythonTag(TAG_GAME_OBJECT)
                     if np not in new_selections:
                         new_selections.append(np)
@@ -90,19 +96,19 @@ class Selection:
         """
         Returns the closest node under the mouse, or None if there isn't one.
         """
-        self.picker.on_update(None)
-        picked_np = self.picker.GetFirstNodePath()
+        self.__picker.on_update(None)
+        picked_np = self.__picker.GetFirstNodePath()
         return picked_np
 
     top_np = None
     def get_top_np(self, np):
         top_np = np.get_parent()
-        if top_np == self.active_scene.render:
+        if top_np == self.__render:
             self.top_np = np.getPythonTag(TAG_GAME_OBJECT)
             return
 
         top_np = top_np.getPythonTag(TAG_GAME_OBJECT)
-        if top_np != self.active_scene.render and top_np is not None:
+        if top_np != self.__render and top_np is not None:
             self.get_top_np(top_np)
 
     @property
@@ -111,3 +117,11 @@ class Selection:
         for np in self.__selected_nps:
             selected.append(np)
         return selected
+
+    @property
+    def marquee(self):
+        return self.__marquee
+
+    @property
+    def render(self):
+        return self.__render

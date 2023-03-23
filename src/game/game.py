@@ -241,6 +241,10 @@ class Game:
         return self.__render
 
     @property
+    def active_scene(self):
+        return self.__active_scene
+
+    @property
     def components(self):
         components = {}  # np: [components,...]
 

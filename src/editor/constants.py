@@ -19,7 +19,8 @@ GAME_GEO_MASK = p3d_core.BitMask32.bit(1)
 
 # -----------------------------------------------------------------------------------------------
 # PATHS
-DEFAULT_PROJECT_PATH = "src/Default Project"  # default project path
+DEFAULT_PROJECT_PATH = ""
+EDITOR_PATH = ""
 
 FILE_EXTENSIONS_ICONS_PATH = "src/editor/resources/icons/fileExtensions"  # icons path for resource browser file extensions
 ICONS_PATH = "src/editor/resources/icons"  # icons path for editor icons

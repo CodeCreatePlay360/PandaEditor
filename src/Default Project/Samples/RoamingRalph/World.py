@@ -1,4 +1,3 @@
-import math
 from panda3d.core import CollisionTraverser, ClockObject
 from editor.core import RuntimeModule
 

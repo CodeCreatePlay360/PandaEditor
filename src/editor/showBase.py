@@ -156,7 +156,8 @@ class ShowBase(sb.ShowBase):
         editor pixel2d."""
         super(ShowBase, self).windowEvent(*args, **kwargs)
         self.update_aspect_ratio()
-        editor.observer.trigger("ShowBaseResize")
+        if editor.observer:
+            editor.observer.trigger("ShowBaseResize")
 
     @property
     def ed_aspect2d(self):

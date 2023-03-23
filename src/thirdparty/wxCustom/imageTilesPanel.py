@@ -7,14 +7,17 @@ import editor.edPreferences as edPreferences
 import editor.wxUI.globals as wxGlobals
 import editor.commands as commands
 
-from editor.utils import FileUtils
+from pathlib import Path
+from panda3d.core import Filename
 from wx.lib.scrolledpanel import ScrolledPanel
+
+from editor.wxUI.etc.dragDropData import ResourceDragDropData
 from editor.wxUI.custom import SelectionButton
 from editor.wxUI.custom import SearchBox
 from editor.globals import editor
 from editor.core import RuntimeModule, EditorPlugin, Component
-from pathlib import Path
-from panda3d.core import Filename
+from editor.utils import FileUtils
+
 
 # event ids for different event types
 EVT_RENAME_ITEM = wx.NewId()
@@ -55,16 +58,6 @@ def create_3d_model_menu_items(parent_menu):
 
 
 class ImageTile(wx.Panel):
-    class TestDragDropData(object):
-        def __init__(self):
-            self.path = None
-
-        def __repr__(self):
-            return "DragDropData"
-
-        def set_source(self, data):
-            self.path = data
-
     class TestDropSource(wx.DropSource):
         def __init__(self, win):
             wx.DropSource.__init__(self, win=win)
@@ -78,11 +71,9 @@ class ImageTile(wx.Panel):
             (window_x, window_y) = wx.GetMousePosition()
             if editor.inspector.components_dnd_panel and \
                     editor.inspector.components_dnd_panel.GetScreenRect().Contains(wx.Point(window_x, window_y)):
-                # editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_SIZING))
                 return True
-            else:
-                # editor.wx_main.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
-                return True
+
+            return False
 
     def __init__(self, parent, label, extension, style, color, size, position, tile_index=-1, data=None):
         """class representing a single image tile, with a text field below image"""
@@ -153,14 +144,14 @@ class ImageTile(wx.Panel):
     def on_begin_drag(self, evt):
         if evt.Dragging():
             # create data that is being dragged
-            dragged_data = ImageTile.TestDragDropData()
+            dragged_data = ResourceDragDropData(ResourceDragDropData.PREVIEW_TILES_PANEL)
             dragged_data.set_source([self.path])
 
             # pickle dragged data
             picked_data = pickle.dumps(dragged_data, 1)
 
             # create a custom data obj and set its data to dragged data
-            custom_data_obj = wx.CustomDataObject(wx.DataFormat('ImageTileData'))
+            custom_data_obj = wx.CustomDataObject(wx.DataFormat('ResourceBrowserData | ImageTileData'))
             custom_data_obj.SetData(picked_data)
 
             # create a source for drag and drop
@@ -476,13 +467,13 @@ class ImageTilesPanel(ScrolledPanel):
             dir_items = os.listdir(path)
             for item in dir_items:
 
-                if os.path.isdir(path + "/" + item):
+                if os.path.isdir(os.path.join(path, item)):
                     continue
 
                 split = item.split(".")
                 extension = split[-1]
                 file_name = split[0]
-                file_path = path + "/" + item
+                file_path = os.path.join(path, item)
 
                 if extension in self.icon_and_extension:
 
