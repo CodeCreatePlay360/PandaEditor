@@ -99,7 +99,7 @@ class PModBase(DirectObject):
                                                sort=self.__late_update_sort,
                                                priority=None)
 
-        res = ed_utils.try_execute(_start)
+        res = ed_utils.safe_execute(_start)
         if not res:
             stop_execution(self)
             return False
@@ -114,14 +114,14 @@ class PModBase(DirectObject):
             # check for case if this module was not active when entering game_state,
             # ---------------------------------------------------------------------
             if not self.__started:
-                if not ed_utils.try_execute(self.on_start):
+                if not ed_utils.safe_execute(self.on_start):
                     stop_execution(self)
                     return
                 else:
                     self.__started = True
             # ---------------------------------------------------------------------
 
-            res = ed_utils.try_execute(self.on_update)
+            res = ed_utils.safe_execute(self.on_update)
         else:
             res = True
 
@@ -136,7 +136,7 @@ class PModBase(DirectObject):
 
     def late_update(self, task):
         if self.__active:
-            res = ed_utils.try_execute(self.on_late_update)
+            res = ed_utils.safe_execute(self.on_late_update)
         else:
             res = True
 

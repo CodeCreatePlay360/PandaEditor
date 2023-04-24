@@ -1,7 +1,7 @@
 import os.path
+import pathlib
 import pickle
 import sys
-
 import wx
 import editor.edPreferences as edPreferences
 import editor.constants as constants
@@ -16,23 +16,26 @@ from editor.globals import editor
 from panda3d.core import NodePath
 
 # icon paths
-Object_settings_icon = constants.ICONS_PATH + "/box_closed.png"
-World_settings_icon = constants.ICONS_PATH + "/globe.png"
-Ed_settings_icon = constants.ICONS_PATH + "/gear.png"
-Plugin_icon = constants.ICONS_PATH + "/plugin.png"
+Object_settings_icon = str(pathlib.Path(constants.ICONS_PATH + "/box_closed.png"))
+World_settings_icon = str(pathlib.Path(constants.ICONS_PATH + "/globe.png"))
+Ed_settings_icon = str(pathlib.Path(constants.ICONS_PATH + "/gear.png"))
+Plugin_Settings_icon = str(pathlib.Path(constants.ICONS_PATH + "/plugin.png"))
 
 #
-Object_Icon = constants.ICONS_PATH + "/Inspector" + "/cube.png"
-Camera_Icon = constants.ICONS_PATH + "/Inspector" + "/video.png"
-Light_Icon = constants.ICONS_PATH + "/Inspector" + "/lightbulb.png"
-Script_Icon = constants.ICONS_PATH + "/Inspector" + "/script_code.png"
-Component_Icon = constants.ICONS_PATH + "/Inspector" + "/script_gear.png"
-Plugin_icon_Small = constants.ICONS_PATH + "/Inspector" + "/script_code_red.png"
+Object_Icon = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/cube16x.png")) if sys.platform == "linux" \
+    else str(pathlib.Path(constants.ICONS_PATH + "/Inspector/cube.png"))
+Camera_Icon = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/video.png"))
+Light_Icon = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/lightbulb.png"))
+Script_Icon = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/script_code16x.png")) if sys.platform == "linux" \
+    else str(pathlib.Path(constants.ICONS_PATH + "/Inspector/script_code.png"))
+Component_Icon = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/script_gear.png"))
+Plugin_icon = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/script_code_red16x.png")) if sys.platform == "linux" \
+    else str(pathlib.Path(constants.ICONS_PATH + "/Inspector/script_code_red.png"))
 
 #
-PIN_ICON = constants.ICONS_PATH + "/pin.png"
-REMOVE_ICON = constants.ICONS_PATH + "/close.png"
-INFO_ICON = constants.ICONS_PATH + "/Inspector" + "/information.png"
+PIN_ICON = str(pathlib.Path(constants.ICONS_PATH + "/pin.png"))
+REMOVE_ICON = str(pathlib.Path(constants.ICONS_PATH + "/close.png"))
+INFO_ICON = str(pathlib.Path(constants.ICONS_PATH + "/Inspector/information.png"))
 
 #
 OBJECT_INSPECTOR_ID = 0
@@ -43,18 +46,18 @@ PLUGIN_INSPECTOR_ID = 3
 # map_ = object_type: (bitmap_path, flags(for box sizer), border(for box sizer))
 OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
                      constants.RuntimeModule: (Script_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
-                     constants.EditorPlugin: (Plugin_icon_Small, wx.EXPAND | wx.TOP, 2),
+                     constants.EditorPlugin: (Plugin_icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
 
-                     constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2),
+                     constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
 
-                     constants.ACTOR_NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2),
+                     constants.ACTOR_NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
 
-                     constants.POINT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
-                     constants.DIRECTIONAL_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
-                     constants.SPOT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
+                     constants.POINT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
+                     constants.DIRECTIONAL_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
+                     constants.SPOT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
                      constants.AMBIENT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
 
-                     constants.CAMERA_NODEPATH: (Camera_Icon, wx.EXPAND | wx.TOP, 2)}
+                     constants.CAMERA_NODEPATH: (Camera_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2)}
 
 
 class TextPanel(wx.Panel):
@@ -140,7 +143,7 @@ class BaseInspectorPanel(wx.Panel):
                                                           text_flags=wx.EXPAND | wx.TOP,
                                                           text_border=1,
 
-                                                          image_path=Plugin_icon,
+                                                          image_path=Plugin_Settings_icon,
                                                           image_flags=wx.EXPAND | wx.RIGHT,
                                                           image_border=3,
 
@@ -404,9 +407,10 @@ class BaseInspectorPanel(wx.Panel):
                     # and wrap it into wx_property object
                     wx_property = self.get_wx_property_object(property_, parent, False)
                     wx_property.SetBackgroundColour(parent.GetBackgroundColour())
-                    wx_property.SetSize((-1, 16))
-                    wx_property.SetMinSize((-1, 16))
-                    wx_property.SetMaxSize((-1, 16))
+                    y_size = 20 if sys.platform == "linux" else 16
+                    wx_property.SetSize((-1, y_size))
+                    wx_property.SetMinSize((-1, y_size))
+                    wx_property.SetMaxSize((-1, y_size))
                     #
                     return wx_property
 
@@ -417,7 +421,7 @@ class BaseInspectorPanel(wx.Panel):
             if isinstance(obj_, PModBase):
                 obj_type = obj_.module_type
             elif isinstance(obj_, NodePath):
-                obj_type = obj_.id
+                obj_type = obj_.ed_id
 
             bitmap_path = OBJ_TYPE_ICON_MAP[obj_type][0]
             sizer_flags = OBJ_TYPE_ICON_MAP[obj_type][1]
@@ -558,7 +562,7 @@ class BaseInspectorPanel(wx.Panel):
         if type(text) == str:
             self.text_panel = TextPanel(self, text)
             self.text_panel.SetMinSize((self.GetSize().x - 40, self.GetSize().y - 40))
-            self.main_sizer.Add(self.text_panel, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+            self.main_sizer.Add(self.text_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
             self.Layout()
 
     def update(self, label=None, force_update_all=False):
@@ -581,20 +585,21 @@ class BaseInspectorPanel(wx.Panel):
             wx_prop = self.property_and_name[key]
 
             # don't update these
-            if wx_prop.property.type_ in ["button"]:
+            if wx_prop.ed_property.type_ in ["button"]:
                 continue
 
-            if not force_update_all and wx_prop.property.type_ is "choice":
+            if not force_update_all and wx_prop.ed_property.type_ == "choice":
                 continue
 
-            # to avoid triggering on_event_text
-            # see wxCustomProperties.py bind and unbind methods
+            # updating wx_prop control value triggers wx.EVT_TEXT, however this should only
+            # trigger upon input from user so unbind it first
             wx_prop.unbind_events()
 
+            # update the control
             if not wx_prop.has_focus():
-                wx_prop.set_control_value(wx_prop.property.get_value())
+                wx_prop.set_control_value(wx_prop.ed_property.get_value())
 
-            # bind them again
+            # and bind events again
             wx_prop.bind_events()
 
     def create_wx_properties(self, ed_properties, parent, save=True):
@@ -617,17 +622,17 @@ class BaseInspectorPanel(wx.Panel):
                 wx_property = Property_And_Type[ed_property.type_]
                 wx_property = wx_property(parent, ed_property)
 
-                if wx_property.property.type_ == "horizontal_layout_group" or wx_property.property.type_ == \
+                if wx_property.ed_property.type_ == "horizontal_layout_group" or wx_property.ed_property.type_ == \
                         "foldout_group":
-                    wx_properties = self.create_wx_properties(wx_property.property.properties, wx_property, False)
-                    wx_property.properties = wx_properties
+                    wx_properties = self.create_wx_properties(wx_property.ed_property.properties, wx_property, False)
+                    # wx_property.properties = wx_properties
+                    wx_property.set_properties(wx_properties)
                     # see wxProperties.Foldout for explanation on this.
                     if hasattr(wx_property, "scrolled_panel"):
                         wx_property.scrolled_panel = self
 
                 # wx_property
                 wx_property.create_control()
-                wx_property.on_control_created()
 
                 if save:
                     self.property_and_name[ed_property.name] = wx_property

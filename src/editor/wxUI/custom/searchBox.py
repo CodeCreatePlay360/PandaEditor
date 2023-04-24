@@ -1,18 +1,19 @@
+import pathlib
 import wx
 import editor.constants as constants
 
 
-TextBox_Cursor = constants.ICONS_PATH + "//" + "text_box_cursor.png"
-REFRESH_ICON = constants.ICONS_PATH + "//" + "arrow_refresh.png"
-MAGNIFYING_GLASS_ICON = constants.ICONS_PATH + "//" + "magnifyingGlassIcon.png"
-SEARCH_CANCEL_ICON = constants.ICONS_PATH + "//" + "cancel.png"
+TextBox_Cursor = str(pathlib.Path(constants.ICONS_PATH + "/text_box_cursor.png"))
+REFRESH_ICON = str(pathlib.Path(constants.ICONS_PATH + "/arrow_refresh.png"))
+MAGNIFYING_GLASS_ICON = str(pathlib.Path(constants.ICONS_PATH + "/magnifyingGlassIcon.png"))
+SEARCH_CANCEL_ICON = str(pathlib.Path(constants.ICONS_PATH + "/cancel.png"))
 
 
 class SearchBox(wx.Panel):
     def __init__(self, parent, size=wx.Size(-1, 18), *args, **kwargs):
         wx.Panel.__init__(self, parent, *args, **kwargs)
         self.SetMaxSize(size)
-        self.SetBackgroundColour(wx.WHITE)
+        self.SetBackgroundColour(wx.Colour(127, 127, 127, 255))
 
         self.max_size = size
         self.search_icon = None
@@ -23,8 +24,6 @@ class SearchBox(wx.Panel):
         self.SetSizer(self.sizer)
 
         self.create()
-
-        # bind events
 
     def create(self):
         image = wx.Image(MAGNIFYING_GLASS_ICON, type=wx.BITMAP_TYPE_ANY)

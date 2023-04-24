@@ -45,9 +45,9 @@ class BaseNodePath(NodePath):
         space = EdProperty.EmptySpace(0, 10)
         label = EdProperty.Label(name="Node Properties", is_bold=True)
         color = EdProperty.FuncProperty(name="Color",
-                                        value=self.get_ed_colour(),
+                                        value=self.get_color(),
                                         setter=lambda val: self.setColor(val),
-                                        getter=self.get_ed_colour)
+                                        getter=self.getColor)
 
         self.__properties.append(space)
         self.__properties.append(label)
@@ -60,16 +60,9 @@ class BaseNodePath(NodePath):
             if i < len(self.__properties):
                 self.__properties[i].set_value(properties[i].get_value())
 
-    def get_properties(self):
-        return self.__properties
-
-    def get_ed_colour(self):
-        if self.hasColor():
-            val = self.getColor()
-        else:
-            val = LColor(1, 1, 1, 1)
-
-        return val
+    def clear_components(self):
+        # print("Cleared all Components on {0}".format(self.name))
+        self.__components.clear()
 
     def attach_component(self, path, component):
         if not self.__components.__contains__(path):
@@ -83,12 +76,11 @@ class BaseNodePath(NodePath):
         if self.__components.__contains__(path):
             del self.__components[path]
 
-    def clear_components(self):
-        # print("Cleared all Components on {0}".format(self.name))
-        self.__components.clear()
+    def get_properties(self):
+        return self.__properties
 
     @property
-    def id(self):
+    def ed_id(self):
         return self.__id
 
     @property

@@ -1,3 +1,4 @@
+import sys
 import traceback
 
 
@@ -7,9 +8,12 @@ def safe_execute(func, *args, **kwargs):
     try:
         val = func(*args, **kwargs)
     except Exception as e:
-        tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-        for x in tb_str:
-            print(x)
+        if sys.platform == "linux":
+            print(e)
+        else:
+            tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+            for x in tb_str:
+                print(x)
 
         if return_func_val:
             return None

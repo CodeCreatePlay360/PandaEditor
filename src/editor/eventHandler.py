@@ -189,7 +189,7 @@ def on_scene_start():
     cube = cube.getPythonTag(TAG_GAME_OBJECT)
     # inspector.set_object(cube, cube.get_name(), cube.get_properties())
 
-    scene_graph.ExpandAll()  # expand scene graph
+    # scene_graph.ExpandAll()  # expand scene graph
     # resource_tree.schedule_dir_watcher()  # start the project directory watcher
     wx_main.thaw()
 
@@ -376,7 +376,6 @@ def reload_editor(*args):
         le.set_selected(selected_nps)
         scene_graph.select(selected_nps)
 
-    # scene_graph.reload_state()
     inspector.layout_auto()  # layout the inspector
     wx_main.thaw()
 
@@ -467,7 +466,7 @@ def property_modified(property_):
     le.update_gizmo()
 
     # TODO this should be replaced by some kind of property flag
-    if property_.property.name in ["Near-Far", "Field Of View", "FilmSize", "Lens Type"]:
+    if property_.ed_property.name in ["Near-Far", "Field Of View", "FilmSize", "Lens Type"]:
         obs.trigger("ShowBaseResize")
 
         for np in le.selection.selected_nps:

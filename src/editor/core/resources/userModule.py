@@ -22,8 +22,8 @@ class UserModule(Resource):
             try:
                 prop = EdProperty.Property(name, val)
                 obj_data.add_property(prop)
-            except Exception:
-                pass
+            except Exception as e:
+                print(e)
 
         self.saved_data = obj_data
 

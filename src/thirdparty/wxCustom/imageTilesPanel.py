@@ -1,4 +1,5 @@
 import os
+import pathlib
 import pickle
 import math
 import wx
@@ -27,21 +28,21 @@ EVT_LOAD_MODEL = wx.NewId()
 EVT_LOAD_ACTOR = wx.NewId()
 
 # icons for selection grid
-Model_icon = constants.ICONS_PATH + "//" + "3D-objects-icon.png"
-Texture_icon = constants.ICONS_PATH + "//" + "images.png"
-Sound_icon = constants.ICONS_PATH + "//" + "music.png"
-Script_icon = constants.ICONS_PATH + "//" + "script_code.png"
-Video_icon = constants.ICONS_PATH + "//" + "video.png"
+Model_icon = str(pathlib.Path(constants.ICONS_PATH + "/3D-objects-icon.png"))
+Texture_icon = str(pathlib.Path(constants.ICONS_PATH + "/images.png"))
+Sound_icon = str(pathlib.Path(constants.ICONS_PATH + "/music.png"))
+Script_icon = str(pathlib.Path(constants.ICONS_PATH + "/script_code.png"))
+Video_icon = str(pathlib.Path(constants.ICONS_PATH + "/video.png"))
 
 # file extension icons for tiles
-AudioFile_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "audio.png"
-VideoFile_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "video.png"
-ImageFile_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "image.png"
-TextFile_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "text.png"
-UserModule_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "userModule.png"
-EditorPlugin_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "plugin.png"
-UnknownFile_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "file.png"
-ModelFile_icon = constants.ICONS_PATH + "//" + "ResourceTiles" + "//" + "3dModel.png"
+AudioFile_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/audio.png"))
+VideoFile_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/video.png"))
+ImageFile_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/image.png"))
+TextFile_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/text.png"))
+UserModule_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/userModule.png"))
+EditorPlugin_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/plugin.png"))
+UnknownFile_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/file.png"))
+ModelFile_icon = str(pathlib.Path(constants.ICONS_PATH + "/ResourceTiles/3dModel.png"))
 
 
 def create_generic_menu_items(parent_menu):
@@ -389,19 +390,19 @@ class ImageTilesPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, parent)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
 
-        self.tool_bar = self.ToolBar(parent)
-        self.tool_bar.SetMaxSize((-1, 36))
+        self.__tool_bar = self.ToolBar(parent)
+        self.__tool_bar.SetMaxSize((-1, 36))
 
-        self.parent = parent
+        self.__parent = parent
         self.__tiles = []
         self.__selected_tiles = []
         self.__saved_state = None
 
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.gridSizer = None
-        self.SetSizer(self.sizer)
+        self.__sizer = wx.BoxSizer(wx.VERTICAL)
+        self.__gridSizer = None
+        self.SetSizer(self.__sizer)
 
-        self.icon_and_extension = {
+        self.supported_extensions_to_icons_map = {
             "generic": UnknownFile_icon,
 
             # model files
@@ -433,8 +434,8 @@ class ImageTilesPanel(ScrolledPanel):
         self.Bind(wx.EVT_SIZE, self.on_evt_resize)
 
     def on_evt_resize(self, evt):
-        if self.gridSizer:
-            self.gridSizer.Clear()
+        if self.__gridSizer:
+            self.__gridSizer.Clear()
         self.update_tiles()
         evt.Skip()
 
@@ -456,7 +457,7 @@ class ImageTilesPanel(ScrolledPanel):
         self.remove_all_tiles()
 
         selections_organized = {}
-        for key in self.icon_and_extension:
+        for key in self.supported_extensions_to_icons_map:
             selections_organized[key] = []
         selections_organized["generic"] = []  # add one generic for not supported extensions.
 
@@ -475,7 +476,7 @@ class ImageTilesPanel(ScrolledPanel):
                 file_name = split[0]
                 file_path = os.path.join(path, item)
 
-                if extension in self.icon_and_extension:
+                if extension in self.supported_extensions_to_icons_map:
 
                     if editor.level_editor.is_module(file_path):
                         module = editor.level_editor.get_module(file_path)
@@ -486,11 +487,11 @@ class ImageTilesPanel(ScrolledPanel):
                         elif isinstance(module, EditorPlugin):
                             image = EditorPlugin_icon
                     else:
-                        image = self.icon_and_extension[extension]
+                        image = self.supported_extensions_to_icons_map[extension]
 
                     selections_organized[extension].append((image, file_name, extension, file_path))
                 else:
-                    image = self.icon_and_extension["generic"]
+                    image = self.supported_extensions_to_icons_map["generic"]
                     selections_organized["generic"].append((image, file_name, extension, file_path))
 
         for item in selections_organized.keys():
@@ -511,7 +512,7 @@ class ImageTilesPanel(ScrolledPanel):
                         tiles[i].on_select()
                     self.__selected_tiles.append(tiles[i])
 
-            self.tool_bar.set_item_info_text(tiles[0].path)
+            self.__tool_bar.set_item_info_text(tiles[0].path)
 
     def select_tiles_from_paths(self, paths, select=True):
         if len(paths) > 0:
@@ -527,12 +528,12 @@ class ImageTilesPanel(ScrolledPanel):
                         tile.on_select()
                     self.__selected_tiles.append(tile)
 
-                self.tool_bar.set_item_info_text(tile.path)
+                self.__tool_bar.set_item_info_text(tile.path)
 
     def deselect_all(self):
         for tile in self.__tiles:
             tile.on_deselect()
-        self.tool_bar.set_item_info_text("No item selected.")
+        self.__tool_bar.set_item_info_text("No item selected.")
         self.__selected_tiles.clear()
 
     def update_tiles(self):
@@ -548,8 +549,8 @@ class ImageTilesPanel(ScrolledPanel):
             return
         num_rows = math.ceil(num_tiles / tiles_per_row)
 
-        self.gridSizer = wx.GridSizer(num_rows, tiles_per_row, 1, 0)
-        self.sizer.Add(self.gridSizer, 1, wx.EXPAND)
+        self.__gridSizer = wx.GridSizer(num_rows, tiles_per_row, 1, 0)
+        self.__sizer.Add(self.__gridSizer, 1, wx.EXPAND)
 
         tile_index = 0
         for i in range(num_rows):
@@ -564,11 +565,11 @@ class ImageTilesPanel(ScrolledPanel):
                 tile.update()
                 tile_index += 1
 
-                self.gridSizer.Add(tile, 0)
+                self.__gridSizer.Add(tile, 0)
                 tile.Show()
 
-        self.gridSizer.Layout()
-        self.sizer.Layout()
+        self.__gridSizer.Layout()
+        self.__sizer.Layout()
         self.SetupScrolling(scroll_x=True)
 
     def remove_all_tiles(self):
@@ -576,8 +577,8 @@ class ImageTilesPanel(ScrolledPanel):
             tile.Destroy()
         self.__tiles = []
         self.__selected_tiles.clear()
-        if self.gridSizer:
-            self.gridSizer.Clear()
+        if self.__gridSizer:
+            self.__gridSizer.Clear()
         self.update_tiles()
 
     def get_selected_tiles(self, paths=False):
@@ -605,3 +606,7 @@ class ImageTilesPanel(ScrolledPanel):
             if self.__tiles[i].path == path:
                 return self.__tiles[i]
         return None
+
+    @property
+    def tool_bar(self):
+        return self.__tool_bar

@@ -1,7 +1,7 @@
-from pathlib import Path
 import panda3d.core as p3dCore
 import direct.gui.DirectGui as gui
 
+from pathlib import Path
 from editor.core import RuntimeModule
 from editor.utils import EdProperty
 
@@ -16,7 +16,7 @@ class Basics(RuntimeModule):
         self.int_property = 5
         self.float_property = 7.5
         self.str_property = "Panda3d"
-        self.bool_property = False
+        self.bool_property = True
         self.vector3 = p3dCore.LVecBase3f(10, 17, 28)
         self.vector2 = p3dCore.LVecBase2f(25, 46)
 
@@ -98,6 +98,7 @@ class Basics(RuntimeModule):
         # this method is called only once
 
         # attributes defined in RuntimeModule base class, they act as bridge between PandaEditor and Panda3d engine
+        # self.show_base           : a reference to show_base
         # self.win                 : the rendering window
         # self.mouse_watcher_node  : mouse watcher node
         # self.render              : this is the current scene's parent node-path
@@ -151,6 +152,7 @@ class Basics(RuntimeModule):
         self.__temperature = val
 
     def set_choice(self, val):
+        print(val)
         self.__curr_choice = val
 
     def set_color(self, val):

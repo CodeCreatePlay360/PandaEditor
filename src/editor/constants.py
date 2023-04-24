@@ -1,3 +1,5 @@
+import pathlib
+
 import panda3d.core as p3d_core
 
 EDITOR_STATE = 0
@@ -22,21 +24,21 @@ GAME_GEO_MASK = p3d_core.BitMask32.bit(1)
 DEFAULT_PROJECT_PATH = ""
 EDITOR_PATH = ""
 
-FILE_EXTENSIONS_ICONS_PATH = "src/editor/resources/icons/fileExtensions"  # icons path for resource browser file extensions
-ICONS_PATH = "src/editor/resources/icons"  # icons path for editor icons
+FILE_EXTENSIONS_ICONS_PATH = str(pathlib.Path("src/editor/resources/icons/fileExtensions"))  # icons path for resource browser file extensions
+ICONS_PATH = str(pathlib.Path("src/editor/resources/icons"))  # icons path for editor icons
 
-MODELS_PATH = "src/editor/resources"  # directory to look for default models (editor lights, camera, default objects etc.)
+MODELS_PATH = str(pathlib.Path("src/editor/resources"))  # directory to look for default models (editor lights, camera, default objects etc.)
 
-POINT_LIGHT_MODEL = MODELS_PATH + "/" + "models/Pointlight.egg.pz"
-DIR_LIGHT_MODEL = MODELS_PATH + "/" + "models/Dirlight.egg"
-SPOT_LIGHT_MODEL = MODELS_PATH + "/" + "models/Spotlight.egg.pz"
-AMBIENT_LIGHT_MODEL = MODELS_PATH + "/" + "models/AmbientLight.obj"
-CAMERA_MODEL = MODELS_PATH + "/" + "models/camera.egg.pz"
+POINT_LIGHT_MODEL = str(pathlib.Path(MODELS_PATH + "/models/Pointlight.egg.pz"))
+DIR_LIGHT_MODEL = str(pathlib.Path(MODELS_PATH + "/models/Dirlight.egg"))
+SPOT_LIGHT_MODEL = str(pathlib.Path(MODELS_PATH + "/models/Spotlight.egg.pz"))
+AMBIENT_LIGHT_MODEL = str(pathlib.Path(MODELS_PATH + "/models/AmbientLight.obj"))
+CAMERA_MODEL = str(pathlib.Path(MODELS_PATH + "/models/camera.egg.pz"))
 
-CUBE_PATH = MODELS_PATH + "/" + "models/cube.fbx"
-CAPSULE_PATH = MODELS_PATH + "/" + "models/capsule.fbx"
-CONE_PATH = MODELS_PATH + "/" + "models/cone.fbx"
-PLANE_PATH = MODELS_PATH + "/" + "models/plane.fbx"
+CUBE_PATH = str(pathlib.Path(MODELS_PATH + "/models/cube.fbx"))
+CAPSULE_PATH = str(pathlib.Path(MODELS_PATH + "/models/capsule.fbx"))
+CONE_PATH = str(pathlib.Path(MODELS_PATH + "/models/cone.fbx"))
+PLANE_PATH = str(pathlib.Path(MODELS_PATH + "/models/plane.fbx"))
 
 
 # -----------------------------------------------------------------------------------------------

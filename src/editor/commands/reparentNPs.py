@@ -13,14 +13,13 @@ class ReparentNPs(Command):
         self.target_np = target_np
 
     def do(self, *args, **kwargs):
-
         editor.resource_browser.deselect_all_files()
-
+        #
         editor.level_editor.reparent_np(self.src_nps, self.target_np)
         editor.level_editor.set_selected(self.src_nps)
         #
         editor.scene_graph.reparent(self.src_nps, self.target_np)
-        editor.scene_graph.select(self.src_nps)
+        # editor.scene_graph.select(self.src_nps)
 
         np = self.src_nps[0]
         editor.inspector.layout(np, np.get_name(), np.get_properties())

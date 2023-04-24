@@ -3,7 +3,7 @@
 ![Image](images//01.png)
 
 **Panda3D is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3D more intuitive to use for  artists and game developers by providing an editor centric workflow**.  
-It has all the bare minimum level editor features including,
+It has all the standard level editor features including,
 
 * Object manipulation
 * Object Inspection
@@ -16,9 +16,11 @@ It has all the bare minimum level editor features including,
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-> **PandaEditor should run on all platforms supported by wxPython(the GUI framework used by PandaEditor) and Panda3D, however active maintenance and support is available only for Microsoft Windows, Mac and Linux / Ubuntu platforms.**
+> **PandaEditor should run on all platforms supported by wxPython(the UI framework used by PandaEditor) and Panda3D, however active maintenance and support is available only for Microsoft Windows, Mac and Linux / Ubuntu.**
 
 > **It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.**  
+
+> **PandaEditor is still in beta stage, visit the road map section to see list of all features under development.**
 
 | ![Image](images//RoamingRalph_00.png) |
 | -- |
@@ -33,16 +35,13 @@ It has all the bare minimum level editor features including,
 1. Panda3D
 2. WxPython
 3. Python WatchDog
-4. TypeEnforce
 
 ## Install
-**Installiation process is fairly simple, first your need to install all dependencies**
+**Installiation process is fairly simple, first your need to install all dependencies**,
 1. Panda3D
-2. pip install wxPython (should work out of box for Windows and macOS, for Linux/Ubuntu users, you can follow download instructions from wxPython's website or get compatible wheel from [linix-wheels](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04/).)
-3. pip install watchdog
-4. pip install type_enforced  
-**Finally, to install PandaEditor**
-1. Download this repository and
+2. Pip install wxPython (should work out of box for Windows and macOS, for Linux/Ubuntu users, you can follow download instructions from wxPython's website or get compatible wheel from [linix-wheels](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04/).)
+3. Pip install watchdog
+1. Download this repository
 2. Run main.py
 
 ## Manual
@@ -63,8 +62,8 @@ It has all the bare minimum level editor features including,
 * [Tutorials](https://github.com/CodeCreatePlay360/PandaEditor#tutorials "")
 
 ## Starting a new project
-PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is setup for you.
-It's located in current working directory and should not be deleted. You can use default project for any purpose, however to create a new project
+PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is created for you.
+It's located in current working directory and should not be deleted. You can use default project for any purpose, however to create a new project to go
 **Menubar > Project > Start New Project** and choose a valid name and path.
 
 ## Object manipulation
@@ -345,24 +344,47 @@ The editor's user interface is divided into 5 main panels,
 4. ResourcesBrowser and
 5. InspectorPanel
 
-When you first start Editor a default layout (arrangement of panels) is created for you but you can also drag panels around and create custom layouts from **menu_bar > Layout > SaveLayout**.
+When you first start Editor a default layout (arrangement of panels) is created for you but you can also drag panels around and create custom layouts and save them **menu_bar > Layout > SaveLayout**.
 
 ## PandaEditor for existing Panda3D users
-**_This section is incomplete and will soon be updated._** 
+Working in PandaEditor will feel like home to existing Panda3D users, as it exposes the full underlying Panda's API without any modifications, however PandaEditor exposes this API using either **RuntimeModules**, **NodePath Components** or the **EditorPlugin** interface, so in regard to this, here are a few examples.
+
+- Initialization of the engine is done by editor itself, so for example the PandaEditor's equivalent of a simple code that loads a 3D model from disk would look something like this.
+
+```
+import pathlib
+from direct.showbase.Loader import Loader
+from editor.core import RuntimeModule
+
+
+class Basics(RuntimeModule):
+    def __init__(self, *args, **kwargs):
+        RuntimeModule.__init__(self, *args, **kwargs)
+
+        # first we create an instance of loader class 
+        self.__loader = Loader(self.show_base)
+
+    def on_start(self):
+        model_path = "/someModelFile.egg"                # path to the model file on disk
+        model_path = pathlib.Path(model_path)            # convert to OS specific
+        model_path = str(model_path)                     # convert it back to a string
+        model_np = self.__loader.load_model(model_path)  # load the model
+        model_np.reparent_to(self.render)                # attach model_np to active scene's render
+```
 
 ## Known issues
+1. Due to a known bug in wxPython editor UI layouts currently cannot be saved in under Linux platforms.
+
 ## Roadmap
 **(For version 1.0)**
 1. Add system to save and reload project and individual scenes.
-2. Object manipulation Gizmos need overhauling.
-3. Add snapping support for gizmo tool.
+2. Building project to Panda3D executable.
+3. Object manipulation gizmos need overhauling.
+4. Add snapping support for gizmo tool.
 
 ## Getting started
 To get started, there are sample programs included with the default project, with each sample project there is an accompanying text file, detailing how to setup the sample program.
 
-*****
 ## Tutorials
-1. [Your first day at PandaEditor]()
 
-****
 

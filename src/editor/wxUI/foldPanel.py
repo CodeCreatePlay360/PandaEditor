@@ -1,5 +1,8 @@
+import sys
+import pathlib
 import wx
 import editor.edPreferences as edPreferences
+
 from editor.constants import ICONS_PATH
 
 Panel_Fold_size = 23.0
@@ -10,8 +13,8 @@ Label_offset_right_1 = 40  # label offset with toggle btn
 Toggle_btn_offset_right = 7
 Controls_offset_right = 18
 
-FOLD_OPEN_ICON = ICONS_PATH + "\\" + "foldOpen_16.png"
-FOLD_CLOSE_ICON = ICONS_PATH + "\\" + "foldClose_16.png"
+FOLD_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/foldOpen_16.png"))
+FOLD_CLOSE_ICON = str(pathlib.Path(ICONS_PATH + "/foldClose_16.png"))
 
 Debug_Mode = True  # debug mode add a small separation of 0.2 between two vertical adjacent controls
 
@@ -92,7 +95,11 @@ class FoldPanel(wx.Panel):
 
         # toggle button
         if toggle_btn:
-            self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.RIGHT, border=3)
+            if sys.platform == "linux":
+                self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.TOP, border=-2)
+                self.h_sizer.AddSpacer(4)
+            else:
+                self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.RIGHT, border=3)
         else:
             self.h_sizer.AddSpacer(2)
 
@@ -107,8 +114,8 @@ class FoldPanel(wx.Panel):
 
         # object bitmap
         if obj_bitmap_path:
-            img = wx.Image(obj_bitmap_path, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-            obj_bitmap = wx.StaticBitmap(self, -1, img, (0, 0))
+            bitmap = wx.Image(obj_bitmap_path, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+            obj_bitmap = wx.StaticBitmap(self, -1, bitmap, (0, 0))
             flags = obj_bitmap_args[0]
             border = obj_bitmap_args[1]
             self.h_sizer.Add(obj_bitmap, 0, flags, border=border)
@@ -119,7 +126,10 @@ class FoldPanel(wx.Panel):
         self.label_control.SetFont(self.font)
         self.label_control.SetForegroundColour(self.text_colour)
         # add label control to sizer
-        self.h_sizer.Add(self.label_control, 0, wx.EXPAND | wx.TOP, border=2)
+        border = 2
+        if sys.platform == "linux":
+            border = 1
+        self.h_sizer.Add(self.label_control, 0, wx.EXPAND | wx.TOP, border=border)
 
         if len(other_controls) > 0:
             self.h_sizer.AddStretchSpacer()
@@ -192,7 +202,11 @@ class FoldPanelManager(wx.Panel):
 
     def add_panel(self, name=""):
         panel = FoldPanel(self, name)
-        self.sizer.Add(panel, 0, wx.EXPAND)
+        if sys.platform == "linux":
+            border = 2 if len(self.panels) > 0 else 0
+            self.sizer.Add(panel, 0, wx.EXPAND | wx.TOP, border=border)
+        else:
+            self.sizer.Add(panel, 0, wx.EXPAND)
         self.panels.append(panel)
         return panel
 

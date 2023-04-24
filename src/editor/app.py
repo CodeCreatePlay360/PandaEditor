@@ -1,5 +1,5 @@
 import os.path
-
+import pathlib
 import editor.constants as constants
 import sys
 import wx
@@ -24,6 +24,8 @@ class MyApp(wxPanda.App):
 
     __current_ui_update_interval = 0
     __ui_update_delay = 1
+    __max_get_handle_attempts = 7
+    __current_get_handle_attempts = 0
 
     def init(self, path):
         constants.EDITOR_PATH = path
@@ -36,10 +38,13 @@ class MyApp(wxPanda.App):
         wx.CallLater(50, self.init_editor)
 
     def init_editor(self):
-        if self.wx_main.ed_viewport_panel.GetHandle() == 0:
+        if self.wx_main.ed_viewport_panel.GetHandle() == 0 and self.__current_get_handle_attempts < self.__max_get_handle_attempts:
             wx.CallLater(50, self.init_editor)
+            self.__max_get_handle_attempts += 1
             print("WARNING: Unable to get platform specific handle...!")
             return
+
+        self.__current_get_handle_attempts = 0
 
         self.show_base.finish_init()
         self.command_manager = CommandManager()
@@ -71,6 +76,15 @@ class MyApp(wxPanda.App):
         self.level_editor.register_user_modules(self.wx_main.resource_browser.tree.resources["py"])
         self.level_editor.register_text_files(editor.resource_browser.resources["txt"])
         self.wx_main.resource_browser.tree.schedule_dir_watcher()
+        self.wx_main.resource_browser.tree.collapse_all()
+
+        item_to_sel_path = os.path.join(constants.DEFAULT_PROJECT_PATH, "Samples/Basics_01")
+        item_to_sel_path = str(pathlib.Path(item_to_sel_path))
+        item_to_sel = self.wx_main.resource_browser.tree.get_item_by_path(item_to_sel_path)
+        self.wx_main.resource_browser.tree.SelectItem(item_to_sel)
+        self.wx_main.resource_browser.tree.Expand(item_to_sel)
+
+        self.wx_main.resource_browser.tree.Refresh()
 
     def wx_step(self, task=None):
         super(MyApp, self).wx_step(task)

@@ -8,13 +8,11 @@ import editor.commands as commands
 import editor.utils as ed_utils
 
 from datetime import date
-
 from panda3d.core import NodePath, PointLight, Spotlight, DirectionalLight, AmbientLight, get_model_path, \
     LVecBase3f, Material, LColor, Camera
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.Loader import Loader
 from direct.gui.OnscreenText import TextNode
-
 from editor.project import Project
 from editor.selection import Selection
 from editor.pluginManager import PluginsManager
@@ -386,7 +384,7 @@ class LevelEditor(DirectObject):
                 nps_ = nps if nps else self.__selection.selected_nps
                 for np in nps_:
                     # initialize
-                    cls_instance = ed_utils.try_execute_1(self.initialize_component, cls_name, cls, path, np)
+                    cls_instance = ed_utils.safe_execute(self.initialize_component, cls_name, cls, path, np, return_func_val=True)
                     # cls_instance = self.initialize_component(cls_name, cls, path, np)
                     if cls_instance is None:
                         continue
@@ -443,7 +441,7 @@ class LevelEditor(DirectObject):
 
         # add the plugin menu bar entries for remaining plugins
         for plugin in self.__ed_plugins.keys():
-            self.__app.p3d_app.wx_main.menu_bar.add_ed_plugin_menu(plugin.name)
+            self.__app.wx_main.menu_bar.add_ed_plugin_menu(plugin.name)
 
         # add the user commands menu bar entries for remaining plugins
         self.register_user_commands()
@@ -586,11 +584,9 @@ class LevelEditor(DirectObject):
     def create_grid(self, size, grid_step, sub_divisions):
         # grid_np = self.app.show_base.edRender.find("AxisGrid")
         if self.__grid_np:
-            self.__grid_np.clearPythonTag("AxisGridNP")
             self.__grid_np.remove_node()
 
         grid_np = ed_core.ThreeAxisGrid()
-        grid_np.setPythonTag(grid_np, "AxisGridNP")
         grid_np.create(size, grid_step, sub_divisions)
         grid_np.reparent_to(self.__app.show_base.edRender)
         grid_np.show(constants.ED_GEO_MASK)
@@ -1008,8 +1004,8 @@ class LevelEditor(DirectObject):
                 original_obj = np_.getPythonTag(constants.TAG_GAME_OBJECT)
                 if recreate:
                     # then wrap NodePath into editor NodePath object
-                    obj_type = NODE_TYPE_MAP[original_obj.id]
-                    if original_obj.id == constants.ACTOR_NODEPATH:
+                    obj_type = NODE_TYPE_MAP[original_obj.ed_id]
+                    if original_obj.ed_id == constants.ACTOR_NODEPATH:
                         # creating an instance of an Actor will create a new actor node in scene graph,
                         # so make sure to remove existing
                         new_obj = obj_type(path=original_obj.path, actor_other=original_obj,
@@ -1038,10 +1034,10 @@ class LevelEditor(DirectObject):
                     #
                     original_obj = new_obj
 
-                if original_obj.id in ["__PointLight__", "__DirectionalLight__", "__SpotLight__", "__AmbientLight__"]:
+                if original_obj.ed_id in ["__PointLight__", "__DirectionalLight__", "__SpotLight__", "__AmbientLight__"]:
                     if light_func:
                         light_func(original_obj)
-                elif original_obj.id == "__CameraNodePath__":
+                elif original_obj.ed_id == "__CameraNodePath__":
                     if cam_func:
                         cam_func(original_obj)
                 else:

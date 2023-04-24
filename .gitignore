@@ -140,3 +140,6 @@ Exclude/Basics_02/Basics.py
 Exclude/Basics_02/Readme.txt
 Exclude/Basics_02/smiley.egg.pz
 Exclude/Panda3D_BasicProgram/main.py
+Exclude/arrivals.xml
+Exclude/wx_guage.py
+Exclude/xmlParser.py

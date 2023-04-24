@@ -83,7 +83,7 @@ class Scene:
         def get_all_scene_lights(np):
             for np_ in np.getChildren():
                 obj = np_.getPythonTag("__GAME_OBJECT__")
-                if obj and obj.id in ["__PointLight__", "__SpotLight__", "__DirectionalLight__", "__AmbientLight__"]:
+                if obj and obj.ed_id in ["__PointLight__", "__SpotLight__", "__DirectionalLight__", "__AmbientLight__"]:
                     lights.append(obj)
 
                 get_all_scene_lights(np_)
@@ -95,16 +95,16 @@ class Scene:
         return self.__scene_lights
 
     @property
-    def cameras(self):
+    def scene_cameras(self):
         def get_all_scene_cameras(np):
             for np_ in np.getChildren():
                 obj = np_.getPythonTag("__GAME_OBJECT__")
-                if obj.id == "__CameraNodePath__":
-                    cameras.append(obj)
+                if obj.ed_id == "__CameraNodePath__":
+                    cameras_.append(obj)
 
                 get_all_scene_cameras(np_)
 
-        cameras = []
+        cameras_ = []
         get_all_scene_cameras(self.__render)
-        self.__scene_cameras = cameras
+        self.__scene_cameras = cameras_
         return self.__scene_cameras

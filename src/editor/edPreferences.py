@@ -10,9 +10,9 @@ class Colors:
     Text = (255, 255, 255, 255)
     Bold_Label = (240, 240, 240, 255)
 
-    Inspector_properties_label = (235, 235, 190, 0)
+    Inspector_properties_label = (235, 235, 190, 255)
 
-    Console_Text = (255, 255, 190, 0)
+    Console_Text = (255, 255, 190, 255)
 
     Image_Tile_BG = (80, 80, 80, 255)
     Image_Tile_Selected = wx.YELLOW

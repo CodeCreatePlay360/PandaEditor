@@ -62,7 +62,7 @@ class ButtonBase(wx.Window):
 
         if self.has_image:
             self.image = wx.Image(self.image_path, type=wx.BITMAP_TYPE_ANY)
-            self.image = self.image.Scale(self.image_scale, self.image_scale)
+            self.image = self.image.Scale(int(self.image_scale), int(self.image_scale))
             self.imageCtrl = wx.StaticBitmap(self, wx.ID_ANY, wx.Image.ConvertToBitmap(self.image))
 
             if not self.image_flags:

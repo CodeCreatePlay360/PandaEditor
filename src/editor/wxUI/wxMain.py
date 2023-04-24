@@ -1,5 +1,5 @@
+import pathlib
 import sys
-
 import wx
 import wx.aui
 import wx.lib.agw.aui as aui
@@ -10,12 +10,8 @@ from editor.wxUI.panels import *
 from editor.constants import ICONS_PATH
 from editor.globals import editor
 from editor.wxUI.custom import BasicButton
-
 from direct.showbase.ShowBase import taskMgr
 
-
-# resources
-REFRESH_ICON = ICONS_PATH + "/StatusBar/arrow_refresh.png"
 
 # scene events
 Evt_Open_Project = wx.NewId()
@@ -54,40 +50,44 @@ Event_Map = {
 }
 
 # resources
-ICON_FILE = ICONS_PATH + "/pandaIcon.ico"
+ICON_FILE = str(pathlib.Path(ICONS_PATH + "/pandaIcon.ico"))
 #
-NEW_SESSION_ICON = ICONS_PATH + "/fileNew_32.png"
-OPEN_ICON = ICONS_PATH + "/fileOpen_32.png"
-SAVE_SESSION_ICON = ICONS_PATH + "/fileSave_32.png"
-SAVE_SESSION_AS_ICON = ICONS_PATH + "/fileSaveAs_32.png"
+NEW_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/fileNew_32.png"))
+OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/fileOpen_32.png"))
+SAVE_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/fileSave_32.png"))
+SAVE_SESSION_AS_ICON = str(pathlib.Path(ICONS_PATH + "/fileSaveAs_32.png"))
 #
-PROJ_OPEN_ICON = ICONS_PATH + "/fileOpen_32.png"
-PROJ_SAVE_ICON = ICONS_PATH + "\\" + "fileOpen_32.png"
-IMPORT_LIBRARY_ICON = ICONS_PATH + "/importLib_32.png"
-IMPORT_PACKAGE_ICON = ICONS_PATH + "/add_package.png"
-OPEN_STORE_ICON = ICONS_PATH + "/shop_network.png"
+PROJ_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/fileOpen_32.png"))
+PROJ_SAVE_ICON = str(pathlib.Path(ICONS_PATH + "/fileOpen_32.png"))
+IMPORT_LIBRARY_ICON = str(pathlib.Path(ICONS_PATH + "/importLib_32.png"))
+IMPORT_PACKAGE_ICON = str(pathlib.Path(ICONS_PATH + "/add_package.png"))
+OPEN_STORE_ICON = str(pathlib.Path(ICONS_PATH + "/shop_network.png"))
 #
-ALL_LIGHTS_ON_ICON = ICONS_PATH + "/lightbulb_32x_on.png"
-ALL_LIGHTS_OFF_ICON = ICONS_PATH + "/lightbulb_32x_off.png"
-SOUND_ICON = ICONS_PATH + "/soundIcon.png"
-NO_SOUND_ICON = ICONS_PATH + "/noSoundIcon.png"
+ALL_LIGHTS_ON_ICON = str(pathlib.Path(ICONS_PATH + "/lightbulb_32x_on.png"))
+ALL_LIGHTS_OFF_ICON = str(pathlib.Path(ICONS_PATH + "/lightbulb_32x_off.png"))
+SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/soundIcon.png"))
+NO_SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/noSoundIcon.png"))
 #
-ED_REFRESH_ICON = ICONS_PATH + "/Refresh_Icon_32.png."
+ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/Refresh_Icon_32.png"))
 #
-ED_MODE_ICON = ICONS_PATH + "/game_mode.png."
-PLAY_ICON = ICONS_PATH + "/playIcon_32x.png"
-STOP_ICON = ICONS_PATH + "/stopIcon_32.png"
+ED_MODE_ICON = str(pathlib.Path(ICONS_PATH + "/game_mode.png"))
+PLAY_ICON = str(pathlib.Path(ICONS_PATH + "/playIcon_32x.png"))
+STOP_ICON = str(pathlib.Path(ICONS_PATH + "/stopIcon_32.png"))
 #
-DISABLED_ICON = ICONS_PATH + "/disabled_icon.png"
+DISABLED_ICON = str(pathlib.Path(ICONS_PATH + "/disabled_icon.png"))
 #
-SELECT_ICON = ICONS_PATH + "/hand_point_090.png"
+SELECT_ICON = str(pathlib.Path(ICONS_PATH + "/hand_point_090.png"))
 #
 # notebook page icons
-VIEWPORT_ICON = ICONS_PATH + "/Panel_Icons/image_16x.png"
-INSPECTOR_ICON = ICONS_PATH + "/Panel_Icons/gear_16x.png"
-CONSOLE_ICON = ICONS_PATH + "/Panel_Icons/monitor_16x.png"
-RESOURCE_BROWSER = ICONS_PATH + "/Panel_Icons/folder_16x.png"
-SCENE_GRAPH_ICON = ICONS_PATH + "/Panel_Icons/structure_16x.png"
+VIEWPORT_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/image_16x.png"))
+INSPECTOR_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/gear_16x.png"))
+CONSOLE_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/monitor_16x.png"))
+RESOURCE_BROWSER = str(pathlib.Path(ICONS_PATH + "/NP_Pages/folder_16x.png"))
+SCENE_GRAPH_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/structure_16x.png"))
+#
+# status bar
+REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/StatusBar/arrow_refresh.png"))
+
 
 # default layout for notebook tabs
 xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4|" \
@@ -117,6 +117,7 @@ class WxAUINotebook(wx.aui.AuiNotebook):
 
     def __init__(self, parent):
         wx.aui.AuiNotebook.__init__(self, parent=parent)
+        self.__parent = parent
         self.__active_pages = []  # keep track of all active pages
 
     def AddPage(self, page, caption, select=False):
@@ -133,6 +134,9 @@ class WxAUINotebook(wx.aui.AuiNotebook):
     def RemovePage(self, page_idx):
         self.__active_pages.remove(self.GetPageText(page_idx))
         super().RemovePage(page_idx)
+
+    def DoGetBestSize(self):
+        return wx.Size(self.__parent.GetSize().x, -1)
 
     def add_pages(self, pages):
         for page, name in pages:

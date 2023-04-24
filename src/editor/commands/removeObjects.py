@@ -13,7 +13,6 @@ class RemoveObjects(Command):
         for np in selected:
             self.saved.append((np, np.get_parent()))
 
-        # editor.observer.trigger("OnRemoveNPs", selected)
         editor.p3d_app.level_editor.remove_nps(selected)
         editor.inspector.layout_auto()
         self.selected_nps.clear()
@@ -22,7 +21,6 @@ class RemoveObjects(Command):
     def undo(self):
         nps = editor.level_editor.restore_nps(self.saved)
         editor.p3d_app.level_editor.set_selected(nps)
-        # editor.observer.trigger("OnAddNPs", nps)
 
     def clean(self, **kwargs):
         nps = []

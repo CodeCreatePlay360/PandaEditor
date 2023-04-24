@@ -10,7 +10,6 @@ from editor.globals import editor
 class ShowBase(sb.ShowBase):
     def __init__(self, ed_wx_win):
         sb.ShowBase.__init__(self)
-
         base.cTrav = None
 
         self.scene_win = ed_wx_win  # wx python window

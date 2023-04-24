@@ -1,15 +1,17 @@
 import sys
+import pathlib
 import wx
+import wx.richtext as richText
 import editor.edPreferences as edPreferences
 import editor.constants as constants
 from editor.wxUI.custom.controlGroup import BasicButton, ToggleButton
 
-Models_icon = constants.ICONS_PATH + "/3D-objects-icon.png"
-Textures_icon = constants.ICONS_PATH + "/images.png"
-Sounds_icon = constants.ICONS_PATH + "/music.png"
-Scripts_icon = constants.ICONS_PATH + "/script_code.png"
-
-Image_Clear = constants.ICONS_PATH + "/Console/trashBin.png"
+Models_icon = str(pathlib.Path(constants.ICONS_PATH + "/3D-objects-icon.png"))
+Textures_icon = str(pathlib.Path(constants.ICONS_PATH + "/images.png"))
+Sounds_icon = str(pathlib.Path(constants.ICONS_PATH + "/music.png"))
+Scripts_icon = str(pathlib.Path(constants.ICONS_PATH + "/script_code.png"))
+#
+Image_Clear = str(pathlib.Path(constants.ICONS_PATH + "/Console/trashBin.png"))
 
 
 class LogPanel(wx.Panel):
@@ -113,10 +115,11 @@ class LogPanel(wx.Panel):
         self.tool_bar = LogPanel.ToolBar(self)
 
         # build log text control
-        self.tc = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.NO_BORDER)
+        self.tc = richText.RichTextCtrl(self, style=wx.VSCROLL | wx.HSCROLL | wx.NO_BORDER)
         self.tc.SetWindowStyleFlag(wx.BORDER_NONE)
         self.tc.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        self.tc.SetForegroundColour(edPreferences.Colors.Console_Text)
+        # self.tc.SetForegroundColour(edPreferences.Colors.Console_Text)
+        self.tc.BeginTextColour(edPreferences.Colors.Console_Text)
 
         # redirect text here
         sys.stdout = self.RedirectText(sys.stdout, self.tc)
@@ -127,7 +130,7 @@ class LogPanel(wx.Panel):
         self.SetSizer(self.sizer)
 
         self.sizer.Add(self.tool_bar, 0, wx.EXPAND | wx.BOTTOM, border=2)
-        self.sizer.Add(self.tc, 1, wx.EXPAND)
+        self.sizer.Add(self.tc, 1, wx.EXPAND | wx.LEFT | wx.TOP, border=-3)
 
     def on_ed_reload(self):
         if self.clear_on_reload:

@@ -1,4 +1,4 @@
-import type_enforced.enforcer
+from thirdparty import type_enforced
 from panda3d.core import LVecBase2f, LVecBase3f, LPoint2f, LPoint3f, LColor, PerspectiveLens, OrthographicLens
 from editor.utils.exceptionHandler import try_execute, try_execute_1
 
