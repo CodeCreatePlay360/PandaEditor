@@ -63,7 +63,7 @@ class MyApp(wxPanda.App):
             game=self.level_editor.project.game,
             resource_browser=self.wx_main.resource_browser,
             scene_graph=self.wx_main.scene_graph_panel.scene_graph,
-            inspector_panel=self.wx_main.inspector_panel,
+            inspector=self.wx_main.inspector_panel,
             console=self.wx_main.console_panel,
         )
 

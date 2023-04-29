@@ -187,11 +187,24 @@ class PModBase(DirectObject):
         attrs = []
         for name, val in self.__dict__.items():
             if name == "_PModBase__active":
+                # this attribute should be saved otherwise active status would have to be manually set after
+                # every editor reload
                 pass
             elif self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name):
                 # print("discarded attr name: {0}".format(name))
                 continue
             # print("[{0}] Saved attribute name: {1} val: {2}".format(self.name, name, val))
+            attrs.append((name, val))
+
+        return attrs
+
+    def get_visible_attributes(self):
+        attrs = []
+        for name, val in self.__dict__.items():
+            if name[0] == "_" or self.__hidden_attributes.__contains__(name) or hasattr(PModBase("", None), name):
+                # print("attr hidden name: {0}".format(name))
+                continue
+            # print("[{0}] Visible attribute name: {1} val: {2}".format(self.name, name, val))
             attrs.append((name, val))
 
         return attrs
@@ -203,15 +216,8 @@ class PModBase(DirectObject):
 
     def get_properties(self):
         self.__properties = []
-        for name, value in self.get_savable_atts():
+        for name, value in self.get_visible_attributes():
 
-            # hidden variables should be ignored
-            if name in self.__hidden_attributes:
-                continue
-
-            # private variables should be ignored
-            if name[0] == "_":
-                continue
             try:
                 prop = ed_utils.EdProperty.ObjProperty(name=name, value=value, type_=type(value), obj=self)
                 self.__properties.append(prop)

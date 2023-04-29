@@ -1,6 +1,6 @@
-from thirdparty import type_enforced
 from panda3d.core import LVecBase2f, LVecBase3f, LPoint2f, LPoint3f, LColor, PerspectiveLens, OrthographicLens
-from editor.utils.exceptionHandler import try_execute, try_execute_1
+from thirdparty import type_enforced
+from editor.utils.exceptionHandler import safe_execute
 
 Supported_Types = [int, float, str, bool, LVecBase2f, LPoint2f, LVecBase3f, LPoint3f, LColor, None]
 Value_Limiter_Types = [int, float, LVecBase2f, LVecBase3f, type(None)]
@@ -77,11 +77,11 @@ class FuncProperty(Property):
         super().validate()
 
     def set_value(self, val, *args, **kwargs):
-        try_execute(self.setter, val, *args, **kwargs)
+        safe_execute(self.setter, val, *args, **kwargs)
 
     def get_value(self, *args, **kwargs):
         getter = self.getter
-        return try_execute_1(getter)
+        return safe_execute(getter, return_func_val=True)
 
 
 class EmptySpace(Property):
@@ -119,7 +119,7 @@ class ButtonProperty(Property):
         super().validate()
 
     def execute(self):
-        try_execute(self.func)
+        safe_execute(self.func)
 
 
 class ChoiceProperty(FuncProperty):
@@ -156,6 +156,13 @@ class Slider(FuncProperty):
 
     def validate(self):
         super().validate()
+
+# ------------------------------------------------------------------------------------------------
+# TODO: HorizontalLayoutGroup, FoldoutGroup, StaticBox should have one base class since code is same for
+#  all 3 of them
+
+# TODO rename HorizontalLayoutGroup to HorizontalGroup and rename FoldoutGroup to VerticalGroup & make
+#  sure to reflect changes in Property_And_Type in wxCustomProperties
 
 
 class HorizontalLayoutGroup(Property):
@@ -204,9 +211,32 @@ class FoldoutGroup(Property):
         super().validate()
 
 
+class StaticBox(Property):
+    @type_enforced.Enforcer
+    def __init__(self, name="LogicalGroup", properties: list = None, *args, **kwargs):
+        super().__init__(name=name, value=None, type_="static_box", *args, **kwargs)
+        if properties is None:
+            properties = []
+        self.properties = properties
+
+    def validate(self):
+        props = []
+        for prop in self.properties:
+            if isinstance(prop, Property):
+                props.append(prop)
+
+        self.properties.clear()
+        for prop in props:
+            prop.validate()
+            if prop.is_valid:
+                self.properties.append(prop)
+
+        super().validate()
+
+
 class Utils:
     @staticmethod
-    def get_properties_for_lens(lens):
+    def get_lens_properties(lens):
         if isinstance(lens, PerspectiveLens):
             near_far = FuncProperty(name="Near-Far",
                                     value=LVecBase2f(lens.get_near(), lens.get_far()),

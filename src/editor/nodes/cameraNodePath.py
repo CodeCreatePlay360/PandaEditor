@@ -33,7 +33,7 @@ class CameraNodePath(BaseNodePath):
         self.properties.append(lens_type)
 
         lens = self.node().getLens()
-        properties = EdProperty.Utils.get_properties_for_lens(lens)
+        properties = EdProperty.Utils.get_lens_properties(lens)
         self.properties.extend(properties)
 
     def set_lens(self, lens_type: int):

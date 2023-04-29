@@ -32,7 +32,7 @@ class Editor:
              game,
              resource_browser,
              scene_graph,
-             inspector_panel,
+             inspector,
              console):
 
         self.__observer = observer
@@ -44,7 +44,7 @@ class Editor:
 
         self.__resource_browser = resource_browser.tree
         self.__scene_graph = scene_graph
-        self.__inspector = inspector_panel
+        self.__inspector = inspector
         self.__console = console
 
     @property

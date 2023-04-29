@@ -159,7 +159,7 @@ class EdSpotLight(LightNp):
 
         lens = self.node().getLens()
         lens.setNearFar(0.5, 5)
-        lens_props = ed_utils.EdProperty.Utils.get_properties_for_lens(lens)
+        lens_props = ed_utils.EdProperty.Utils.get_lens_properties(lens)
 
         self.properties.append(attenuation)
         self.properties.append(space)

@@ -36,7 +36,7 @@ class Basics(RuntimeModule):
         self.add_property(EdProperty.Label(name="Custom Properties", is_bold=True))
 
         # button property
-        self.add_property(EdProperty.ButtonProperty(name="ButtonProperty", func=self.on_button))
+        self.add_property(EdProperty.ButtonProperty(name="Button Property", func=self.on_button))
 
         # slider property
         self.add_property(EdProperty.Slider(name="Slider",
@@ -71,6 +71,15 @@ class Basics(RuntimeModule):
         horizontal_layout_group = EdProperty.HorizontalLayoutGroup(name="HLayoutGroup", properties=properties)
         self.add_property(horizontal_layout_group)
 
+        # --------------------------------
+        properties = [EdProperty.Label(name="HorizontalGroup: ", is_bold=True),
+                      EdProperty.ObjProperty(name="vector2", value=self.vector2, obj=self),
+                      EdProperty.ObjProperty(name="toggle", value=self.toggle, obj=self)]
+
+        # a static box container to group together logically similar attributes
+        static_box = EdProperty.StaticBox(name="Properties-Group", properties=properties)
+        self.add_property(static_box)
+
         # --------------------------------------
         # vertical layout group or foldout group
         self.__integer = 45
@@ -87,7 +96,7 @@ class Basics(RuntimeModule):
         # CUSTOMIZATION ----------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------------
         # to stop public attributes from displaying in inspector add them to list of hidden attributes
-        self.hidden_attrs = "toggle"
+        # self.hidden_attrs = "toggle"
 
         # ------------------------------------------------------------------------------------------------
         # to stop attributes from being saved during editor reload, add them to list of

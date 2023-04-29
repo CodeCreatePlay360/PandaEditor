@@ -1,6 +1,5 @@
 from editor.utils import EdProperty
 from panda3d.core import LColor
-from editor.globals import editor
 
 
 class EditorSettings:
@@ -26,30 +25,46 @@ class EditorSettings:
         self.hidden_attrs = "sub_divisions"
         self.hidden_attrs = "bg_color"
 
-        self.properties.append(EdProperty.Label(name="AxisGrid", is_bold=True))
-        self.properties.append(EdProperty.FuncProperty("show_grid", self.show_grid, self.toggle_grid_visible,
-                                                       lambda: self.show_grid))
-        self.properties.append(EdProperty.ObjProperty(name="grid_size", value=self.grid_size, obj=self))
-        self.properties.append(EdProperty.ObjProperty(name="gridStep", value=self.gridStep, obj=self))
-        self.properties.append(EdProperty.ObjProperty(name="sub_divisions", value=self.sub_divisions, obj=self))
-        self.properties.append(EdProperty.ButtonProperty("Update Grid", self.set_grid))
+        # ----------------------------------------------------------------------------------------------------
+        grid_settings = [EdProperty.FuncProperty("show", self.show_grid, self.toggle_grid_visible,
+                                                 lambda: self.show_grid),
+                         EdProperty.ObjProperty(name="grid_size", value=self.grid_size, obj=self),
+                         EdProperty.ObjProperty(name="gridStep", value=self.gridStep, obj=self),
+                         EdProperty.ObjProperty(name="sub_divisions", value=self.sub_divisions, obj=self),
+                         EdProperty.ButtonProperty("Update Grid", self.set_grid)]
+
+        static_box_1 = EdProperty.StaticBox(name="Grid Settings", properties=grid_settings)
+
+        self.properties.append(static_box_1)
+
+        # ----------------------------------------------------------------------------------------------------
+        editor_settings = [EdProperty.ObjProperty("auto_reload", self.auto_reload, self)]
+        static_box_2 = EdProperty.StaticBox(name="Editor Settings", properties=editor_settings)
 
         self.properties.append(EdProperty.EmptySpace(0, 5))
-        self.properties.append(EdProperty.Label(name="Resources", is_bold=True))
-        self.properties.append(EdProperty.ObjProperty("auto_reload", self.auto_reload, self))
+        self.properties.append(static_box_2)
 
-        self.properties.append(EdProperty.EmptySpace(0, 5))
-        self.properties.append(EdProperty.Label(name="Viewport", is_bold=True))
-        self.properties.append(EdProperty.Label(name="Camera", is_bold=False))
-
-        for prop in EdProperty.Utils.get_properties_for_lens(
+        # ----------------------------------------------------------------------------------------------------
+        camera_settings = []
+        for prop in EdProperty.Utils.get_lens_properties(
                 self.level_editor.app.show_base.ed_camera.node().get_lens()):
-            self.properties.append(prop)
+            camera_settings.append(prop)
 
-        self.properties.append(EdProperty.Label(name="DisplayRegion", is_bold=False))
-        bg_color = EdProperty.FuncProperty(name="SceneBackgroundColor", value=self.bg_color, setter=self.set_bg_color,
-                                           getter=lambda: self.bg_color)
-        self.properties.append(bg_color)
+        static_box_3 = EdProperty.StaticBox(name="Camera Settings", properties=camera_settings)
+
+        self.properties.append(EdProperty.EmptySpace(0, 5))
+        self.properties.append(static_box_3)
+
+        # ----------------------------------------------------------------------------------------------------
+        viewport_settings = [EdProperty.FuncProperty(name="SceneBackgroundColor", value=self.bg_color,
+                                                     setter=self.set_bg_color, getter=lambda: self.bg_color)]
+        self.properties.append(EdProperty.EmptySpace(0, 5))
+        self.properties.append(static_box_3)
+
+        static_box_4 = EdProperty.StaticBox(name="Viewport Settings", properties=viewport_settings)
+
+        self.properties.append(EdProperty.EmptySpace(0, 5))
+        self.properties.append(static_box_4)
 
     def toggle_grid_visible(self, val):
         self.show_grid = not self.show_grid

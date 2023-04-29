@@ -273,6 +273,8 @@ class BaseInspectorPanel(wx.Panel):
         self.main_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=1)
         self.main_sizer.Add(self.fold_manager_panel, 1, wx.EXPAND)
 
+        # self.should_update = True
+
     def select_inspector(self, idx):
         self.inspector_type_sel_panel.buttons_list[idx].on_click()
 
@@ -595,9 +597,16 @@ class BaseInspectorPanel(wx.Panel):
             # trigger upon input from user so unbind it first
             wx_prop.unbind_events()
 
-            # update the control
-            if not wx_prop.has_focus():
-                wx_prop.set_control_value(wx_prop.ed_property.get_value())
+            if wx_prop.ed_property.type_ in ["horizontal_layout_group", "foldout_group", "static_box"]:
+                for wx_prop_ in wx_prop.properties:
+                    if not wx_prop_.has_focus():
+                        wx_prop_.unbind_events()
+                        wx_prop_.set_control_value(wx_prop_.ed_property.get_value())
+                        wx_prop_.bind_events()
+            else:
+                # update the control
+                if not wx_prop.has_focus():
+                    wx_prop.set_control_value(wx_prop.ed_property.get_value())
 
             # and bind events again
             wx_prop.bind_events()
@@ -622,8 +631,9 @@ class BaseInspectorPanel(wx.Panel):
                 wx_property = Property_And_Type[ed_property.type_]
                 wx_property = wx_property(parent, ed_property)
 
-                if wx_property.ed_property.type_ == "horizontal_layout_group" or wx_property.ed_property.type_ == \
-                        "foldout_group":
+                if wx_property.ed_property.type_ == "horizontal_layout_group" or\
+                        wx_property.ed_property.type_ == "foldout_group" or\
+                        wx_property.ed_property.type_ == "static_box":
                     wx_properties = self.create_wx_properties(wx_property.ed_property.properties, wx_property, False)
                     # wx_property.properties = wx_properties
                     wx_property.set_properties(wx_properties)

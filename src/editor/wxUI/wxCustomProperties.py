@@ -59,7 +59,8 @@ class WxCustomProperty(wx.Window):
 
         # create fonts
         self.__ed_property_font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        self.__control_label_font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.__control_label_font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL,
+                                            wx.FONTWEIGHT_BOLD)
         # ------------------------------------------------------------------------------
 
         self.__ed_property_label = wx.StaticText(self, label=self.ed_property.name.capitalize())
@@ -95,13 +96,18 @@ class WxCustomProperty(wx.Window):
     def get_type(self):
         return self.ed_property.get_type()
 
+    def set_parent(self, parent):
+        self.__parent = parent
+
     def set_control_value(self, val):
         pass
 
     def set_value(self, val):
         # self.value = val
+        # editor.inspector.should_update = False
         property_value = self.ed_property.set_value(val)
         editor.observer.trigger("PropertyModified", self)
+        # editor.inspector.should_update = True
         return property_value
 
     def has_focus(self):
@@ -186,7 +192,7 @@ class IntProperty(WxCustomProperty):
         super().__init__(parent, prop, *args, **kwargs)
 
         self.__text_ctrl = None
-        self.__current_value = None
+        self.__current_value = self.get_value()
         self.__old_value = None  # last value of text control before updating
 
     def on_event_text(self, evt):
@@ -241,7 +247,7 @@ class FloatProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
         self.__text_ctrl = None
-        self.__current_value = None
+        self.__current_value = self.get_value()
         self.__old_value = None  # last value of text control before updating
 
     def on_event_text(self, evt):
@@ -301,7 +307,7 @@ class StringProperty(WxCustomProperty):
     def __init__(self, parent, prop, *args, **kwargs):
         super().__init__(parent, prop, *args, **kwargs)
         self.__text_ctrl = None
-        self.__current_value = None
+        self.__current_value = self.get_value()
 
     def on_event_text(self, evt):
         self.__current_value = self.__text_ctrl.GetValue()
@@ -508,7 +514,7 @@ class Vector2Property(WxCustomProperty):
         self.__text_ctrl_x = None
         self.__text_ctrl_y = None
 
-        self.__current_value = None
+        self.__current_value = self.get_value()
         self.__old_value = None  # last value of text control before updating
 
     def on_event_text(self, evt):
@@ -627,7 +633,7 @@ class Vector3Property(WxCustomProperty):
         self.__text_ctrl_z = None
 
         self.__old_value = None
-        self.__current_value = None
+        self.__current_value = self.get_value()
 
     def on_event_text(self, evt):
         # validate h
@@ -872,6 +878,10 @@ class ButtonProperty(WxCustomProperty):
 
         self.__btn = wx.Button(self, label=self.ed_property.name)
         self.__btn.SetBackgroundColour(edPreferences.Colors.Panel_Light)
+
+        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.__btn.SetFont(font)
+
         self.__btn.SetMaxSize((-1, self.GetSize().y))
         self.sizer.Add(self.__btn, 1)
         self.bind_events()
@@ -910,9 +920,12 @@ class HorizontalLayoutGroup(WxCustomProperty):
             else:
                 pass
 
+    @property
+    def properties(self):
+        return self.__properties
+
 
 class FoldoutGroup(WxCustomProperty):
-
     FOLD_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/foldOpen_16.png"))
     FOLD_CLOSE_ICON = str(pathlib.Path(ICONS_PATH + "/foldClose_16.png"))
 
@@ -1018,6 +1031,43 @@ class FoldoutGroup(WxCustomProperty):
         return self.__properties
 
 
+class StaticBox(WxCustomProperty):
+    def __init__(self, parent, property_, *args, **kwargs):
+        super().__init__(parent, property_)
+
+        self.sizer.Clear(True)  # delete default sizer
+        self.__sz = None
+        self.__properties = []
+
+        self.SetSize(wx.Size(-1, -1))
+        self.SetMaxSize(wx.Size(-1, -1))
+        self.SetMinSize(wx.Size(-1, -1))
+
+    def add_properties(self):
+        for prop in self.__properties:
+            prop.Show()
+            prop.set_parent(self.__sz.GetStaticBox())
+            self.__sz.Add(prop, 1, wx.EXPAND)
+
+    def create_control(self):
+        super(StaticBox, self).create_control()
+        self.__sz = wx.StaticBoxSizer(wx.VERTICAL, self, self.ed_property.name)
+
+        font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.__sz.GetStaticBox().SetFont(font)
+        self.__sz.GetStaticBox().SetForegroundColour(wx.Colour(255, 220, 145, 255))
+
+        self.add_properties()
+        self.SetSizer(self.__sz)
+
+    def set_properties(self, properties):
+        self.__properties = properties
+
+    @property
+    def properties(self):
+        return self.__properties
+
+
 class InfoBox(WxCustomProperty):
     def __init__(self, parent, _property, *args, **kwargs):
         super().__init__(parent, _property, *args, **kwargs)
@@ -1052,4 +1102,5 @@ Property_And_Type = {
 
     "horizontal_layout_group": HorizontalLayoutGroup,
     "foldout_group": FoldoutGroup,
+    "static_box": StaticBox,
 }
