@@ -295,12 +295,12 @@ def switch_ed_state(state=None):
     # change graphics
     if le.ed_state == 1:
         wx_main.ply_btn.SetBitmap(wx_main.stop_icon)
-        wx_main.playctrls_tb.ToggleTool(wx_main.ply_btn.GetId(), True)
+        wx_main.file_menu_tb.ToggleTool(wx_main.ply_btn.GetId(), True)
     elif le.ed_state == 0:
         wx_main.ply_btn.SetBitmap(wx_main.play_icon)
-        wx_main.playctrls_tb.ToggleTool(wx_main.ply_btn.GetId(), False)
+        wx_main.file_menu_tb.ToggleTool(wx_main.ply_btn.GetId(), False)
 
-    wx_main.playctrls_tb.Realize()
+    wx_main.file_menu_tb.Realize()
 
 
 @obs.on("OnEnableEditorState")
@@ -325,12 +325,12 @@ def toggle_lights(value=None):
     # change graphics
     if current_status:
         wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_on_icon)
-        wx_main.scene_ctrls_tb.ToggleTool(wx_main.lights_toggle_btn.GetId(), True)
+        wx_main.file_menu_tb.ToggleTool(wx_main.lights_toggle_btn.GetId(), True)
     elif not current_status:
         wx_main.lights_toggle_btn.SetBitmap(wx_main.lights_off_icon)
-        wx_main.scene_ctrls_tb.ToggleTool(wx_main.lights_toggle_btn.GetId(), False)
+        wx_main.file_menu_tb.ToggleTool(wx_main.lights_toggle_btn.GetId(), False)
 
-    wx_main.scene_ctrls_tb.Refresh()
+    wx_main.file_menu_tb.Refresh()
 
 
 @obs.on("PluginFailed")
@@ -405,8 +405,6 @@ def on_resource_tile_selected(file_path):
     scene_graph = editor.scene_graph
     inspector = editor.inspector
 
-    wx_main.freeze()
-
     # deselect all node-paths
     # ** do not trigger "OnDeselectAllNPs" event, otherwise it
     # will cause the inspector layout event **
@@ -420,9 +418,7 @@ def on_resource_tile_selected(file_path):
         on_txt_file_selected(le.get_text_file(file_path))
 
     else:
-        inspector.set_text("There is no inspector for this item.")
-
-    wx_main.thaw()
+        inspector.set_text("No inspector defined for this item.")
 
 
 @obs.on("OnSelUserCommandMenuEntry")

@@ -2,10 +2,10 @@ import wx
 import editor.edPreferences as edPreferences
 
 
-Selection_btn_color_normal = wx.Colour(127, 127, 127, 255)
-Selection_btn_color_pressed = wx.Colour(155, 155, 155, 255)
-Selection_btn_color_pressed_dark = wx.Colour(110, 110, 110, 255)
-Selection_btn_color_hover = wx.Colour(145, 145, 145, 255)
+Selection_btn_color_normal = wx.Colour(110, 110, 110, 255)
+Selection_btn_color_pressed = wx.Colour(125, 125, 125, 255)
+Selection_btn_color_pressed_dark = wx.Colour(100, 100, 100, 255)
+Selection_btn_color_hover = wx.Colour(130, 130, 130, 255)
 
 # button types
 __BasicButton__ = 0
@@ -19,8 +19,9 @@ class ButtonBase(wx.Window):
                  btn_index,
                  label_text,
                  start_offset=0,
+                 font_scale=7,
                  text_pos=(22, 2), text_flags=None, text_border=None,
-                 image_path=None, image_pos=(3, 2), image_scale=14.0, image_flags=None, image_border=None,
+                 image_path=None, image_scale=14.0, image_flags=None, image_border=None,
                  image_to_text_space=0,
                  select_func=None, deselect_func=None,
                  bg_color=Selection_btn_color_normal,
@@ -37,7 +38,6 @@ class ButtonBase(wx.Window):
         self.parent = parent
 
         self.button_index = btn_index
-        self.image_position = image_pos
         self.image_scale = image_scale
         self.image_path = image_path
         self.has_image = self.image_path is not None
@@ -82,9 +82,9 @@ class ButtonBase(wx.Window):
 
         if self.label_text is not None:
             self.text_ctrl = wx.StaticText(self, label=self.label_text)
-            self.text_ctrl_font = wx.Font(8, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+            self.text_ctrl_font = wx.Font(font_scale, wx.DEFAULT, wx.NORMAL, wx.BOLD)
             self.text_ctrl.SetFont(self.text_ctrl_font)
-            self.text_ctrl.SetForegroundColour(edPreferences.Colors.Bold_Label)\
+            self.text_ctrl.SetForegroundColour(edPreferences.Colors.Bold_Label)
 
             if not self.text_flags:
                 text_flags = wx.EXPAND
@@ -192,7 +192,7 @@ class ToggleButton(ButtonBase):
         self.button_type = __ToggleButton__
 
         self.selected_color = kwargs.pop("selected_color", Selection_btn_color_pressed)
-        self.deselected_color = kwargs.pop("deselected_color", Selection_btn_color_normal)
+        self.deselected_color = kwargs.pop("deselected_color", self.background_color)
 
         self.SetBackgroundColour(self.deselected_color)
 

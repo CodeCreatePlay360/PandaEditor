@@ -225,7 +225,6 @@ class ImageTile(wx.Panel):
         self.Refresh()
 
         editor.observer.trigger("OnResourceTileSelected", self.path)
-
         if evt:
             evt.Skip()
 
@@ -312,68 +311,91 @@ class ImageTilesPanel(ScrolledPanel):
             self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
             self.parent = parent
 
+            # -------------------------------------------------------------------------------------------------
             self.main_sizer = wx.BoxSizer(wx.VERTICAL)  # the main sizer
             self.SetSizer(self.main_sizer)  # set sizer
 
-            self.nested_h_sizer = wx.BoxSizer(wx.HORIZONTAL)  # nested h sizer for search control and buttons
-            self.main_sizer.Add(self.nested_h_sizer, 1, wx.EXPAND)  # add it to main sizer
+            static_line = wx.Panel(self)
+            static_line.SetMaxSize(wx.Size(-1, 3))
+            static_line.SetBackgroundColour(wx.Colour(80, 80, 80, 255))
+            self.main_sizer.Add(static_line, 0, wx.EXPAND)
 
-            self.search_control = SearchBox(self)  # search box control
-            self.search_control.SetMinSize((200, -1))
+            self.nested_h_sizer = wx.BoxSizer(wx.HORIZONTAL)  # nested h sizer for search control and buttons
+            self.main_sizer.Add(self.nested_h_sizer, 0, wx.EXPAND)  # add it to main sizer
+
+            # -------------------------------------------------------------------------------------------------
+            # search box control
+            self.search_control = SearchBox(self)
+            self.search_control.SetMinSize(wx.Size(200, -1))
+            self.search_control.SetMaxSize(wx.Size(-1, 14))
 
             # filter buttons
             self.filter_buttons = []
 
-            models_filter_btn = SelectionButton(self, 0,
+            models_filter_btn = SelectionButton(self,
+                                                0,
                                                 "Models",
                                                 start_offset=2,
-                                                text_flags=wx.EXPAND | wx.TOP, text_border=2,
+                                                text_flags=wx.EXPAND | wx.TOP, text_border=1,
                                                 image_to_text_space=5,
-                                                image_path=Model_icon)
+                                                image_path=Model_icon, image_scale=12)
 
-            texture_filter_btn = SelectionButton(self, 1, "Textures",
+            texture_filter_btn = SelectionButton(self,
+                                                 1,
+                                                 "Textures",
                                                  start_offset=2,
-                                                 text_flags=wx.EXPAND | wx.TOP, text_border=2,
+                                                 text_flags=wx.EXPAND | wx.TOP, text_border=1,
                                                  image_to_text_space=5,
-                                                 image_path=Texture_icon,
-                                                 image_scale=13)
+                                                 image_path=Texture_icon, image_scale=12)
 
-            sounds_filter_btn = SelectionButton(self, 2, "Sounds",
+            sounds_filter_btn = SelectionButton(self,
+                                                2,
+                                                "Sounds",
                                                 start_offset=2,
-                                                text_flags=wx.EXPAND | wx.TOP, text_border=2,
+                                                text_flags=wx.EXPAND | wx.TOP, text_border=1,
                                                 image_to_text_space=5,
-                                                image_path=Sound_icon)
+                                                image_path=Sound_icon, image_scale=12)
 
-            scripts_filter_btn = SelectionButton(self, 3, "Scripts",
+            scripts_filter_btn = SelectionButton(self,
+                                                 3,
+                                                 "Scripts",
                                                  start_offset=2,
-                                                 text_flags=wx.EXPAND | wx.TOP, text_border=2,
+                                                 text_flags=wx.EXPAND | wx.TOP, text_border=1,
                                                  image_to_text_space=5,
-                                                 image_path=Script_icon)
+                                                 image_path=Script_icon, image_scale=12)
 
             self.filter_buttons = [models_filter_btn, texture_filter_btn, sounds_filter_btn, scripts_filter_btn]
+
             for btn in self.filter_buttons:
-                btn.SetMinSize((85, -1))
+                btn.SetMinSize(wx.Size(85, -1))
+                btn.SetMaxSize(wx.Size(-1, 14))
+
+            # static line for separation
+            static_line = wx.Panel(self)
+            static_line.SetMaxSize(wx.Size(-1, 3))
+            static_line.SetBackgroundColour(wx.Colour(80, 80, 80, 255))
 
             # static text panel to display selected item path info
             self.sel_item_label_panel = wx.Panel(self)
-            self.sel_item_label_panel.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+            self.sel_item_label_panel.SetBackgroundColour(wx.Colour(110, 110, 110, 255))
             sizer = wx.BoxSizer(wx.HORIZONTAL)
             self.sel_item_label_panel.SetSizer(sizer)
-            #
+
             self.sel_item_label_ctrl = wx.StaticText(self.sel_item_label_panel, label="")
             self.sel_item_label_ctrl.SetForegroundColour(edPreferences.Colors.Panel_Light)
-            self.sel_item_label_ctrl.SetFont(wx.Font(8, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD))
-            sizer.Add(self.sel_item_label_ctrl, 1, wx.EXPAND | wx.TOP | wx.LEFT, border=2)
-            # -------------------------------------------------------------
+            self.sel_item_label_ctrl.SetFont(wx.Font(7, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD))
+            sizer.Add(self.sel_item_label_ctrl, 1, wx.EXPAND | wx.LEFT, border=2)
 
+            # -------------------------------------------------------------------------------------------------
             self.nested_h_sizer.Add(self.search_control, 1, wx.EXPAND | wx.RIGHT, border=1)
-            #
-            self.nested_h_sizer.Add(models_filter_btn, 0, wx.EXPAND | wx.RIGHT, 1)
-            self.nested_h_sizer.Add(texture_filter_btn, 0, wx.EXPAND | wx.RIGHT, 1)
-            self.nested_h_sizer.Add(sounds_filter_btn, 0, wx.EXPAND | wx.RIGHT, 1)
-            self.nested_h_sizer.Add(scripts_filter_btn, 0, wx.EXPAND | wx.RIGHT, 1)
-            #
-            self.main_sizer.Add(self.sel_item_label_panel, 1, wx.EXPAND | wx.TOP, border=1)
+
+            self.nested_h_sizer.Add(models_filter_btn, 1, wx.EXPAND | wx.RIGHT, 1)
+            self.nested_h_sizer.Add(texture_filter_btn, 1, wx.EXPAND | wx.RIGHT, 1)
+            self.nested_h_sizer.Add(sounds_filter_btn, 1, wx.EXPAND | wx.RIGHT, 1)
+            self.nested_h_sizer.Add(scripts_filter_btn, 1, wx.EXPAND | wx.RIGHT, 1)
+
+            self.main_sizer.Add(static_line, 0, wx.EXPAND)
+            self.main_sizer.Add(self.sel_item_label_panel, 0, wx.EXPAND | wx.TOP, 0)
 
         def on_filter_btn_pressed(self, btn_index):
             pass
@@ -391,7 +413,6 @@ class ImageTilesPanel(ScrolledPanel):
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
 
         self.__tool_bar = self.ToolBar(parent)
-        self.__tool_bar.SetMaxSize((-1, 36))
 
         self.__parent = parent
         self.__tiles = []
@@ -454,8 +475,8 @@ class ImageTilesPanel(ScrolledPanel):
         tile.Hide()
 
     def set_from_selections(self, selections):
+        self.Freeze()
         self.remove_all_tiles()
-
         selections_organized = {}
         for key in self.supported_extensions_to_icons_map:
             selections_organized[key] = []
@@ -500,12 +521,11 @@ class ImageTilesPanel(ScrolledPanel):
                 self.create_tile(_item[0], _item[1], _item[2], _item[3])
 
         self.update_tiles()
+        self.Thaw()
 
     def select_tiles(self, tiles, select=True):
         if len(tiles) > 0:
-
             self.deselect_all()
-
             for i in range(len(tiles)):
                 if tiles[i] in self.__tiles:
                     if select:
@@ -516,9 +536,7 @@ class ImageTilesPanel(ScrolledPanel):
 
     def select_tiles_from_paths(self, paths, select=True):
         if len(paths) > 0:
-
             self.deselect_all()
-
             for i in range(len(paths)):
                 if not os.path.exists(paths[i]):
                     continue

@@ -34,13 +34,12 @@ class EditorSettings:
                          EdProperty.ButtonProperty("Update Grid", self.set_grid)]
 
         static_box_1 = EdProperty.StaticBox(name="Grid Settings", properties=grid_settings)
-
         self.properties.append(static_box_1)
 
         # ----------------------------------------------------------------------------------------------------
         editor_settings = [EdProperty.ObjProperty("auto_reload", self.auto_reload, self)]
-        static_box_2 = EdProperty.StaticBox(name="Editor Settings", properties=editor_settings)
 
+        static_box_2 = EdProperty.StaticBox(name="Editor Settings", properties=editor_settings)
         self.properties.append(EdProperty.EmptySpace(0, 5))
         self.properties.append(static_box_2)
 
@@ -51,18 +50,14 @@ class EditorSettings:
             camera_settings.append(prop)
 
         static_box_3 = EdProperty.StaticBox(name="Camera Settings", properties=camera_settings)
-
         self.properties.append(EdProperty.EmptySpace(0, 5))
         self.properties.append(static_box_3)
 
         # ----------------------------------------------------------------------------------------------------
         viewport_settings = [EdProperty.FuncProperty(name="SceneBackgroundColor", value=self.bg_color,
                                                      setter=self.set_bg_color, getter=lambda: self.bg_color)]
-        self.properties.append(EdProperty.EmptySpace(0, 5))
-        self.properties.append(static_box_3)
 
         static_box_4 = EdProperty.StaticBox(name="Viewport Settings", properties=viewport_settings)
-
         self.properties.append(EdProperty.EmptySpace(0, 5))
         self.properties.append(static_box_4)
 

@@ -20,7 +20,6 @@ OBJECT_ICON = str(pathlib.Path(constants.ICONS_PATH + "/SceneGraph/cube.png"))
 class SceneBrowserPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
-        # self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
         self.wx_main = args[0]
 
@@ -42,13 +41,12 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
     def __init__(self, parent, wx_main, *args, **kwargs):
         customtree.CustomTreeCtrl.__init__(self, parent, *args, **kwargs)
+        self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
         self.wx_main = wx_main
         self.parent = parent
         self.organize_tree = True  # organize a tree based on file_extensions
 
         # ---------------------------------------------------------------------------- #
-        self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
-
         win_styles = wx.TR_TWIST_BUTTONS | wx.TR_LINES_AT_ROOT | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
         self.SetAGWWindowStyleFlag(win_styles)
         self.SetWindowStyleFlag(win_styles)

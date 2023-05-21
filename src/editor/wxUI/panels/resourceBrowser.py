@@ -109,7 +109,11 @@ class ResourceTiles(wx.Panel):
         self.SetSizer(self.sizer)
 
         self.tiles_panel = ImageTilesPanel(self)
-        static_line = wx.StaticLine(self)
+
+        static_line = wx.Panel(self)
+        static_line.SetMaxSize(wx.Size(-1, 3))
+        static_line.SetBackgroundColour(wx.Colour(60, 60, 60, 255))
+
         self.sizer.Add(self.tiles_panel.tool_bar, 0, wx.EXPAND)
         self.sizer.Add(static_line, 0, wx.EXPAND)
         self.sizer.Add(self.tiles_panel, 1, wx.EXPAND)
@@ -617,7 +621,6 @@ class ResourceTree(customtree.CustomTreeCtrl):
         if type(selection) is list:
             for item in selection:
                 self.SelectItem(item)
-                print(item)
         else:
             self.SelectItem(selection)
 

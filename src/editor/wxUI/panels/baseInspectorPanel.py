@@ -7,9 +7,9 @@ import editor.edPreferences as edPreferences
 import editor.constants as constants
 import editor.wxUI.custom as wx_custom
 
+from wx.lib.scrolledpanel import ScrolledPanel
 from editor.core import PModBase
 from editor.utils import EdProperty as edProperty
-from wx.lib.scrolledpanel import ScrolledPanel
 from editor.wxUI.foldPanel import FoldPanelManager
 from editor.wxUI.wxCustomProperties import Property_And_Type
 from editor.globals import editor
@@ -44,20 +44,20 @@ ED_INSPECTOR_ID = 2
 PLUGIN_INSPECTOR_ID = 3
 
 # map_ = object_type: (bitmap_path, flags(for box sizer), border(for box sizer))
-OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
-                     constants.RuntimeModule: (Script_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
-                     constants.EditorPlugin: (Plugin_icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
+OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, wx.EXPAND | wx.TOP, 2 if sys.platform == "linux" else 2),
+                     constants.RuntimeModule: (Script_Icon, wx.EXPAND | wx.TOP, 2 if sys.platform == "linux" else 2),
+                     constants.EditorPlugin: (Plugin_icon, wx.EXPAND | wx.TOP, 2 if sys.platform == "linux" else 2),
 
-                     constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
+                     constants.NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2 if sys.platform == "linux" else 2),
 
-                     constants.ACTOR_NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
+                     constants.ACTOR_NODEPATH: (Object_Icon, wx.EXPAND | wx.TOP, 2 if sys.platform == "linux" else 2),
 
-                     constants.POINT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
-                     constants.DIRECTIONAL_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
-                     constants.SPOT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2),
-                     constants.AMBIENT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1),
+                     constants.POINT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1 if sys.platform == "linux" else 2),
+                     constants.DIRECTIONAL_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1 if sys.platform == "linux" else 2),
+                     constants.SPOT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1 if sys.platform == "linux" else 2),
+                     constants.AMBIENT_LIGHT: (Light_Icon, wx.EXPAND | wx.TOP, 1 if sys.platform == "linux" else 2),
 
-                     constants.CAMERA_NODEPATH: (Camera_Icon, wx.EXPAND | wx.TOP, 0 if sys.platform == "linux" else 2)}
+                     constants.CAMERA_NODEPATH: (Camera_Icon, wx.EXPAND | wx.TOP, 3 if sys.platform == "linux" else 2)}
 
 
 class TextPanel(wx.Panel):
@@ -83,7 +83,7 @@ class TextPanel(wx.Panel):
         self.Layout()
 
 
-class BaseInspectorPanel(wx.Panel):
+class BaseInspectorPanel(ScrolledPanel):
     class InspectorTypeSelectionPanel(wx.Panel):
         def __init__(self, *args, **kwargs):
             wx.Panel.__init__(self, *args, **kwargs)
@@ -98,8 +98,7 @@ class BaseInspectorPanel(wx.Panel):
                                                             "Inspector",
                                                             start_offset=2,
                                                             text_flags=wx.EXPAND | wx.TOP,
-                                                            text_border=1,
-
+                                                            text_border=2,
                                                             image_path=Object_settings_icon,
                                                             image_flags=wx.EXPAND | wx.RIGHT,
                                                             image_border=3,
@@ -110,15 +109,12 @@ class BaseInspectorPanel(wx.Panel):
                                                            1,
                                                            "World",
                                                            start_offset=3,
-
                                                            text_flags=wx.EXPAND | wx.TOP,
-                                                           text_border=1,
-
+                                                           text_border=2,
                                                            image_path=World_settings_icon,
                                                            image_flags=wx.EXPAND | wx.RIGHT,
                                                            image_border=3,
                                                            image_scale=13,
-
                                                            select_func=self.on_btn_select)
             world_settings_btn.SetMinSize((-1, 16))
 
@@ -127,12 +123,10 @@ class BaseInspectorPanel(wx.Panel):
                                                         "Editor",
                                                         start_offset=2,
                                                         text_flags=wx.EXPAND | wx.TOP,
-                                                        text_border=1,
-
+                                                        text_border=2,
                                                         image_path=Ed_settings_icon,
                                                         image_flags=wx.EXPAND | wx.RIGHT,
                                                         image_border=3,
-
                                                         select_func=self.on_btn_select)
             ed_settings_btn.SetMinSize((-1, 16))
 
@@ -141,12 +135,10 @@ class BaseInspectorPanel(wx.Panel):
                                                           "Plugins",
                                                           start_offset=2,
                                                           text_flags=wx.EXPAND | wx.TOP,
-                                                          text_border=1,
-
+                                                          text_border=2,
                                                           image_path=Plugin_Settings_icon,
                                                           image_flags=wx.EXPAND | wx.RIGHT,
                                                           image_border=3,
-
                                                           select_func=self.on_btn_select)
             plugins_panel_btn.SetMinSize((-1, 16))
 
@@ -161,15 +153,6 @@ class BaseInspectorPanel(wx.Panel):
             for btn in self.buttons_list:
                 btn.deselect()
             self.inspector.on_inspector_select(idx)
-
-    class FoldManagerPanel(ScrolledPanel):
-        """a sub scrolled-panel for adding the FoldManager"""
-
-        def __init__(self, parent):
-            ScrolledPanel.__init__(self, parent)
-            self.sizer = wx.BoxSizer(wx.VERTICAL)
-            self.SetSizer(self.sizer)
-            self.SetupScrolling(scroll_x=False)
 
     class DragDropCompPanel(wx.Panel):
         class TestDropTarget(wx.PyDropTarget):
@@ -212,7 +195,6 @@ class BaseInspectorPanel(wx.Panel):
 
         def __init__(self, *args, **kwargs):
             wx.Panel.__init__(self, *args, **kwargs)
-            self.SetWindowStyleFlag(wx.BORDER_DOUBLE)
             self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
             self.SetMinSize(wx.Size(-1, 40))
             self.SetMaxSize(wx.Size(-1, 40))
@@ -223,23 +205,41 @@ class BaseInspectorPanel(wx.Panel):
 
             self.font = wx.Font(12, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.BOLD)
 
-            self.ctrl_label = wx.StaticText(self, label="DRAG COMPONENTS HERE__")
+            self.ctrl_label = wx.StaticText(self, label="DRAG COMPONENTS HERE.")
             self.ctrl_label.SetFont(self.font)
             self.ctrl_label.SetForegroundColour(edPreferences.Colors.Inspector_properties_label)
 
-            # self.static_line = wx.StaticLine(self, style=wx.SL_HORIZONTAL)
-
             self.main_sizer.AddStretchSpacer()
             self.main_sizer.Add(self.ctrl_label, 0, wx.CENTER)
-            # self.main_sizer.Add(self.static_line, 0, wx.EXPAND | wx.CENTER | wx.LEFT | wx.RIGHT, border=50)
             self.main_sizer.AddStretchSpacer()
 
             # create a drop target
             dt = BaseInspectorPanel.DragDropCompPanel.TestDropTarget(self)
             self.SetDropTarget(dt)
 
+            self.Bind(wx.EVT_SIZE, self.on_size)
+            self.Bind(wx.EVT_PAINT, self.on_paint)
+
+        def on_size(self, evt):
+            self.Refresh()
+            evt.Skip()
+
+        def on_paint(self, evt):
+            pdc = wx.PaintDC(self)
+            gc = pdc
+
+            gc.SetPen(wx.Pen(wx.Colour(150, 150, 150, 255), 1))
+            gc.SetBrush(wx.Brush(wx.Colour(edPreferences.Colors.Panel_Normal)))
+            gc.DrawRectangle(0, 0, self.GetSize().x, self.GetSize().y)
+
+            gc.DrawLine(wx.Point(0, 0), wx.Point(self.GetSize().x, 0))  # top
+            gc.DrawLine(wx.Point(0, self.GetSize().y), wx.Point(self.GetSize().x, self.GetSize().y))  # bottom
+            gc.DrawLine(wx.Point(0, 0), wx.Point(0, self.GetSize().y))  # left
+            gc.DrawLine(wx.Point(self.GetSize().x, 0), wx.Point(self.GetSize().x, self.GetSize().y))  # right
+            evt.Skip()
+
     def __init__(self, parent, *args, **kwargs):
-        wx.Panel.__init__(self, parent, *args, **kwargs)
+        ScrolledPanel.__init__(self, parent, *args, **kwargs)
 
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
         self.wxMain = parent
@@ -250,7 +250,7 @@ class BaseInspectorPanel(wx.Panel):
         self.label = ""
         self.properties = []
 
-        self.fold_manager_panel = BaseInspectorPanel.FoldManagerPanel(self)
+        # self.fold_manager_panel = BaseInspectorPanel.FoldManagerPanel(self)
         self.fold_manager = None  # a FoldPanelManager for laying out variables of a python module
         self.text_panel = None  # a text_panel for displaying .txt files
 
@@ -265,15 +265,12 @@ class BaseInspectorPanel(wx.Panel):
         self.inspector_type_sel_panel = BaseInspectorPanel.InspectorTypeSelectionPanel(self)
 
         self.__is_dirty = False
+        self.has_spacer = False
+        self.spacer_idx = -1
 
-        self.static_line = wx.StaticLine(self, style=wx.SL_HORIZONTAL)
-
-        self.main_sizer.Add(self.inspector_type_sel_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM,
-                            border=5)
-        self.main_sizer.Add(self.static_line, 0, wx.EXPAND | wx.BOTTOM, border=1)
-        self.main_sizer.Add(self.fold_manager_panel, 1, wx.EXPAND)
-
-        # self.should_update = True
+        self.main_sizer.Add(self.inspector_type_sel_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=5)
+        self.main_sizer.AddSpacer(5)
+        self.SetupScrolling(scroll_x=False, scroll_y=True)
 
     def select_inspector(self, idx):
         self.inspector_type_sel_panel.buttons_list[idx].on_click()
@@ -437,14 +434,14 @@ class BaseInspectorPanel(wx.Panel):
                 0,
                 "",
                 image_path=PIN_ICON,
-                image_flags=wx.EXPAND,
-                image_border=0,
+                image_flags=wx.EXPAND | wx.RIGHT,
+                image_border=4,
                 select_func=self.set_pinned,
                 deselect_func=self.clear_pinned,
                 deselected_color=parent.GetBackgroundColour(),
                 data=None,
             )
-            xx = (pin_btn, wx.EXPAND | wx.RIGHT, 4)
+            xx = (pin_btn, wx.EXPAND | wx.TOP, 1)
             return xx
 
         def get_remove_btn(parent, btn_data):
@@ -467,24 +464,16 @@ class BaseInspectorPanel(wx.Panel):
             if inspector_id != OBJECT_INSPECTOR_ID:
                 return
 
+        self.Freeze()
+
         if reset:
             self.reset()
             self.object = obj
             self.label = name if name else self.label
             self.properties.extend(properties)
-            self.fold_manager = FoldPanelManager(self.fold_manager_panel)
-            self.fold_manager_panel.sizer.Add(self.fold_manager, 0, wx.EXPAND, border=0)
+            self.fold_manager = FoldPanelManager(self)
+            self.main_sizer.Add(self.fold_manager, 0, wx.EXPAND, border=0)
             obj_label = self.label[0].upper() + self.label[1:]
-
-            # for objects of type NodePaths, create a drop target to drag and drop components from project
-            # onto this NodePath
-            if isinstance(obj, NodePath):
-                if self.components_dnd_panel is None:
-                    self.components_dnd_panel = BaseInspectorPanel.DragDropCompPanel(self.fold_manager_panel)
-                    self.fold_manager_panel.sizer.Add(self.components_dnd_panel,
-                                                      1,
-                                                      wx.EXPAND | wx.LEFT | wx.TOP,
-                                                      border=8)
         else:
             self.properties.extend(properties)
             obj_label = name[0].upper() + name[1:]
@@ -495,8 +484,7 @@ class BaseInspectorPanel(wx.Panel):
 
         # the first fold_panel will always contain the object (NodePath or any other resource item), so
         # create a pin button for it
-
-        if len(self.fold_manager.panels) == 1:
+        if self.fold_manager.panel_count == 1:
             try:
                 # get object bitmaps
                 obj_bitmap, flags, border = get_object_bitmap(obj)
@@ -547,9 +535,15 @@ class BaseInspectorPanel(wx.Panel):
                                 is_editor_item=True,
                                 reset=False)
 
-        self.fold_manager_panel.SetupScrolling(scroll_x=False)
+            if not self.components_dnd_panel:
+                self.main_sizer.AddSpacer(15)
+                self.components_dnd_panel = BaseInspectorPanel.DragDropCompPanel(self)
+                self.main_sizer.Add(self.components_dnd_panel, 0, wx.EXPAND | wx.LEFT, border=5)
+
+        self.fold_manager.sizer.Layout()
         self.main_sizer.Layout()
         self.__is_dirty = False
+        self.Thaw()
 
     def set_text_from_file(self, text_file):
         """set text from a .txt file"""
@@ -558,6 +552,7 @@ class BaseInspectorPanel(wx.Panel):
             self.set_text(readme_text)
 
     def set_text(self, text, reset=True):
+        self.Freeze()
         if reset:
             self.reset()
 
@@ -566,6 +561,8 @@ class BaseInspectorPanel(wx.Panel):
             self.text_panel.SetMinSize((self.GetSize().x - 40, self.GetSize().y - 40))
             self.main_sizer.Add(self.text_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
             self.Layout()
+
+        self.Thaw()
 
     def update(self, label=None, force_update_all=False):
         """updates the selected object's properties
@@ -631,8 +628,8 @@ class BaseInspectorPanel(wx.Panel):
                 wx_property = Property_And_Type[ed_property.type_]
                 wx_property = wx_property(parent, ed_property)
 
-                if wx_property.ed_property.type_ == "horizontal_layout_group" or\
-                        wx_property.ed_property.type_ == "foldout_group" or\
+                if wx_property.ed_property.type_ == "horizontal_layout_group" or \
+                        wx_property.ed_property.type_ == "foldout_group" or \
                         wx_property.ed_property.type_ == "static_box":
                     wx_properties = self.create_wx_properties(wx_property.ed_property.properties, wx_property, False)
                     # wx_property.properties = wx_properties
@@ -676,21 +673,13 @@ class BaseInspectorPanel(wx.Panel):
         self.properties = []
         self.property_and_name.clear()
 
-        if self.text_panel is not None:
-            self.main_sizer.Detach(self.text_panel)
-            self.text_panel.Destroy()
-            self.text_panel = None
-
-        if self.fold_manager is not None:
-            self.main_sizer.Detach(self.fold_manager)
-            self.fold_manager.Destroy()
-            self.fold_manager = None
-
         if self.components_dnd_panel:
-            self.main_sizer.Detach(self.components_dnd_panel)
-            self.components_dnd_panel.Destroy()
-            self.components_dnd_panel = None
+            self.main_sizer.Remove(len(self.main_sizer.GetChildren())-2)  # remove spacer based on its position index
 
-        # self.sizer.Clear()
-        self.fold_manager_panel.SetupScrolling(scroll_x=False)
+        # remove other panels
+        for item in [self.text_panel, self.fold_manager, self.components_dnd_panel]:
+            if item:
+                self.main_sizer.Detach(item)
+                item.Destroy()
+
         self.Layout()

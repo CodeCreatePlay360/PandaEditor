@@ -1,9 +1,8 @@
 ## An open source level / scene editor for Panda3D
 
-![Image](images//01.png)
+![Image](images//main.png)
 
-**Panda3D is one of best open source game engines out there, but lack of a proper scene editor and tools for artists limits its scope and target audience, this project aims to make Panda3D more intuitive to use for  artists and game developers by providing an editor centric workflow**.  
-It has all the standard level editor features including,
+**PandaEditor is an open-source level editor for Panda3D game engine that supports all industry standard features including support for writing custom editor plugins. Designed to be easy to use and easy to integrate with your existing Panda3D projects, PandaEditor provides you with a convenient interface for quickly editing your 3D or 2D scenes.**.
 
 * Object manipulation
 * Object Inspection
@@ -25,7 +24,7 @@ It has all the standard level editor features including,
 | ![Image](images//RoamingRalph_00.png) |
 | -- |
 | ![Image](images//RoamingRalph_01.gif) |
-| Roaming Ralph from official Panda3D sample programs running on PandaEditor using Runtime modules and Components based workflow. (Note, jitter in GIF above is due to screen recording software.) |
+| Roaming Ralph from official Panda3D sample programs running on PandaEditor using Runtime modules and Components based workflow. (Note, jitters in GIF above is due to screen recording software.) |
 
 ## Links
 1. [Discord](https://discord.gg/eTMcUp2PXF)
@@ -386,5 +385,8 @@ class Basics(RuntimeModule):
 To get started, there are sample programs included with the default project, with each sample project there is an accompanying text file, detailing how to setup the sample program.
 
 ## Tutorials
+1. [Your first day at PandaEditor]("")
+2. [Getting staring with basics]("")
+
 
 

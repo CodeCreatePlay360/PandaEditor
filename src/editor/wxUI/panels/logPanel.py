@@ -10,7 +10,6 @@ Models_icon = str(pathlib.Path(constants.ICONS_PATH + "/3D-objects-icon.png"))
 Textures_icon = str(pathlib.Path(constants.ICONS_PATH + "/images.png"))
 Sounds_icon = str(pathlib.Path(constants.ICONS_PATH + "/music.png"))
 Scripts_icon = str(pathlib.Path(constants.ICONS_PATH + "/script_code.png"))
-#
 Image_Clear = str(pathlib.Path(constants.ICONS_PATH + "/Console/trashBin.png"))
 
 
@@ -23,8 +22,7 @@ class LogPanel(wx.Panel):
     class ToolBar(wx.Panel):
         def __init__(self, *args, **kwargs):
             wx.Panel.__init__(self, *args)
-            self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
-            self.SetWindowStyleFlag(wx.BORDER_DOUBLE)
+            self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
 
             self.parent = args[0]
 
@@ -37,16 +35,14 @@ class LogPanel(wx.Panel):
                                                        start_offset=1,
                                                        text_flags=wx.RIGHT | wx.EXPAND,
                                                        text_border=3,
-
                                                        select_func=self.on_toggle,
                                                        deselect_func=self.on_toggle_off)
+            self.toggle_clear_on_reload.SetMinSize(wx.Size(80, -1))
 
             self.toggle_clear_on_play = ToggleButton(self, 1,
                                                      "ClearOnPlay ",
-                                                     start_offset=1,
-
-                                                     select_func=self.on_toggle,
-                                                     deselect_func=self.on_toggle_off)
+                                                     start_offset=3,
+                                                     select_func=self.on_toggle)
 
             self.clear_console_btn = BasicButton(self, 0,
                                                  "ClearConsole ",
@@ -105,7 +101,6 @@ class LogPanel(wx.Panel):
 
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
-        self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
         self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
 
         self.clear_on_reload = False
@@ -115,11 +110,18 @@ class LogPanel(wx.Panel):
         self.tool_bar = LogPanel.ToolBar(self)
 
         # build log text control
-        self.tc = richText.RichTextCtrl(self, style=wx.VSCROLL | wx.HSCROLL | wx.NO_BORDER)
-        self.tc.SetWindowStyleFlag(wx.BORDER_NONE)
+        self.tc = richText.RichTextCtrl(self, style=wx.VSCROLL | wx.NO_BORDER)
         self.tc.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        # self.tc.SetForegroundColour(edPreferences.Colors.Console_Text)
         self.tc.BeginTextColour(edPreferences.Colors.Console_Text)
+
+        # static line
+        static_line_0 = wx.Panel(self)
+        static_line_0.SetMaxSize(wx.Size(-1, 3))
+        static_line_0.SetBackgroundColour(wx.Colour(50, 50, 50, 255))
+
+        static_line_1 = wx.Panel(self)
+        static_line_1.SetMaxSize(wx.Size(-1, 3))
+        static_line_1.SetBackgroundColour(wx.Colour(50, 50, 50, 255))
 
         # redirect text here
         sys.stdout = self.RedirectText(sys.stdout, self.tc)
@@ -129,8 +131,10 @@ class LogPanel(wx.Panel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        self.sizer.Add(self.tool_bar, 0, wx.EXPAND | wx.BOTTOM, border=2)
-        self.sizer.Add(self.tc, 1, wx.EXPAND | wx.LEFT | wx.TOP, border=-3)
+        self.sizer.Add(static_line_0, 0, wx.EXPAND)
+        self.sizer.Add(self.tool_bar, 0, wx.EXPAND | wx.BOTTOM, border=0)
+        self.sizer.Add(static_line_1, 0, wx.EXPAND)
+        self.sizer.Add(self.tc, 1, wx.EXPAND | wx.LEFT, border=-3)
 
     def on_ed_reload(self):
         if self.clear_on_reload:

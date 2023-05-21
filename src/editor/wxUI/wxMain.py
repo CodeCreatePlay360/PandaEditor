@@ -12,7 +12,6 @@ from editor.globals import editor
 from editor.wxUI.custom import BasicButton
 from direct.showbase.ShowBase import taskMgr
 
-
 # scene events
 Evt_Open_Project = wx.NewId()
 Evt_New_Scene = wx.NewId()
@@ -52,27 +51,26 @@ Event_Map = {
 # resources
 ICON_FILE = str(pathlib.Path(ICONS_PATH + "/pandaIcon.ico"))
 #
-NEW_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/fileNew_32.png"))
-OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/fileOpen_32.png"))
-SAVE_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/fileSave_32.png"))
-SAVE_SESSION_AS_ICON = str(pathlib.Path(ICONS_PATH + "/fileSaveAs_32.png"))
+NEW_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileNew_32.png"))
+OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileOpen_32.png"))
+SAVE_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileSave_32.png"))
+SAVE_SESSION_AS_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileSaveAs_32.png"))
 #
-PROJ_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/fileOpen_32.png"))
-PROJ_SAVE_ICON = str(pathlib.Path(ICONS_PATH + "/fileOpen_32.png"))
-IMPORT_LIBRARY_ICON = str(pathlib.Path(ICONS_PATH + "/importLib_32.png"))
-IMPORT_PACKAGE_ICON = str(pathlib.Path(ICONS_PATH + "/add_package.png"))
-OPEN_STORE_ICON = str(pathlib.Path(ICONS_PATH + "/shop_network.png"))
+PROJ_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileOpen_32.png"))
+IMPORT_LIBRARY_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/package_link.png"))
+IMPORT_PACKAGE_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/add_package.png"))
+OPEN_STORE_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/shop_network.png"))
 #
-ALL_LIGHTS_ON_ICON = str(pathlib.Path(ICONS_PATH + "/lightbulb_32x_on.png"))
-ALL_LIGHTS_OFF_ICON = str(pathlib.Path(ICONS_PATH + "/lightbulb_32x_off.png"))
-SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/soundIcon.png"))
-NO_SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/noSoundIcon.png"))
+ALL_LIGHTS_ON_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/lightbulb_32x_on.png"))
+ALL_LIGHTS_OFF_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/lightbulb_32x_off.png"))
+SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/soundIcon.png"))
+NO_SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/noSoundIcon.png"))
 #
-ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/Refresh_Icon_32.png"))
+ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/Refresh_Icon_32.png"))
 #
-ED_MODE_ICON = str(pathlib.Path(ICONS_PATH + "/game_mode.png"))
-PLAY_ICON = str(pathlib.Path(ICONS_PATH + "/playIcon_32x.png"))
-STOP_ICON = str(pathlib.Path(ICONS_PATH + "/stopIcon_32.png"))
+ED_MODE_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/game_mode.png"))
+PLAY_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/playIcon_32x.png"))
+STOP_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/stopIcon_32.png"))
 #
 DISABLED_ICON = str(pathlib.Path(ICONS_PATH + "/disabled_icon.png"))
 #
@@ -87,7 +85,6 @@ SCENE_GRAPH_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/structure_16x.png"))
 #
 # status bar
 REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/StatusBar/arrow_refresh.png"))
-
 
 # default layout for notebook tabs
 xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4|" \
@@ -196,12 +193,14 @@ class AUINotebook(aui.AuiNotebook):
 
 
 class WxFrame(wx.Frame):
+    USING_SPLITTER = False
+
     class StatusPanel(wx.Panel):
         def __init__(self, *args):
             wx.Panel.__init__(self, *args)
-            self.SetWindowStyleFlag(wx.SUNKEN_BORDER)
-            self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-            self.SetMaxSize((-1, 20))
+            # self.SetWindowStyleFlag(wx.SUNKEN_BORDER)
+            self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+            self.SetMaxSize((-1, 16))
             self.parent = args[0]
             #
             self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -209,22 +208,31 @@ class WxFrame(wx.Frame):
             #
             self.refresh_btn = self.create_refresh_btn()
             #
-            self.bold_font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_MAX)
+            if sys.platform == "linux":
+                font = wx.Font(8, wx.MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD)
+            else:
+                font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_MAX)
+
             self.bg_tasks_text_ctrl = wx.StaticText(self)
             self.bg_tasks_text_ctrl.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
             self.bg_tasks_text_ctrl.SetForegroundColour(wx.Colour(225, 225, 225, 255))
-            self.bg_tasks_text_ctrl.SetFont(self.bold_font)
+            self.bg_tasks_text_ctrl.SetFont(font)
             self.bg_tasks_text_ctrl.SetLabelText("[PandaEditor]")
             #
             self.selected_item_text_info = wx.StaticText(self)
             self.selected_item_text_info.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
             self.selected_item_text_info.SetForegroundColour(wx.Colour(225, 225, 225, 255))
-            self.selected_item_text_info.SetFont(self.bold_font)
+            self.selected_item_text_info.SetFont(font)
             self.selected_item_text_info.SetLabelText("(SelectedItemInfo: no info available)")
             #
             self.main_sizer.Add(self.refresh_btn, 0, wx.EXPAND | wx.RIGHT, border=1)
-            self.main_sizer.Add(self.bg_tasks_text_ctrl, 0, wx.EXPAND | wx.RIGHT, border=1)
-            self.main_sizer.Add(self.selected_item_text_info, 0, wx.EXPAND, border=0)
+
+            self.main_sizer.Add(self.bg_tasks_text_ctrl, 0, wx.EXPAND | wx.TOP,
+                                border=2 if sys.platform == "linux" else 0)
+
+            self.main_sizer.Add(self.selected_item_text_info, 0, wx.EXPAND | wx.TOP,
+                                border=2 if sys.platform == "linux" else 0)
+
             self.main_sizer.Layout()
 
         def create_refresh_btn(self):
@@ -254,30 +262,21 @@ class WxFrame(wx.Frame):
         icon = wx.Icon(icon_file, wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
-        # main sizer
-        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.main_sizer)
-
         self.panda_app = wx.GetApp()
         self.freeze()
         self.load_resources()
-
+        #
         # set menu bar
         self.menu_bar = WxMenuBar(self)
         self.SetMenuBar(self.menu_bar)
         #
         self.status_panel = WxFrame.StatusPanel(self)
-
-        # notebook
-        self.notebook = WxAUINotebook(self) if sys.platform == "linux" else AUINotebook(self)
-        self.saved_layouts = {}  # saved perspectives for aui notebook
-
+        #
         self.ed_viewport_panel = Viewport(self)
         self.inspector_panel = InspectorPanel(self)
         self.console_panel = LogPanel(self)
         self.resource_browser = ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
-        # page icons
 
         self.panels = [(self.ed_viewport_panel, "Viewport"),
                        (self.inspector_panel, "Inspector"),
@@ -285,36 +284,34 @@ class WxFrame(wx.Frame):
                        (self.resource_browser, "ResourceBrowser"),
                        (self.scene_graph_panel, "SceneGraph")]
 
+        if sys.platform == "linux":
+            self.USING_SPLITTER = True
+
+        # notebook
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.main_sizer)
+
+        self.notebook = WxAUINotebook(self) if self.USING_SPLITTER else AUINotebook(self)  # aui nb has issues on linux
         self.notebook.add_pages(self.panels)  # add panels to notebook
-        #
         self.notebook.SetPageBitmap(0, wx.Bitmap(VIEWPORT_ICON))
         self.notebook.SetPageBitmap(1, wx.Bitmap(INSPECTOR_ICON))
         self.notebook.SetPageBitmap(2, wx.Bitmap(CONSOLE_ICON))
         self.notebook.SetPageBitmap(3, wx.Bitmap(RESOURCE_BROWSER))
         self.notebook.SetPageBitmap(4, wx.Bitmap(SCENE_GRAPH_ICON))
-        #
-        # toolbar
+
+        self.saved_layouts = {}  # saved perspectives for aui notebook
         # create aui toolbars
-        self.build_file_menu_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
-        self.build_proj_menus_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
-        self.build_scene_ctrls_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
-        self.build_ed_ctrls_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
-        self.build_play_ctrls_tb(wx.BORDER_DOUBLE, wx.aui.AUI_TB_GRIPPER)
-        #
+        self.file_menu_tb = self.create_toolbar()
+        self.file_menu_tb.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        self.file_menu_tb.Realize()
         # toolbar sizer
         self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        #
-        border = 0 if sys.platform == "linux" else 1
-        self.toolbar_sizer.Add(self.file_menu_tb, 0, wx.RIGHT, border=border)
-        self.toolbar_sizer.Add(self.proj_meuns_tb, 0, wx.RIGHT, border=border)
-        self.toolbar_sizer.Add(self.scene_ctrls_tb, 0, wx.RIGHT, border=border)
-        self.toolbar_sizer.Add(self.ed_ctrls_tb, 0, wx.RIGHT, border=border)
-        self.toolbar_sizer.Add(self.playctrls_tb, 0, wx.RIGHT, border=border)
-        #
-        if not sys.platform == "linux":
+        self.toolbar_sizer.Add(self.file_menu_tb, 0, border=0)
+
+        if not self.USING_SPLITTER:
             self.notebook.LoadPerspective(xx)
             self.save_layout("Default")
-        #
+
         self.main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
         self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
         self.main_sizer.Add(self.status_panel, 1, wx.EXPAND)
@@ -334,7 +331,6 @@ class WxFrame(wx.Frame):
         self.save_session_as_icon = wx.Bitmap(SAVE_SESSION_AS_ICON)
 
         self.proj_open_icon = wx.Bitmap(PROJ_OPEN_ICON)
-        self.proj_save_icon = wx.Bitmap(PROJ_SAVE_ICON)
         self.import_lib_icon = wx.Bitmap(IMPORT_LIBRARY_ICON)
         self.import_package_icon = wx.Bitmap(IMPORT_PACKAGE_ICON)
         self.open_store_icon = wx.Bitmap(OPEN_STORE_ICON)
@@ -353,10 +349,8 @@ class WxFrame(wx.Frame):
         # other
         self.select_icon = wx.Cursor(wx.Image(SELECT_ICON))
 
-    def build_file_menu_tb(self, win_style, agw_style):
+    def create_toolbar(self):
         self.file_menu_tb = aui.AuiToolBar(self)
-        self.file_menu_tb.SetWindowStyle(win_style)
-        self.file_menu_tb.SetAGWWindowStyleFlag(agw_style)
 
         new_btn = self.file_menu_tb.AddTool(Evt_New_Scene,
                                             '',
@@ -379,107 +373,94 @@ class WxFrame(wx.Frame):
                                                 kind=wx.ITEM_NORMAL,
                                                 short_help_string="SaveSceneAs")
 
-        self.file_menu_tb.Realize()
-        self.file_menu_tb.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, new_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, save_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, save_as_btn)
 
-    def build_proj_menus_tb(self, win_style, agw_style):
-        self.proj_meuns_tb = aui.AuiToolBar(self)
-        self.proj_meuns_tb.SetWindowStyle(win_style)
-        self.proj_meuns_tb.SetAGWWindowStyleFlag(agw_style)
+        self.file_menu_tb.AddSeparator()
+        # -------------------------------------------------------------------------------------
 
-        open_proj_btn = self.proj_meuns_tb.AddTool(Evt_Open_Project,
+        open_proj_btn = self.file_menu_tb.AddTool(Evt_Open_Project,
+                                                  '',
+                                                  self.proj_open_icon,
+                                                  disabled_bitmap=self.proj_open_icon,
+                                                  kind=wx.ITEM_NORMAL,
+                                                  short_help_string="Open Project")
+
+        import_lib_btn = self.file_menu_tb.AddTool(Evt_Append_Library,
                                                    '',
-                                                   self.proj_open_icon,
-                                                   disabled_bitmap=self.proj_open_icon,
+                                                   self.import_lib_icon,
+                                                   disabled_bitmap=self.import_lib_icon,
                                                    kind=wx.ITEM_NORMAL,
-                                                   short_help_string="OpenProject")
+                                                   short_help_string="Append Library")
 
-        import_lib_btn = self.proj_meuns_tb.AddTool(Evt_Append_Library,
-                                                    '',
-                                                    self.import_lib_icon,
-                                                    disabled_bitmap=self.import_lib_icon,
-                                                    kind=wx.ITEM_NORMAL,
-                                                    short_help_string="AppendLibrary")
+        import_package_btn = self.file_menu_tb.AddTool(wx.NewId(),
+                                                       '',
+                                                       self.import_package_icon,
+                                                       disabled_bitmap=self.import_package_icon,
+                                                       kind=wx.ITEM_NORMAL,
+                                                       short_help_string="Import P3d Package")
 
-        import_package_btn = self.proj_meuns_tb.AddTool(wx.NewId(),
-                                                        '',
-                                                        self.import_package_icon,
-                                                        disabled_bitmap=self.import_package_icon,
-                                                        kind=wx.ITEM_NORMAL,
-                                                        short_help_string="ImportP3dPackage")
+        open_store_btn = self.file_menu_tb.AddTool(wx.NewId(),
+                                                   '',
+                                                   self.open_store_icon,
+                                                   disabled_bitmap=self.open_store_icon,
+                                                   kind=wx.ITEM_NORMAL,
+                                                   short_help_string="PandaStore")
 
-        open_store_btn = self.proj_meuns_tb.AddTool(wx.NewId(),
-                                                    '',
-                                                    self.open_store_icon,
-                                                    disabled_bitmap=self.open_store_icon,
-                                                    kind=wx.ITEM_NORMAL,
-                                                    short_help_string="PandaStore")
-
-        self.proj_meuns_tb.Realize()
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, open_proj_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, import_lib_btn)
 
-    def build_scene_ctrls_tb(self, win_style, agw_style):
-        self.scene_ctrls_tb = aui.AuiToolBar(self)
-        self.scene_ctrls_tb.SetWindowStyle(win_style)
-        self.scene_ctrls_tb.SetAGWWindowStyleFlag(agw_style)
+        self.file_menu_tb.AddSeparator()
+        # -------------------------------------------------------------------------------------
 
-        self.lights_toggle_btn = self.scene_ctrls_tb.AddToggleTool(Evt_Toggle_Scene_Lights,
-                                                                   bitmap=self.lights_off_icon,
-                                                                   disabled_bitmap=self.lights_off_icon,
-                                                                   short_help_string="ToggleSceneLights",
-                                                                   toggle=True)
+        self.lights_toggle_btn = self.file_menu_tb.AddToggleTool(Evt_Toggle_Scene_Lights,
+                                                                 bitmap=self.lights_off_icon,
+                                                                 disabled_bitmap=self.lights_off_icon,
+                                                                 short_help_string="Toggle Scene Lights",
+                                                                 toggle=True)
 
         self.sounds_on = True
-        self.sound_toggle_btn = self.scene_ctrls_tb.AddToggleTool(Evt_Toggle_Sounds,
-                                                                  bitmap=self.sound_icon,
-                                                                  disabled_bitmap=self.sound_icon,
-                                                                  short_help_string="ToggleSound",
-                                                                  toggle=True)
+        self.sound_toggle_btn = self.file_menu_tb.AddToggleTool(Evt_Toggle_Sounds,
+                                                                bitmap=self.sound_icon,
+                                                                disabled_bitmap=self.sound_icon,
+                                                                short_help_string="Toggle Sound",
+                                                                toggle=True)
 
-        self.scene_ctrls_tb.Realize()
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.sound_toggle_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.lights_toggle_btn)
 
-    def build_ed_ctrls_tb(self, win_style, agw_style):
-        self.ed_ctrls_tb = aui.AuiToolBar(self)
-        self.ed_ctrls_tb.SetWindowStyle(win_style)
-        self.ed_ctrls_tb.SetAGWWindowStyleFlag(agw_style)
+        self.file_menu_tb.AddSeparator()
+        # -------------------------------------------------------------------------------------
 
-        self.refresh_btn = self.ed_ctrls_tb.AddTool(Evt_Refresh,
-                                                    "",
-                                                    bitmap=self.ed_refresh_icon,
-                                                    disabled_bitmap=self.ed_refresh_icon,
-                                                    kind=wx.ITEM_NORMAL,
-                                                    short_help_string="RefreshIcon")
+        self.refresh_btn = self.file_menu_tb.AddTool(Evt_Refresh,
+                                                     "",
+                                                     bitmap=self.ed_refresh_icon,
+                                                     disabled_bitmap=self.ed_refresh_icon,
+                                                     kind=wx.ITEM_NORMAL,
+                                                     short_help_string="Refresh Editor")
 
-        self.ed_ctrls_tb.Realize()
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.refresh_btn)
 
-    def build_play_ctrls_tb(self, win_style, agw_style):
-        self.playctrls_tb = aui.AuiToolBar(self)
-        self.playctrls_tb.SetWindowStyle(win_style)
-        self.playctrls_tb.SetAGWWindowStyleFlag(agw_style)
+        self.file_menu_tb.AddSeparator()
+        # -------------------------------------------------------------------------------------
 
-        self.ed_viewport_mode_btn = self.playctrls_tb.AddToggleTool(Evt_Ed_Viewport_style,
+        self.ed_viewport_mode_btn = self.file_menu_tb.AddToggleTool(Evt_Ed_Viewport_style,
                                                                     bitmap=self.ed_mode_icon,
                                                                     disabled_bitmap=self.ed_mode_icon,
-                                                                    short_help_string="MaximizeGameViewPortOnPlay",
+                                                                    short_help_string="Maximize Game ViewPort On Play",
                                                                     toggle=True)
 
-        self.ply_btn = self.playctrls_tb.AddToggleTool(Evt_Play,
+        self.ply_btn = self.file_menu_tb.AddToggleTool(Evt_Play,
                                                        bitmap=self.play_icon,
                                                        disabled_bitmap=self.play_icon,
-                                                       short_help_string="StartGame",
+                                                       short_help_string="Start Game",
                                                        toggle=True)
 
-        self.playctrls_tb.Realize()
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ed_viewport_mode_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ply_btn)
+
+        return self.file_menu_tb
 
     def on_save_current_layout(self):
         dial = wx.TextEntryDialog(None, "Enter layout name", "Layout", "")
@@ -551,7 +532,7 @@ class WxFrame(wx.Frame):
 
         for item in self.panels:
             panel = item[0]
-            if not panel.IsFrozen():
+            if panel != self.ed_viewport_panel and not panel.IsFrozen():
                 panel.Freeze()
 
     def thaw(self):

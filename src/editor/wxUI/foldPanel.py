@@ -2,10 +2,7 @@ import sys
 import pathlib
 import wx
 import editor.edPreferences as edPreferences
-
 from editor.constants import ICONS_PATH
-
-Panel_Fold_size = 23.0
 
 Bitmap_offset_right = 5
 Label_offset_right_0 = 20  # label offset without toggle btn
@@ -16,20 +13,17 @@ Controls_offset_right = 18
 FOLD_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/foldOpen_16.png"))
 FOLD_CLOSE_ICON = str(pathlib.Path(ICONS_PATH + "/foldClose_16.png"))
 
-Debug_Mode = True  # debug mode add a small separation of 0.2 between two vertical adjacent controls
-
 
 class FoldPanel(wx.Panel):
     def __init__(self, fold_manager, label):
         wx.Panel.__init__(self, fold_manager)
-        self.SetWindowStyleFlag(wx.BORDER_NONE)
         self.SetBackgroundColour(wx.Colour(edPreferences.Colors.Panel_Dark))
 
         self.fold_manager = fold_manager
 
         # label font and color
         self.__label = label
-        self.font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.text_colour = edPreferences.Colors.Bold_Label
 
         self.fd_control = None  # foldout open and close button
@@ -50,6 +44,7 @@ class FoldPanel(wx.Panel):
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_evt_left_down)
         self.Bind(wx.EVT_SIZE, self.on_evt_size)
+        self.Bind(wx.EVT_PAINT, self.on_paint)
 
     @property
     def label(self):
@@ -88,18 +83,21 @@ class FoldPanel(wx.Panel):
 
         # open and close icon bitmaps
         self.fd_control = wx.StaticBitmap(self, -1, self.fd_close_icon, (0, 0))
+
         # add bitmap controls to sizer
         self.h_sizer.AddSpacer(2)
-        self.h_sizer.Add(self.fd_control, 0, wx.EXPAND | wx.TOP, border=1)
+        border = 3 if sys.platform == "linux" else 2
+        self.h_sizer.Add(self.fd_control, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, border=border)
         self.h_sizer.AddSpacer(2)
 
         # toggle button
         if toggle_btn:
             if sys.platform == "linux":
-                self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.TOP, border=-2)
+                self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.TOP, border=1)
                 self.h_sizer.AddSpacer(4)
             else:
-                self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.RIGHT, border=3)
+                self.h_sizer.Add(toggle_btn, 0, wx.EXPAND | wx.TOP, border=1)
+                self.h_sizer.AddSpacer(3)
         else:
             self.h_sizer.AddSpacer(2)
 
@@ -125,10 +123,9 @@ class FoldPanel(wx.Panel):
         self.label_control = wx.StaticText(self, label=self.__label)
         self.label_control.SetFont(self.font)
         self.label_control.SetForegroundColour(self.text_colour)
+
         # add label control to sizer
-        border = 2
-        if sys.platform == "linux":
-            border = 1
+        border = 6 if sys.platform == "linux" else 4
         self.h_sizer.Add(self.label_control, 0, wx.EXPAND | wx.TOP, border=border)
 
         if len(other_controls) > 0:
@@ -139,13 +136,15 @@ class FoldPanel(wx.Panel):
 
         self.v_sizer.Layout()
 
-    def update_controls(self, shown=True):
+    def update_controls(self, show=True):
+        self.SetMinSize(wx.Size(-1, -1))
+
         layout = False
         for i in range(len(self.wx_properties)):
             control = self.wx_properties[i]
-            if shown:
+            if show:
                 if not self.__controls_in_sizer:
-                    self.v_sizer.Add(control, 0, wx.EXPAND | wx.LEFT, border=8)
+                    self.v_sizer.Add(control, 0, wx.EXPAND | wx.LEFT, border=6)
                 control.Show()
                 layout = True
             else:
@@ -153,13 +152,13 @@ class FoldPanel(wx.Panel):
                 control.Hide()
                 layout = False
 
+        self.SetMinSize(wx.Size(-1, self.GetBestSize().y+1))
         self.__controls_in_sizer = layout
-        self.v_sizer.Layout()
 
     def switch_expanded_state(self, state=None):
         if state:
             self.expanded = state
-
+        self.Freeze()
         if not self.expanded:
             # if closed, open
             self.update_controls(True)
@@ -174,6 +173,8 @@ class FoldPanel(wx.Panel):
             self.fold_manager.on_panel_foldout(self)
             # change graphics to fold close
             self.fd_control.SetBitmap(self.fd_close_icon)
+            self.SetMinSize(wx.Size(-1, -1))
+        self.Thaw()
 
     def clear(self):
         for control in self.wx_properties:
@@ -186,34 +187,53 @@ class FoldPanel(wx.Panel):
 
     def on_evt_size(self, evt):
         self.update_controls(self.expanded)
+        self.Refresh()
         evt.Skip()
+
+    def on_paint(self, evt):
+        pdc = wx.PaintDC(self)
+        gc = wx.GCDC(pdc)
+
+        gc.SetPen(wx.Pen(wx.Colour(150, 150, 150, 255), 1))
+        gc.SetBrush(wx.Brush(wx.Colour(edPreferences.Colors.Panel_Normal)))
+        # gc.DrawRectangle(0+12, 0, self.GetSize().x, self.GetSize().y)
+
+        gc.DrawLine(wx.Point(6, 0), wx.Point(self.GetSize().x, 0))  # top
+        gc.DrawLine(wx.Point(6, self.GetSize().y-1), wx.Point(self.GetSize().x, self.GetSize().y-1))  # bottom
+        gc.DrawLine(wx.Point(5, 0), wx.Point(5, self.GetSize().y))  # left
+        gc.DrawLine(wx.Point(self.GetSize().x, 0), wx.Point(self.GetSize().x, self.GetSize().y))  # right
 
 
 class FoldPanelManager(wx.Panel):
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
-        self.SetWindowStyleFlag(wx.BORDER_NONE)
 
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.sizer)
+        self.__parent = args[0]
+        self.__panels = []
+        self.__sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.panels = []
-        self.parent = args[0]
+        self.SetSizer(self.__sizer)
 
     def add_panel(self, name=""):
         panel = FoldPanel(self, name)
-        if sys.platform == "linux":
-            border = 2 if len(self.panels) > 0 else 0
-            self.sizer.Add(panel, 0, wx.EXPAND | wx.TOP, border=border)
+
+        if self.panel_count > 0:
+            self.__sizer.Add(panel, 0, wx.EXPAND | wx.TOP, border=5)
         else:
-            self.sizer.Add(panel, 0, wx.EXPAND)
-        self.panels.append(panel)
+            self.__sizer.Add(panel, 0, wx.EXPAND, border=0)
+
+        self.__panels.append(panel)
         return panel
 
     def on_panel_foldout(self, panel):
+        self.__parent.Layout()
         self.PostSizeEventToParent()
-        self.parent.Layout()
+        self.Refresh()
 
     @property
     def panel_count(self):
-        return len(self.panels)
+        return len(self.__panels)
+
+    @property
+    def sizer(self):
+        return self.__sizer

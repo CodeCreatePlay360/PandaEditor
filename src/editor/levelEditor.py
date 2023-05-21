@@ -873,10 +873,6 @@ class LevelEditor(DirectObject):
             # initialize
             light_node = light_node(name)
 
-            # # no shadows for ambient lights
-            # if not isinstance(light_node, AmbientLight):
-            #     light_node.setShadowCaster(True, 512, 512)
-
             # create a np for it
             np = NodePath(name)
             np = np.attachNewNode(light_node)
@@ -886,12 +882,21 @@ class LevelEditor(DirectObject):
             np = ed_handle(np=np, path="")
             np.setPythonTag(constants.TAG_GAME_OBJECT, np)
 
-            # re-parent node-path to a model for visual representation in editor mode
+            # re-parent node-path to a model for visual representation in editor viewport
             model = self.__loader.loadModel(model, noCache=True)
             model.setLightOff()
             model.show(constants.ED_GEO_MASK)
             model.hide(constants.GAME_GEO_MASK)
             model.reparentTo(np)
+
+            if light == constants.DIRECTIONAL_LIGHT:
+                model.setScale(10)
+            elif light == constants.POINT_LIGHT:
+                model.setScale(10)
+            elif light == constants.SPOT_LIGHT:
+                model.setScale(5)
+            elif light == constants.AMBIENT_LIGHT:
+                model.setScale(10)
 
             if self.__scene_lights_on:
                 self.__active_scene.render.setLight(np)

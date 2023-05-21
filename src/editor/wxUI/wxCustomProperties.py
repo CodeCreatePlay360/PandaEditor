@@ -14,7 +14,7 @@ ID_TEXT_CHANGE = wx.NewId()
 
 # constants
 Control_Margin_Right = 1
-Control_Margin_Left = 3
+Control_Margin_Left = 4
 Label_To_Control_Space = 10
 Label_Top_Offset = 3
 
@@ -55,17 +55,15 @@ class WxCustomProperty(wx.Window):
         self.__ed_property = prop
         self.__h_offset = h_offset
         self.__font_colour = edPreferences.Colors.Inspector_properties_label
-        self.__font_size = 10
+        self.__font_size = 9 if sys.platform == "linux" else 10
+
+        self.__ed_property_label = None
 
         # create fonts
-        self.__ed_property_font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.__ed_property_font = wx.Font(self.font_size, wx.ROMAN, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
         self.__control_label_font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL,
                                             wx.FONTWEIGHT_BOLD)
         # ------------------------------------------------------------------------------
-
-        self.__ed_property_label = wx.StaticText(self, label=self.ed_property.name.capitalize())
-        self.__ed_property_label.SetFont(self.ed_property_font)
-        self.__ed_property_label.SetForegroundColour(self.font_colour)
 
         self.SetSize((-1, 22))
         self.SetMinSize((-1, 22))
@@ -87,6 +85,9 @@ class WxCustomProperty(wx.Window):
         pass
 
     def create_control(self):
+        self.__ed_property_label = wx.StaticText(self, label=self.ed_property.name.capitalize())
+        self.__ed_property_label.SetFont(self.ed_property_font)
+        self.__ed_property_label.SetForegroundColour(self.font_colour)
         size = self.ed_property_label.GetSize()
         self.ed_property_label.SetMinSize((size.x + Label_To_Control_Space, size.y))
 
@@ -173,12 +174,11 @@ class LabelProperty(WxCustomProperty):
         self.ctrl_label = None
 
     def create_control(self):
-        self.ed_property_label.Destroy()
-
+        font = wx.DEFAULT if sys.platform == "linux" else wx.DEFAULT
         if self.ed_property.is_bold:
-            self.font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.BOLD)
+            self.font = wx.Font(9, font, wx.DEFAULT, wx.BOLD)
         else:
-            self.font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
+            self.font = wx.Font(9, font, wx.DEFAULT, wx.NORMAL)
 
         self.ctrl_label = wx.StaticText(self, label=self.ed_property.name)
         self.ctrl_label.SetFont(self.font)
@@ -841,6 +841,7 @@ class SliderProperty(WxCustomProperty):
         evt.Skip()
 
     def create_control(self):
+        super(SliderProperty, self).create_control()
         self.__slider = wx.Slider(self,
                                   value=self.get_value(),
                                   minValue=self.ed_property.min_value,
@@ -874,14 +875,17 @@ class ButtonProperty(WxCustomProperty):
         evt.Skip()
 
     def create_control(self):
-        self.ed_property_label.Destroy()
-
         self.__btn = wx.Button(self, label=self.ed_property.name)
         self.__btn.SetBackgroundColour(edPreferences.Colors.Panel_Light)
 
-        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        self.__btn.SetFont(font)
+        if sys.platform == "linux":
+            font = wx.DEFAULT
+        else:
+            font = wx.SWISS
+            self.__btn.SetForegroundColour(wx.Colour(25, 25, 25, 255))
 
+        font = wx.Font(8, font, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
+        self.__btn.SetFont(font)
         self.__btn.SetMaxSize((-1, self.GetSize().y))
         self.sizer.Add(self.__btn, 1)
         self.bind_events()
@@ -903,7 +907,6 @@ class HorizontalLayoutGroup(WxCustomProperty):
         self.__properties = properties
 
     def create_control(self):
-        self.ed_property_label.Destroy()
         self.sizer.Clear(True)
 
         for i in range(len(self.__properties)):
@@ -947,16 +950,17 @@ class FoldoutGroup(WxCustomProperty):
 
         self.SetSizer(self.__v_sizer, deleteOld=True)
 
-    def on_click(self, evt=None):
+    def on_click(self, evt):
         self.__is_open = not self.__is_open
+        self.open() if self.__is_open else self.close()
 
-        if self.__is_open:
-            self.open()
-        else:
-            self.close()
+        editor.inspector.Freeze()
+        self.parent.Layout()
+        editor.inspector.fold_manager.Layout()
+        editor.inspector.Layout()
+        editor.inspector.Thaw()
 
-        if evt:
-            evt.Skip()
+        evt.Skip()
 
     def set_properties(self, properties):
         self.__properties = properties
@@ -965,7 +969,7 @@ class FoldoutGroup(WxCustomProperty):
         super(FoldoutGroup, self).create_control()
         self.create_foldout_buttons()
         self.add_properties()
-        self.on_click(None)  # default
+        self.open() if self.__is_open else self.close()
 
     def create_foldout_buttons(self):
         self.__v_sizer.Clear()
@@ -1001,13 +1005,7 @@ class FoldoutGroup(WxCustomProperty):
         self.SetMinSize((-1, min_size))
 
         self.__fd_button.SetBitmap(self.__fd_open_icon)
-
-        self.__v_sizer.Layout()
-
-        if self.scrolled_panel:
-            self.scrolled_panel.PostSizeEvent()
-        else:
-            self.parent.PostSizeEvent()
+        self.Layout()
 
     def close(self):
         for prop in self.__properties:
@@ -1019,13 +1017,6 @@ class FoldoutGroup(WxCustomProperty):
 
         self.__fd_button.SetBitmap(self.__fd_close_icon)
 
-        self.__v_sizer.Layout()
-
-        if self.scrolled_panel:
-            self.scrolled_panel.PostSizeEvent()
-        else:
-            self.parent.PostSizeEvent()
-
     @property
     def properties(self):
         return self.__properties
@@ -1035,7 +1026,6 @@ class StaticBox(WxCustomProperty):
     def __init__(self, parent, property_, *args, **kwargs):
         super().__init__(parent, property_)
 
-        self.sizer.Clear(True)  # delete default sizer
         self.__sz = None
         self.__properties = []
 
@@ -1049,16 +1039,22 @@ class StaticBox(WxCustomProperty):
             prop.set_parent(self.__sz.GetStaticBox())
             self.__sz.Add(prop, 1, wx.EXPAND)
 
+        if sys.platform == "linux":
+            self.__sz.AddSpacer(4)
+
     def create_control(self):
-        super(StaticBox, self).create_control()
         self.__sz = wx.StaticBoxSizer(wx.VERTICAL, self, self.ed_property.name)
 
-        font = wx.Font(self.font_size, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        if sys.platform == "linux":
+            self.sizer.Add(self.__sz, 1, wx.EXPAND | wx.BOTTOM, border=5)
+        else:
+            self.sizer.Add(self.__sz, 1, wx.EXPAND)
+
+        font = wx.Font(8 if sys.platform == "linux" else 8, wx.ROMAN, wx.NORMAL, wx.FONTWEIGHT_BOLD)
         self.__sz.GetStaticBox().SetFont(font)
         self.__sz.GetStaticBox().SetForegroundColour(wx.Colour(255, 220, 145, 255))
 
         self.add_properties()
-        self.SetSizer(self.__sz)
 
     def set_properties(self, properties):
         self.__properties = properties
