@@ -28,7 +28,7 @@
 
 ## Links
 1. [Discord](https://discord.gg/eTMcUp2PXF)
-2. [Patreon](https://www.patreon.com/Panda3D_Editor)
+2. [Patreon](https://www.patreon.com/PandaEditor_)
 
 ## Dependencies
 1. Panda3D
