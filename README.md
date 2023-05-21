@@ -1,8 +1,8 @@
-## An open source level / scene editor for Panda3D
+## Open source scene editor for Panda3D
 
 ![Image](images//main.png)
 
-**PandaEditor is an open-source level editor for Panda3D game engine that supports all industry standard features including support for writing custom editor plugins. Designed to be easy to use and easy to integrate with your existing Panda3D projects, PandaEditor provides you with a convenient interface for quickly editing your 3D or 2D scenes.**.
+**PandaEditor is an open-source level editor for the Panda3D game engine, designed to be easy to use and extend, PandaEditor provides you with a convenient interface that allows for quickly editing your 2D or 3D scenes, it has support for all industry standard features including.**
 
 * Object manipulation
 * Object Inspection

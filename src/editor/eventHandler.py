@@ -3,7 +3,7 @@ import wx
 
 from thirdparty.event.observable import Observable
 from editor.globals import editor
-from editor.constants import GAME_STATE, TAG_GAME_OBJECT
+from editor.constants import GAME_STATE, TAG_GAME_OBJECT, GAME_STATE
 from editor.utils import safe_execute
 
 
@@ -346,6 +346,10 @@ def clean_unused_loaded_nps(nps_to_remove):
 @obs.on("EditorReload")
 def reload_editor(*args):
     le = editor.level_editor
+    if le.ed_state == GAME_STATE:
+        print("Cannot reload editor while in game mode.")
+        return
+
     wx_main = editor.wx_main
     inspector = editor.inspector
     resource_tree = editor.resource_browser
