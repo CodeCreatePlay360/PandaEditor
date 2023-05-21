@@ -86,7 +86,7 @@ class LevelEditor(DirectObject):
                                 "mouse2-up": (self.on_mouse2_up, None),
 
                                 "shift-mouse1": (self.on_mouse1_down, [True]),
-                                "control-mouse1": (self.on_mouse1_down, None)
+                                "control-mouse1": (self.on_mouse1_down, [False])
                                 }
 
         self.__scene_lights_on = False  # scene lights are on or off ?
