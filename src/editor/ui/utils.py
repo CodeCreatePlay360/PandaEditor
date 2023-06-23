@@ -1,4 +1,4 @@
-import wx
+from wx import MenuItem
 
 
 def build_menu(menu, items):
@@ -9,6 +9,6 @@ def build_menu(menu, items):
             menu.AppendSeparator()
             continue
 
-        menu_item = wx.MenuItem(menu, _items[0], _items[1])
+        menu_item = MenuItem(menu, _items[0], _items[1])
         # menu_item.SetBitmap(wx.Bitmap('exit.png'))
         menu.Append(menu_item)

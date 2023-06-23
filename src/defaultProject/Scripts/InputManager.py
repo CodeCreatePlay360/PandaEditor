@@ -31,10 +31,10 @@ class InputManager(RuntimeModule):
         self.__zoom = 0
         self.center_mouse = False
 
-        self.discarded_attrs = "keys"
-        self.discarded_attrs = "_InputManager__dx"
-        self.discarded_attrs = "_InputManager__dy"
-        self.discarded_attrs = "_InputManager__lastMousePos"
+        self.non_serialized_attrs = "keys"
+        self.non_serialized_attrs = "_InputManager__dx"
+        self.non_serialized_attrs = "_InputManager__dy"
+        self.non_serialized_attrs = "_InputManager__lastMousePos"
 
     def register_key(self, key: str):
         if not isinstance(key, str):

@@ -23,7 +23,7 @@ class Project(object):
         self.project_path = path
 
         # set window title
-        self.app.wx_main.SetTitle("PandaEditor (Default Project)")
+        self.app.wx_main.SetTitle("PandaEditor (defaultProject)")
 
         # sys.path.append(self.project_path)
         # clear panda3d's current model paths and set new according to new project path

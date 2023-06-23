@@ -16,11 +16,14 @@ class Property:
                  value: Supported_Types,
                  value_limit: Value_Limiter_Types = None,
                  type_=None,
+                 layout_idx: int = 100,
                  *args, **kwargs):
+
         self.name = name
         self.initial_value = value
         self.type_ = type(self.initial_value) if type_ is None else type_
         self.value_limit = None if not value_limit else value_limit
+        self.layout_idx = layout_idx
         self.kwargs = kwargs
 
         self.is_valid = False
@@ -156,6 +159,7 @@ class Slider(FuncProperty):
 
     def validate(self):
         super().validate()
+
 
 # ------------------------------------------------------------------------------------------------
 # TODO: HorizontalLayoutGroup, FoldoutGroup, StaticBox should have one base class since code is same for

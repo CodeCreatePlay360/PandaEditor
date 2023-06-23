@@ -12,9 +12,9 @@ class EditorPlugin(PModBase):
 
         self.module_type = constants.EditorPlugin
 
-        self.discarded_attrs = "_EditorPlugin__le"
-        self.discarded_attrs = "_EditorPlugin__commands"
-        self.discarded_attrs = "_EditorPlugin__commands"
+        self.non_serialized_attrs = "_EditorPlugin__le"
+        self.non_serialized_attrs = "_EditorPlugin__commands"
+        self.non_serialized_attrs = "_EditorPlugin__commands"
 
     @property
     def le(self):

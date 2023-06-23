@@ -23,6 +23,8 @@ class Editor:
     __inspector = None
     __console = None
 
+    __ui_config = None
+
     def init(self,
              observer,
              app,
@@ -46,6 +48,9 @@ class Editor:
         self.__scene_graph = scene_graph
         self.__inspector = inspector
         self.__console = console
+
+    def set_ui_config(self, ui_config):
+        self.__ui_config = ui_config
 
     @property
     def observer(self):
@@ -90,6 +95,10 @@ class Editor:
     @property
     def console(self):
         return self.__console
+
+    @property
+    def ui_config(self):
+        return self.__ui_config
 
 
 editor = Editor()

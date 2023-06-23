@@ -114,7 +114,7 @@ UI_LAYOUT_EVENTS = {
     Evt_Save_UI_Layout: "SaveUILayout"}
 
 
-class WxMenuBar(wx.MenuBar):
+class MenuBar(wx.MenuBar):
     def __init__(self, wx_main):
         wx.MenuBar.__init__(self)
         self.wx_main = wx_main

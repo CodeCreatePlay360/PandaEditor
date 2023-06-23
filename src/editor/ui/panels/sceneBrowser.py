@@ -3,9 +3,8 @@ import pickle
 import wx
 import wx.lib.agw.customtreectrl as customtree
 import editor.constants as constants
-import editor.edPreferences as edPreferences
 from panda3d.core import NodePath
-from editor.wxUI.custom import SearchBox
+from editor.ui.custom import SearchBox
 from editor.commands import ReparentNPs, SelectObjects, RemoveObjects, RenameNPs
 from editor.globals import editor
 
@@ -20,7 +19,7 @@ OBJECT_ICON = str(pathlib.Path(constants.ICONS_PATH + "/SceneGraph/cube.png"))
 class SceneBrowserPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
-        self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
         self.wx_main = args[0]
 
         self.scene_graph = SceneBrowser(self, self.wx_main)
@@ -41,7 +40,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
     def __init__(self, parent, wx_main, *args, **kwargs):
         customtree.CustomTreeCtrl.__init__(self, parent, *args, **kwargs)
-        self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
         self.wx_main = wx_main
         self.parent = parent
         self.organize_tree = True  # organize a tree based on file_extensions

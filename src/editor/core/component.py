@@ -9,7 +9,7 @@ class Component(RuntimeModule, NodePath):
         RuntimeModule.__init__(self, *args, **kwargs)
         self.module_type = constants.Component
         self.__status = constants.SCRIPT_STATUS_OK
-        self.discarded_attrs = "_Component__status"
+        self.non_serialized_attrs = "_Component__status"
 
     def set_status(self, status: int):
         if status not in [constants.SCRIPT_STATUS_OK, constants.SCRIPT_STATUS_ERROR]:

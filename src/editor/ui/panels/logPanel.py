@@ -2,9 +2,9 @@ import sys
 import pathlib
 import wx
 import wx.richtext as richText
-import editor.edPreferences as edPreferences
 import editor.constants as constants
-from editor.wxUI.custom.controlGroup import BasicButton, ToggleButton
+from editor.ui.custom.controlGroup import BasicButton, ToggleButton
+from editor.globals import editor
 
 Models_icon = str(pathlib.Path(constants.ICONS_PATH + "/3D-objects-icon.png"))
 Textures_icon = str(pathlib.Path(constants.ICONS_PATH + "/images.png"))
@@ -22,7 +22,7 @@ class LogPanel(wx.Panel):
     class ToolBar(wx.Panel):
         def __init__(self, *args, **kwargs):
             wx.Panel.__init__(self, *args)
-            self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+            self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
 
             self.parent = args[0]
 
@@ -30,24 +30,14 @@ class LogPanel(wx.Panel):
             self.SetSizer(self.sizer)
 
             # add controls to sizer
-            self.toggle_clear_on_reload = ToggleButton(self, 0,
-                                                       "ClearOnReload ",
-                                                       start_offset=1,
-                                                       text_flags=wx.RIGHT | wx.EXPAND,
-                                                       text_border=3,
-                                                       select_func=self.on_toggle,
+            self.toggle_clear_on_reload = ToggleButton(self, 0, "ClearOnReload ", select_func=self.on_toggle,
                                                        deselect_func=self.on_toggle_off)
             self.toggle_clear_on_reload.SetMinSize(wx.Size(80, -1))
 
-            self.toggle_clear_on_play = ToggleButton(self, 1,
-                                                     "ClearOnPlay ",
-                                                     start_offset=3,
-                                                     select_func=self.on_toggle)
+            self.toggle_clear_on_play = ToggleButton(self, 1, "ClearConsole ", select_func=self.on_toggle,
+                                                     deselect_func=self.on_toggle_off)
 
-            self.clear_console_btn = BasicButton(self, 0,
-                                                 "ClearConsole ",
-                                                 start_offset=1,
-                                                 select_func=self.on_button)
+            self.clear_console_btn = BasicButton(self, 2, "ClearConsole ", select_func=self.on_button)
 
             # add controls to sizer
             self.sizer.Add(self.toggle_clear_on_reload, 0)
@@ -101,7 +91,7 @@ class LogPanel(wx.Panel):
 
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
-        self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
 
         self.clear_on_reload = False
         self.clear_on_play = False
@@ -111,8 +101,8 @@ class LogPanel(wx.Panel):
 
         # build log text control
         self.tc = richText.RichTextCtrl(self, style=wx.VSCROLL | wx.NO_BORDER)
-        self.tc.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
-        self.tc.BeginTextColour(edPreferences.Colors.Console_Text)
+        self.tc.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
+        self.tc.BeginTextColour(editor.ui_config.color_map("Text_Secondary"))
 
         # static line
         static_line_0 = wx.Panel(self)

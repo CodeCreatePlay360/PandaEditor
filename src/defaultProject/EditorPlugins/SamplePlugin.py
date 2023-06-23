@@ -3,7 +3,7 @@ import panda3d.core as p3d_core
 from editor.core import EditorPlugin
 
 
-class Scatter(EditorPlugin):
+class SamplePlugin(EditorPlugin):
     def __init__(self, *args, **kwargs):
         EditorPlugin.__init__(self, *args, **kwargs)
 

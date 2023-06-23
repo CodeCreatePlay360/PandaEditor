@@ -184,7 +184,7 @@ def on_scene_start():
     wx_main.freeze()
 
     # set a default active object for inspector
-    inspector.select_inspector(0)
+    inspector.select_tab(0)
     cube = level_editor.active_scene.render.find("**/cube.fbx")
     cube = cube.getPythonTag(TAG_GAME_OBJECT)
     # inspector.set_object(cube, cube.get_name(), cube.get_properties())

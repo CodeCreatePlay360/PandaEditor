@@ -4,13 +4,12 @@ import shutil
 import sys
 import wx
 import wx.lib.agw.customtreectrl as customtree
-import editor.edPreferences as edPreferences
-import editor.wxUI.globals as wxGlobals
+import editor.ui.utils as wxUtils
 
 from pathlib import Path
 from editor.utils.exceptionHandler import try_execute
-from editor.wxUI.etc.dragDropData import ResourceDragDropData
 from editor.utils import DirWatcher, FileUtils
+from editor.ui.etc.dragDropData import ResourceDragDropData
 from editor.globals import editor
 from editor.constants import ICONS_PATH
 from thirdparty.wxCustom.imageTilesPanel import ImageTilesPanel
@@ -74,7 +73,7 @@ def create_generic_menu_items(parent_menu):
     menu_items = [(EVT_RENAME_ITEM, "&Rename", None),
                   (EVT_REMOVE_ITEM, "&Remove", None),
                   (EVT_DUPLICATE_ITEM, "&Duplicate", None)]
-    wxGlobals.build_menu(parent_menu, menu_items)
+    wxUtils.build_menu(parent_menu, menu_items)
 
 
 def create_add_menu_items(parent_menu):
@@ -88,7 +87,7 @@ def create_add_menu_items(parent_menu):
         (EVT_NEW_DIR, "New Folder", None)
     ]
     objects_menu = wx.Menu()
-    wxGlobals.build_menu(objects_menu, objects_items)
+    wxUtils.build_menu(objects_menu, objects_items)
     parent_menu.Append(wx.ID_ANY, "Add", objects_menu)
 
     # import assets menu
@@ -98,7 +97,7 @@ def create_add_menu_items(parent_menu):
 
     # show in explorer menu
     library_items = [(EVT_SHOW_IN_EXPLORER, "&Show In Explorer", None)]
-    wxGlobals.build_menu(parent_menu, library_items)
+    wxUtils.build_menu(parent_menu, library_items)
 
 
 # TODO make implementation in this class as part of image tiles panel
@@ -158,8 +157,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
         self.__tiles_panel = preview_tiles_panel
 
         # ---------------------------------------------------------------------------- #
-        self.SetBackgroundColour(edPreferences.Colors.Image_Tile_BG)
-        # self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
+        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
 
         agw_win_styles = wx.TR_DEFAULT_STYLE | wx.TR_SINGLE | wx.TR_MULTIPLE | wx.TR_HIDE_ROOT
         agw_win_styles |= wx.TR_TWIST_BUTTONS
@@ -785,7 +783,7 @@ class TestDropTarget(wx.PyDropTarget):
 
                 if sys.platform == "linux":
                     file = src_path.split("/")[-1]
-                elif sys.platform == "win32" or sys.platform == "win64":
+                elif sys.platform == "win32":
                     file = src_path.split("\\")[-1]
                 else:
                     return wx.DragError

@@ -8,7 +8,7 @@ class RuntimeModule(PModBase):
 
         self.__game = kwargs.pop("game", None)
         self.module_type = constants.RuntimeModule
-        self.discarded_attrs = "_RuntimeModule__game"
+        self.non_serialized_attrs = "_RuntimeModule__game"
 
     @property
     def game(self):

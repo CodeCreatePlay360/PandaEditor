@@ -2,6 +2,7 @@ import editor.constants as constants
 import editor.utils as ed_utils
 
 from direct.showbase.DirectObject import DirectObject
+from panda3d.core import LVecBase2f, LPoint2f, LVecBase3f, LPoint3f
 from editor.globals import editor
 
 
@@ -55,7 +56,7 @@ class PModBase(DirectObject):
 
         # to be discarded variables
         # these variables will not be saved
-        self.__discarded_attributes = []
+        self.__non_serialized_attrs = []
 
     def accept(self, event, method, extra_args: list = None):
         if extra_args is None:
@@ -190,21 +191,16 @@ class PModBase(DirectObject):
                 # this attribute should be saved otherwise active status would have to be manually set after
                 # every editor reload
                 pass
-            elif self.__discarded_attributes.__contains__(name) or hasattr(PModBase("", None), name):
+
+            if name[0] == "_" or hasattr(PModBase("", None), name):
                 # print("discarded attr name: {0}".format(name))
                 continue
-            # print("[{0}] Saved attribute name: {1} val: {2}".format(self.name, name, val))
-            attrs.append((name, val))
 
-        return attrs
-
-    def get_visible_attributes(self):
-        attrs = []
-        for name, val in self.__dict__.items():
-            if name[0] == "_" or self.__hidden_attributes.__contains__(name) or hasattr(PModBase("", None), name):
-                # print("attr hidden name: {0}".format(name))
+            if not isinstance(val, (int, float, str, bool, LVecBase2f, LPoint2f, LVecBase3f, LPoint3f)):
+                # print("[{0}] Attribute ignored name: {1} val: {2}".format(self.name, name, val))
                 continue
-            # print("[{0}] Visible attribute name: {1} val: {2}".format(self.name, name, val))
+
+            # print("[{0}] Saved attribute name: {1} val: {2}".format(self.name, name, val))
             attrs.append((name, val))
 
         return attrs
@@ -216,8 +212,7 @@ class PModBase(DirectObject):
 
     def get_properties(self):
         self.__properties = []
-        for name, value in self.get_visible_attributes():
-
+        for name, value in self.get_savable_atts():
             try:
                 prop = ed_utils.EdProperty.ObjProperty(name=name, value=value, type_=type(value), obj=self)
                 self.__properties.append(prop)
@@ -225,14 +220,23 @@ class PModBase(DirectObject):
                 print("Error: Unable to add property {0}".format(name))
                 print(e)
 
-        self.__properties.extend(self.__user_properties)
+        properties_pre = []
+        properties_post = []
+        for property_ in self.__user_properties:
+            if property_.layout_idx == -1:
+                properties_pre.append(property_)
+            else:
+                properties_post.append(property_)
+
+        # self.__properties.extend(self.__user_properties)
+        self.__properties = properties_pre + self.__properties + properties_post
         return self.__properties
 
     def set_active(self, val):
         self.__active = val
 
     def is_discarded_attr(self, name):
-        if name in self.__discarded_attributes:
+        if name in self.__non_serialized_attrs:
             return True
         return False
 
@@ -251,8 +255,8 @@ class PModBase(DirectObject):
         return self.__hidden_attributes
 
     @property
-    def discarded_attrs(self):
-        return self.__discarded_attributes
+    def non_serialized_attrs(self):
+        return self.__non_serialized_attrs
 
     @property
     def name(self):
@@ -346,13 +350,13 @@ class PModBase(DirectObject):
         if hasattr(self, attr) and not self.__hidden_attributes.__contains__(attr):
             self.__hidden_attributes.append(attr)
 
-    @discarded_attrs.setter
-    def discarded_attrs(self, attr: str):
+    @non_serialized_attrs.setter
+    def non_serialized_attrs(self, attr: str):
         if not isinstance(attr, str):
             print("{0}: Unable to set attribute {1} as discarded, value must be of type string".format(self.name, attr))
             return
-        if hasattr(self, attr) and not self.__discarded_attributes.__contains__(attr):
-            self.__discarded_attributes.append(attr)
+        if hasattr(self, attr) and not self.__non_serialized_attrs.__contains__(attr):
+            self.__non_serialized_attrs.append(attr)
 
     @module_type.setter
     def module_type(self, val):

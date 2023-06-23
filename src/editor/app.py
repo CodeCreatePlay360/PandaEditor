@@ -8,7 +8,8 @@ from panda3d.core import WindowProperties
 from direct.showbase.ShowBase import taskMgr
 from editor.showBase import ShowBase
 from editor.eventHandler import *
-from editor.wxUI.wxMain import WxFrame
+from editor.ui.wxMain import WxFrame
+from editor.ui.config import UI_Config
 from editor.levelEditor import LevelEditor
 from editor.p3d import wxPanda
 from editor.commandManager import CommandManager, Command
@@ -21,6 +22,7 @@ class MyApp(wxPanda.App):
     _mouse_mode = None
     level_editor = None
     command_manager = None
+    ui_config = None
 
     __current_ui_update_interval = 0
     __ui_update_delay = 1
@@ -29,12 +31,15 @@ class MyApp(wxPanda.App):
 
     def init(self, path):
         constants.EDITOR_PATH = path
-        constants.DEFAULT_PROJECT_PATH = os.path.join(path, "Default Project")
-
-        self.wx_main = WxFrame(parent=None, title="PandaEditor (Default Project)", size=(800, 600))
+        constants.DEFAULT_PROJECT_PATH = os.path.join(path, "defaultProject")
+        self.ui_config = UI_Config(str(pathlib.Path("src/config.xml")))
+        editor.set_ui_config(self.ui_config)
+        self.wx_main = WxFrame(parent=None, title="PandaEditor (defaultProject)", size=(800, 600))
         self.show_base = ShowBase(self.wx_main.ed_viewport_panel)
+
         self.replace_event_loop()
         self.wx_main.do_after()
+
         wx.CallLater(50, self.init_editor)
 
     def init_editor(self):
@@ -64,10 +69,10 @@ class MyApp(wxPanda.App):
             resource_browser=self.wx_main.resource_browser,
             scene_graph=self.wx_main.scene_graph_panel.scene_graph,
             inspector=self.wx_main.inspector_panel,
-            console=self.wx_main.console_panel,
+            console=self.wx_main.console_panel
         )
 
-        # finally, create your first scene
+        # create a default scene
         self.level_editor.create_new_scene(True)
 
         self.wx_main.resource_browser.tree.remove_all_libs()

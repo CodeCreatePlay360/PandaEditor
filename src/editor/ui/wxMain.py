@@ -3,14 +3,14 @@ import sys
 import wx
 import wx.aui
 import wx.lib.agw.aui as aui
-import editor.edPreferences as edPreferences
 
-from editor.wxUI.wxMenuBar import WxMenuBar
-from editor.wxUI.panels import *
+from direct.showbase.ShowBase import taskMgr
+from editor.ui.menuBar import MenuBar
+from editor.ui.panels import *
+from editor.ui.custom import BasicButton
 from editor.constants import ICONS_PATH
 from editor.globals import editor
-from editor.wxUI.custom import BasicButton
-from direct.showbase.ShowBase import taskMgr
+
 
 # scene events
 Evt_Open_Project = wx.NewId()
@@ -136,7 +136,7 @@ class WxAUINotebook(wx.aui.AuiNotebook):
         return wx.Size(self.__parent.GetSize().x, -1)
 
     def add_pages(self, pages):
-        for page, name in pages:
+        for page, name, bitmap in pages:
             self.AddPage(page, name, True)
 
     def is_page_active(self, name):
@@ -149,10 +149,11 @@ class WxAUINotebook(wx.aui.AuiNotebook):
 
 class AUINotebook(aui.AuiNotebook):
     class NotebookPageAndIdx:
-        def __init__(self, idx, page, label):
+        def __init__(self, idx, page, label, bitmap):
             self.idx = idx
             self.page = page
             self.label = label
+            self.bitmap = bitmap
 
     def __init__(self, parent):
         aui.AuiNotebook.__init__(self, parent=parent)
@@ -166,7 +167,7 @@ class AUINotebook(aui.AuiNotebook):
     def InsertPage(self, page_idx, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap,
                    control=None, tooltip=""):
         self.__active_pages.append(caption)
-        super().InsertPage(page_idx, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap,
+        super().InsertPage(page_idx, page, caption, select=False, bitmap=bitmap, disabled_bitmap=wx.NullBitmap,
                            control=None, tooltip="")
 
     def DeletePage(self, page_idx):
@@ -181,7 +182,7 @@ class AUINotebook(aui.AuiNotebook):
         super().RemovePage(page_idx)
 
     def add_pages(self, pages):
-        for page, name in pages:
+        for page, name, bitmap, in pages:
             self.AddPage(page, name, True)
 
     def is_page_active(self, name):
@@ -196,10 +197,37 @@ class WxFrame(wx.Frame):
     USING_SPLITTER = False
 
     class StatusPanel(wx.Panel):
+        class InfoPanel(wx.Window):
+            def __init__(self, *args, **kwargs):
+                wx.Window.__init__(self, *args, **kwargs)
+                self.SetBackgroundColour(editor.ui_config.color_map("Panel_Normal"))
+
+                font = wx.Font(8, editor.ui_config.ed_font, wx.NORMAL, wx.NORMAL)
+
+                self.bg_tasks_text_ctrl = wx.StaticText(self)
+                self.bg_tasks_text_ctrl.SetBackgroundColour(editor.ui_config.color_map("Panel_Normal"))
+                self.bg_tasks_text_ctrl.SetForegroundColour(wx.Colour(225, 225, 225, 255))
+                self.bg_tasks_text_ctrl.SetFont(font)
+                self.bg_tasks_text_ctrl.SetLabelText("[PandaEditor]")
+                #
+                self.selected_item_text_info = wx.StaticText(self)
+                self.selected_item_text_info.SetBackgroundColour(editor.ui_config.color_map("Panel_Normal"))
+                self.selected_item_text_info.SetForegroundColour(wx.Colour(225, 225, 225, 255))
+                self.selected_item_text_info.SetFont(font)
+                self.selected_item_text_info.SetLabelText("(Selected item info: no info available)")
+
+                sizer = wx.BoxSizer(wx.HORIZONTAL)
+                self.SetSizer(sizer)
+
+                border = 2 if sys.platform == "linux" else 1
+                sizer.Add(self.bg_tasks_text_ctrl, 0, wx.EXPAND | wx.TOP, border=border)
+                sizer.AddSpacer(2)
+                sizer.Add(self.selected_item_text_info, 0, wx.EXPAND | wx.TOP, border=border)
+
         def __init__(self, *args):
             wx.Panel.__init__(self, *args)
             # self.SetWindowStyleFlag(wx.SUNKEN_BORDER)
-            self.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
+            self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
             self.SetMaxSize((-1, 16))
             self.parent = args[0]
             #
@@ -208,31 +236,10 @@ class WxFrame(wx.Frame):
             #
             self.refresh_btn = self.create_refresh_btn()
             #
-            if sys.platform == "linux":
-                font = wx.Font(8, wx.MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD)
-            else:
-                font = wx.Font(8, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_MAX)
-
-            self.bg_tasks_text_ctrl = wx.StaticText(self)
-            self.bg_tasks_text_ctrl.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
-            self.bg_tasks_text_ctrl.SetForegroundColour(wx.Colour(225, 225, 225, 255))
-            self.bg_tasks_text_ctrl.SetFont(font)
-            self.bg_tasks_text_ctrl.SetLabelText("[PandaEditor]")
-            #
-            self.selected_item_text_info = wx.StaticText(self)
-            self.selected_item_text_info.SetBackgroundColour(edPreferences.Colors.Panel_Normal)
-            self.selected_item_text_info.SetForegroundColour(wx.Colour(225, 225, 225, 255))
-            self.selected_item_text_info.SetFont(font)
-            self.selected_item_text_info.SetLabelText("(SelectedItemInfo: no info available)")
+            self.info_panel = WxFrame.StatusPanel.InfoPanel(self)
             #
             self.main_sizer.Add(self.refresh_btn, 0, wx.EXPAND | wx.RIGHT, border=1)
-
-            self.main_sizer.Add(self.bg_tasks_text_ctrl, 0, wx.EXPAND | wx.TOP,
-                                border=2 if sys.platform == "linux" else 0)
-
-            self.main_sizer.Add(self.selected_item_text_info, 0, wx.EXPAND | wx.TOP,
-                                border=2 if sys.platform == "linux" else 0)
-
+            self.main_sizer.Add(self.info_panel, 0, border=0)
             self.main_sizer.Layout()
 
         def create_refresh_btn(self):
@@ -248,7 +255,7 @@ class WxFrame(wx.Frame):
         def write_tasks_info(self, count):
             # bg running tasks info
             info = "(Background running tasks count = {0})".format(len(taskMgr.getAllTasks()))
-            self.bg_tasks_text_ctrl.SetLabelText(info)
+            self.info_panel.bg_tasks_text_ctrl.SetLabelText(info)
             self.main_sizer.Layout()
 
         def write_selected_item_info(self):
@@ -267,8 +274,8 @@ class WxFrame(wx.Frame):
         self.load_resources()
         #
         # set menu bar
-        self.menu_bar = WxMenuBar(self)
-        self.SetMenuBar(self.menu_bar)
+        self.__menu_bar = MenuBar(self)
+        self.SetMenuBar(self.__menu_bar)
         #
         self.status_panel = WxFrame.StatusPanel(self)
         #
@@ -278,26 +285,26 @@ class WxFrame(wx.Frame):
         self.resource_browser = ResourceBrowser(self)
         self.scene_graph_panel = SceneBrowserPanel(self)
 
-        self.panels = [(self.ed_viewport_panel, "Viewport"),
-                       (self.inspector_panel, "Inspector"),
-                       (self.console_panel, "ConsolePanel"),
-                       (self.resource_browser, "ResourceBrowser"),
-                       (self.scene_graph_panel, "SceneGraph")]
+        self.__panels = [(self.ed_viewport_panel, "Viewport", wx.Bitmap(VIEWPORT_ICON)),
+                         (self.inspector_panel, "Inspector", wx.Bitmap(INSPECTOR_ICON)),
+                         (self.console_panel, "ConsolePanel", wx.Bitmap(CONSOLE_ICON)),
+                         (self.resource_browser, "ResourceBrowser", wx.Bitmap(RESOURCE_BROWSER)),
+                         (self.scene_graph_panel, "SceneGraph", wx.Bitmap(SCENE_GRAPH_ICON))]
 
         if sys.platform == "linux":
             self.USING_SPLITTER = True
 
         # notebook
-        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.main_sizer)
+        self.__main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.__main_sizer)
 
-        self.notebook = WxAUINotebook(self) if self.USING_SPLITTER else AUINotebook(self)  # aui nb has issues on linux
-        self.notebook.add_pages(self.panels)  # add panels to notebook
-        self.notebook.SetPageBitmap(0, wx.Bitmap(VIEWPORT_ICON))
-        self.notebook.SetPageBitmap(1, wx.Bitmap(INSPECTOR_ICON))
-        self.notebook.SetPageBitmap(2, wx.Bitmap(CONSOLE_ICON))
-        self.notebook.SetPageBitmap(3, wx.Bitmap(RESOURCE_BROWSER))
-        self.notebook.SetPageBitmap(4, wx.Bitmap(SCENE_GRAPH_ICON))
+        self.__notebook = WxAUINotebook(self) if self.USING_SPLITTER else AUINotebook(self)  # aui nb has issues on linux
+        self.__notebook.add_pages(self.__panels)  # add panels to notebook
+        self.__notebook.SetPageBitmap(0, self.__panels[0][2])
+        self.__notebook.SetPageBitmap(1, self.__panels[1][2])
+        self.__notebook.SetPageBitmap(2, self.__panels[2][2])
+        self.__notebook.SetPageBitmap(3, self.__panels[3][2])
+        self.__notebook.SetPageBitmap(4, self.__panels[4][2])
 
         self.saved_layouts = {}  # saved perspectives for aui notebook
         # create aui toolbars
@@ -309,12 +316,12 @@ class WxFrame(wx.Frame):
         self.toolbar_sizer.Add(self.file_menu_tb, 0, border=0)
 
         if not self.USING_SPLITTER:
-            self.notebook.LoadPerspective(xx)
+            self.__notebook.LoadPerspective(xx)
             self.save_layout("Default")
 
-        self.main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
-        self.main_sizer.Add(self.notebook, 1, wx.EXPAND)
-        self.main_sizer.Add(self.status_panel, 1, wx.EXPAND)
+        self.__main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
+        self.__main_sizer.Add(self.__notebook, 1, wx.EXPAND)
+        self.__main_sizer.Add(self.status_panel, 1, wx.EXPAND)
 
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
 
@@ -474,14 +481,15 @@ class WxFrame(wx.Frame):
             return
 
         data = []
-        for i in range(self.notebook.GetPageCount()):
+        for i in range(self.__notebook.GetPageCount()):
             save_obj = AUINotebook.NotebookPageAndIdx(idx=i,
-                                                      page=self.notebook.GetPage(i),
-                                                      label=self.notebook.GetPageText(i))
+                                                      page=self.__notebook.GetPage(i),
+                                                      label=self.__notebook.GetPageText(i),
+                                                      bitmap=self.__notebook.GetPageBitmap(i))
             data.append(save_obj)
 
-        self.saved_layouts[name] = (data, self.notebook.SavePerspective())
-        self.menu_bar.add_ui_layout_menu(name)
+        self.saved_layouts[name] = (data, self.__notebook.SavePerspective())
+        self.__menu_bar.add_ui_layout_menu(name)
         self.saved_layouts.keys()
 
     def load_layout(self, layout):
@@ -492,24 +500,29 @@ class WxFrame(wx.Frame):
         # check if layout exists
         self.Freeze()
         if self.saved_layouts.__contains__(layout):
-            for i in range(len(self.panels)):
-                self.notebook.RemovePage(0)
+            for i in range(len(self.__notebook.active_pages)):
+                self.__notebook.RemovePage(0)
 
             saved_data = self.saved_layouts[layout][0]
             for i in range(len(saved_data)):
-                self.notebook.InsertPage(saved_data[i].idx, saved_data[i].page, saved_data[i].label)
+                self.__notebook.InsertPage(saved_data[i].idx, saved_data[i].page, saved_data[i].label, bitmap=saved_data[i].bitmap)
 
-            self.notebook.LoadPerspective(self.saved_layouts[layout][1])  # finally, load perspective
-            self.notebook.Refresh()
-            self.notebook.Update()
+            self.__notebook.LoadPerspective(self.saved_layouts[layout][1])  # finally, load perspective
+            self.__notebook.Refresh()
+            self.__notebook.Update()
             self.save_layout(layout)  # update the layout
         self.Thaw()
 
     def add_page(self, page: str):
-        for item in self.panels:
+        for item in self.__panels:
             if item[1] == page:
-                if not self.notebook.is_page_active(item[1]):
-                    self.notebook.AddPage(item[0], item[1], False)
+                if not self.__notebook.is_page_active(item[1]):
+                    self.__notebook.AddPage(item[0], item[1])
+                    # update page bitmap
+                    for i in range(len(self.__panels)):
+                        if self.__panels[i][1] == page:
+                            idx = self.__notebook.GetPageIndex(item[0])
+                            self.__notebook.SetPageBitmap(idx, self.__panels[i][2])
                 else:
                     print("Page {0} already exists".format(item[1]))
 
@@ -530,13 +543,17 @@ class WxFrame(wx.Frame):
         if not hasattr(self, "panels"):
             return
 
-        for item in self.panels:
+        for item in self.__panels:
             panel = item[0]
             if panel != self.ed_viewport_panel and not panel.IsFrozen():
                 panel.Freeze()
 
     def thaw(self):
-        for item in self.panels:
+        for item in self.__panels:
             panel = item[0]
             if panel.IsFrozen():
                 panel.Thaw()
+
+    @property
+    def menu_bar(self):
+        return self.__menu_bar

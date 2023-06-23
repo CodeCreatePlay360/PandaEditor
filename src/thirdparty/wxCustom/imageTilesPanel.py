@@ -4,17 +4,16 @@ import pickle
 import math
 import wx
 import editor.constants as constants
-import editor.edPreferences as edPreferences
-import editor.wxUI.globals as wxGlobals
+import editor.ui.utils as wxUtils
 import editor.commands as commands
 
 from pathlib import Path
 from panda3d.core import Filename
 from wx.lib.scrolledpanel import ScrolledPanel
 
-from editor.wxUI.etc.dragDropData import ResourceDragDropData
-from editor.wxUI.custom import SelectionButton
-from editor.wxUI.custom import SearchBox
+from editor.ui.etc.dragDropData import ResourceDragDropData
+from editor.ui.custom import SelectionButton
+from editor.ui.custom import SearchBox
 from editor.globals import editor
 from editor.core import RuntimeModule, EditorPlugin, Component
 from editor.utils import FileUtils
@@ -49,13 +48,13 @@ def create_generic_menu_items(parent_menu):
     menu_items = [(EVT_RENAME_ITEM, "&Rename", None),
                   (EVT_REMOVE_ITEM, "&Remove", None),
                   (EVT_DUPLICATE_ITEM, "&Duplicate", None)]
-    wxGlobals.build_menu(parent_menu, menu_items)
+    wxUtils.build_menu(parent_menu, menu_items)
 
 
 def create_3d_model_menu_items(parent_menu):
     menu_items = [(EVT_LOAD_MODEL, "&Load Model", None),
                   (EVT_LOAD_ACTOR, "&Load As Actor", None)]
-    wxGlobals.build_menu(parent_menu, menu_items)
+    wxUtils.build_menu(parent_menu, menu_items)
 
 
 class ImageTile(wx.Panel):
@@ -221,7 +220,7 @@ class ImageTile(wx.Panel):
         # self.parent.options.set_item_info_text(self.data)
 
         self.is_selected = True
-        self.text_ctrl.SetBackgroundColour(edPreferences.Colors.Image_Tile_Selected)
+        self.text_ctrl.SetBackgroundColour(editor.ui_config.color_map("Resource_Image_Tile_Sel"))
         self.Refresh()
 
         editor.observer.trigger("OnResourceTileSelected", self.path)
@@ -230,7 +229,7 @@ class ImageTile(wx.Panel):
 
     def on_deselect(self):
         self.is_selected = False
-        self.text_ctrl.SetBackgroundColour(edPreferences.Colors.Image_Tile_BG)
+        self.text_ctrl.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
         self.Refresh()
 
     def on_right_down(self, evt):
@@ -308,7 +307,7 @@ class ImageTilesPanel(ScrolledPanel):
 
         def __init__(self, parent, *args, **kwargs):
             wx.Window.__init__(self, parent, *args, **kwargs)
-            self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+            self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
             self.parent = parent
 
             # -------------------------------------------------------------------------------------------------
@@ -332,37 +331,10 @@ class ImageTilesPanel(ScrolledPanel):
             # filter buttons
             self.filter_buttons = []
 
-            models_filter_btn = SelectionButton(self,
-                                                0,
-                                                "Models",
-                                                start_offset=2,
-                                                text_flags=wx.EXPAND | wx.TOP, text_border=1,
-                                                image_to_text_space=5,
-                                                image_path=Model_icon, image_scale=12)
-
-            texture_filter_btn = SelectionButton(self,
-                                                 1,
-                                                 "Textures",
-                                                 start_offset=2,
-                                                 text_flags=wx.EXPAND | wx.TOP, text_border=1,
-                                                 image_to_text_space=5,
-                                                 image_path=Texture_icon, image_scale=12)
-
-            sounds_filter_btn = SelectionButton(self,
-                                                2,
-                                                "Sounds",
-                                                start_offset=2,
-                                                text_flags=wx.EXPAND | wx.TOP, text_border=1,
-                                                image_to_text_space=5,
-                                                image_path=Sound_icon, image_scale=12)
-
-            scripts_filter_btn = SelectionButton(self,
-                                                 3,
-                                                 "Scripts",
-                                                 start_offset=2,
-                                                 text_flags=wx.EXPAND | wx.TOP, text_border=1,
-                                                 image_to_text_space=5,
-                                                 image_path=Script_icon, image_scale=12)
+            models_filter_btn = SelectionButton(self, 0, "Models", image_path=Model_icon)
+            texture_filter_btn = SelectionButton(self, 1, "Textures", image_path=Texture_icon)
+            sounds_filter_btn = SelectionButton(self, 2, "Sounds", image_path=Sound_icon)
+            scripts_filter_btn = SelectionButton(self, 3, "Scripts", image_path=Script_icon)
 
             self.filter_buttons = [models_filter_btn, texture_filter_btn, sounds_filter_btn, scripts_filter_btn]
 
@@ -382,7 +354,7 @@ class ImageTilesPanel(ScrolledPanel):
             self.sel_item_label_panel.SetSizer(sizer)
 
             self.sel_item_label_ctrl = wx.StaticText(self.sel_item_label_panel, label="")
-            self.sel_item_label_ctrl.SetForegroundColour(edPreferences.Colors.Panel_Light)
+            self.sel_item_label_ctrl.SetForegroundColour(editor.ui_config.color_map("Panel_Light"))
             self.sel_item_label_ctrl.SetFont(wx.Font(7, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_BOLD))
             sizer.Add(self.sel_item_label_ctrl, 1, wx.EXPAND | wx.LEFT, border=2)
 
@@ -410,7 +382,7 @@ class ImageTilesPanel(ScrolledPanel):
 
     def __init__(self, parent):
         ScrolledPanel.__init__(self, parent)
-        self.SetBackgroundColour(edPreferences.Colors.Panel_Dark)
+        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
 
         self.__tool_bar = self.ToolBar(parent)
 
@@ -465,7 +437,7 @@ class ImageTilesPanel(ScrolledPanel):
                          label=label,
                          extension=extension,
                          style=wx.BORDER_NONE,
-                         color=edPreferences.Colors.Panel_Dark,
+                         color=editor.ui_config.color_map("Panel_Dark"),
                          size=(10, 10),
                          position=(0, 0),
                          data=data)

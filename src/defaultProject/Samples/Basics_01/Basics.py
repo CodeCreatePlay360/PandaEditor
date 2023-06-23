@@ -4,6 +4,7 @@ import direct.gui.DirectGui as gui
 from pathlib import Path
 from editor.core import RuntimeModule
 from editor.utils import EdProperty
+from direct.showbase.Loader import Loader
 
 
 class Basics(RuntimeModule):
@@ -13,6 +14,8 @@ class Basics(RuntimeModule):
         # __init__ should not contain anything except for variable declaration
 
         # by default all public attributes will be displayed in inspector and saved during editor reload.
+        self.add_property(EdProperty.Label(name="Default Properties", is_bold=True, layout_idx=-1))
+
         self.int_property = 5
         self.float_property = 7.5
         self.str_property = "Panda3d"
@@ -72,7 +75,7 @@ class Basics(RuntimeModule):
         self.add_property(horizontal_layout_group)
 
         # --------------------------------
-        properties = [EdProperty.Label(name="HorizontalGroup: ", is_bold=True),
+        properties = [EdProperty.Label(name="StaticBox: ", is_bold=True),
                       EdProperty.ObjProperty(name="vector2", value=self.vector2, obj=self),
                       EdProperty.ObjProperty(name="toggle", value=self.toggle, obj=self)]
 
@@ -101,7 +104,7 @@ class Basics(RuntimeModule):
         # ------------------------------------------------------------------------------------------------
         # to stop attributes from being saved during editor reload, add them to list of
         # discarded attributes
-        self.discarded_attrs = "toggle"
+        self.non_serialized_attrs = "toggle"
 
     def on_start(self):
         # this method is called only once
@@ -112,6 +115,7 @@ class Basics(RuntimeModule):
         # self.mouse_watcher_node  : mouse watcher node
         # self.render              : this is the current scene's parent node-path
         # self.game                : instance of current running game
+        loader = Loader(self.show_base)
 
         # ---------------------------
         # basic scene graph operations
@@ -134,8 +138,18 @@ class Basics(RuntimeModule):
 
         # --------------------
         # basic event handling
-        # self.accept("a", self.on_key_down, ["a"])
-        # self.accept("a-up", self.on_key_up, ["a"])
+        self.accept("a", self.on_key_down, ["a"])
+        self.accept("a-up", self.on_key_up, ["a"])
+
+        # house = self.render.find("**/RussianHouse2.gltf")
+        # obj = house.find("**/defaultMaterial")
+        #
+        # mat = p3dCore.Material("SomeMat")
+        # obj.setMaterial(mat, 1)
+        # path = str(pathlib.Path("/Samples/RPG Character/brick-c.jpg"))
+        # obj.setTexture(self.__loader.load_texture(path), 1)
+        # obj.ls()
+        # print(obj.get_material())
 
     def on_update(self):
         # this method is called every frame

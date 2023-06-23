@@ -111,9 +111,9 @@ class LevelEditor(DirectObject):
         self.__user_commands = {}
 
         self.__on_screen_text = self.create_on_screen_text()
+        self.toggle_hot_keys_text()
 
         self.bind_key_events()
-
         self.__app.command_manager.clear()
         get_model_path().clear()
 
@@ -724,11 +724,10 @@ class LevelEditor(DirectObject):
         # -----------------------------------------------
         # clear the runtime scene graph
         for np in self.__active_scene.render.get_children():
-            self.traverse_scene_graph(np,
-                                      light_func=self.__active_scene.render.clear_light if self.__scene_lights_on else None)
             np.remove_node()
 
         self.__active_scene.clear_cam()
+        self.__active_scene.render.clear_light()
 
         # restore original saved scene graph
         for np in self.hidden_np.getChildren():
