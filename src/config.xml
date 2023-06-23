@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<config>
+    <UI editor_version="1.0" platform="any">
+        <ColorPalette>
+            <Panel_Light>200,200,200,255</Panel_Light>
+            <Panel_Normal>100,100,100,255</Panel_Normal>
+            <Panel_Dark>80,80,80,255</Panel_Dark>
+
+            <Text_Primary>240,240,240,255</Text_Primary>
+            <Text_Secondary>235,235,190,255</Text_Secondary>
+
+            <Resource_Image_Tile_Sel>255,255,0,255</Resource_Image_Tile_Sel>
+        </ColorPalette>
+        <Font>SWISS</Font>
+    </UI>
+</config>

@@ -54,7 +54,7 @@
   * [Nodepath Component](https://github.com/CodeCreatePlay360/PandaEditor#nodepath-component "")
 * [User commands](https://github.com/CodeCreatePlay360/PandaEditor#user-commands "")
 * [Editor UI](https://github.com/CodeCreatePlay360/PandaEditor/#editor-ui "")
-* [PandaEditor for existing Panda3D users]()
+* [PandaEditor for existing Panda3D users](https://github.com/CodeCreatePlay360/PandaEditor/#pandaeditor-for-existing-panda3d-users)
 * [Known issues](https://github.com/CodeCreatePlay360/PandaEditor#known-issues "")
 * [Roadmap](https://github.com/CodeCreatePlay360/PandaEditor#roadmap "")
 * [Getting started](https://github.com/CodeCreatePlay360/PandaEditor#getting-started "")
