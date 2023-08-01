@@ -96,7 +96,7 @@ class MyApp(wxPanda.App):
 
         if task is not None:
             # sometimes on linux/ubuntu panda window looses focus even when in focus so force set it to foreground
-            if sys.platform == "linux" and \
+            if False and \
                     self.wx_main.ed_viewport_panel._initialized and \
                     self.show_base.ed_mouse_watcher_node.hasMouse() and \
                     not self.wx_main.ed_viewport_panel._win.getProperties().getForeground():
@@ -126,3 +126,6 @@ class MyApp(wxPanda.App):
         wp = WindowProperties()
         wp.setMouseMode(WindowProperties.M_confined)
         self.show_base.main_win.requestProperties(wp)
+
+    def has_focus(self):
+        return self.wx_main.ed_viewport_panel._win.getProperties().getForeground()

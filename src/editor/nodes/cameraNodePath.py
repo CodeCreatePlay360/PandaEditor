@@ -1,4 +1,4 @@
-from panda3d.core import PerspectiveLens, OrthographicLens, Camera, NodePath, LColor
+from panda3d.core import PerspectiveLens, OrthographicLens, LColor
 from editor.nodes.baseNodePath import BaseNodePath
 from editor.utils import EdProperty
 from editor.globals import editor
@@ -7,8 +7,9 @@ from editor.globals import editor
 class CameraNodePath(BaseNodePath):
     def __init__(self, np, path, uid=None):
         BaseNodePath.__init__(self, np, path, id_="__CameraNodePath__", uid=uid)
-        self.setColor(LColor(0.2, 0.2, 0.2, 1))
-        self.current_lens_type = -1  # 0: Perspective, 1: Ortho
+
+        self.current_lens_type = 0  # 0: Perspective, 1: Ortho
+
         self.set_lens(0)
         self.create_properties()
 
@@ -32,7 +33,7 @@ class CameraNodePath(BaseNodePath):
         self.properties.append(lens_prop_label)
         self.properties.append(lens_type)
 
-        lens = self.node().getLens()
+        lens = self.np.node().getLens()
         properties = EdProperty.Utils.get_lens_properties(lens)
         self.properties.extend(properties)
 
@@ -50,7 +51,7 @@ class CameraNodePath(BaseNodePath):
         if lens is None:
             lens = PerspectiveLens()
 
-        self.node().setLens(lens)
+        self.np.node().setLens(lens)
         self.current_lens_type = 0
         editor.observer.trigger("ResizeEvent")
         return lens
@@ -63,7 +64,15 @@ class CameraNodePath(BaseNodePath):
         if lens is None:
             lens = OrthographicLens()
 
-        self.node().setLens(lens)
+        self.np.node().setLens(lens)
         self.current_lens_type = 1
         editor.observer.trigger("ResizeEvent")
         return lens
+
+    def get_copy(self, np):
+        data = None
+        if np.hasPythonTag("__GAME_OBJECT__"):
+            data = CameraNodePath(np, self.path)
+            self.copy_properties(np.getPythonTag("__GAME_OBJECT__"))
+            np.setPythonTag("__GAME_OBJECT__", data)
+        return data

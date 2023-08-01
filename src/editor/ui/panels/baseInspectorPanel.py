@@ -6,7 +6,7 @@ import editor.ui.custom as wx_custom
 
 from panda3d.core import NodePath
 from wx.lib.scrolledpanel import ScrolledPanel
-from editor.core import PModBase
+from editor.core import PModBase, Component
 from editor.utils import EdProperty as edProperty
 from editor.globals import editor
 from editor.ui.foldPanel import FoldPanelManager
@@ -312,7 +312,7 @@ class BaseInspectorPanel(ScrolledPanel):
             if isinstance(obj_, PModBase):
                 obj_type = obj_.module_type
             elif isinstance(obj_, NodePath):
-                obj_type = obj_.ed_id
+                obj_type = obj_.getPythonTag(constants.TAG_GAME_OBJECT).ed_id
 
             return OBJ_TYPE_ICON_MAP[obj_type]
 
@@ -382,15 +382,15 @@ class BaseInspectorPanel(ScrolledPanel):
         fold_panel.Show()
 
         # if object is of type NodePath, then layout properties for its components as well.
-        if isinstance(obj, NodePath):
-            if hasattr(obj, "components"):
-                for key in obj.components:
-                    comp = obj.components[key].class_instance
-                    self.layout(comp,
-                                obj.components[key].class_instance.name,
-                                comp.get_properties(),
-                                is_editor_item=True,
-                                reset=False)
+        if isinstance(obj, NodePath) and not isinstance(obj, Component):
+            obj_data = obj.getPythonTag(constants.TAG_GAME_OBJECT)
+            for key in obj_data.components:
+                comp = obj_data.components[key].class_instance
+                self.layout(comp,
+                            obj_data.components[key].class_instance.name,
+                            comp.get_properties(),
+                            is_editor_item=True,
+                            reset=False)
 
             if not self.components_dnd_panel:
                 self.__main_sizer.AddSpacer(15)
@@ -487,7 +487,6 @@ class BaseInspectorPanel(ScrolledPanel):
                 if wx_property.ed_property.type_ == "horizontal_layout_group" or \
                         wx_property.ed_property.type_ == "foldout_group" or \
                         wx_property.ed_property.type_ == "static_box":
-
                     wx_properties = self.create_wx_properties(wx_property.ed_property.properties, wx_property, False)
                     wx_property.set_properties(wx_properties)
 
@@ -511,9 +510,9 @@ class BaseInspectorPanel(ScrolledPanel):
         pass
 
     def remove_component(self, idx, data):
-        obj = data[0]
+        np = data[0].getPythonTag(constants.TAG_GAME_OBJECT)
         comp_path = data[1]
-        obj.detach_component(comp_path)
+        np.detach_component(comp_path)
         self.mark_dirty()
 
     def mark_dirty(self):
@@ -529,7 +528,8 @@ class BaseInspectorPanel(ScrolledPanel):
         self.property_and_name.clear()
 
         if self.components_dnd_panel:
-            self.__main_sizer.Remove(len(self.__main_sizer.GetChildren()) - 2)  # remove spacer based on its position index
+            self.__main_sizer.Remove(
+                len(self.__main_sizer.GetChildren()) - 2)  # remove spacer based on its position index
 
         # remove other panels
         for item in [self.__text_panel, self.__fold_manager, self.components_dnd_panel]:

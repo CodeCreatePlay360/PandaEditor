@@ -133,6 +133,8 @@ class ResourceBrowser(wx.Panel):
 
         self.wx_main = args[0]
         self.splitter_win = wx.SplitterWindow(self)
+        self.splitter_win.SetWindowStyleFlag(wx.SP_NO_XP_THEME)  # NO_XP_THEME, otherwise you cannot change BG color
+        self.splitter_win.SetBackgroundColour(wx.Colour(200, 200, 200, 255))
 
         self.tiles = ResourceTiles(self.splitter_win)
         self.tree = ResourceTree(self.splitter_win, self.wx_main, self.tiles.tiles_panel)

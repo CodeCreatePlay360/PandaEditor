@@ -1,7 +1,10 @@
+import os.path
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from direct.showbase.ShowBase import taskMgr
 from editor.globals import editor
+from editor.constants import GAME_STATE
 
 
 class DirEventProcessor(FileSystemEventHandler):
@@ -13,17 +16,32 @@ class DirEventProcessor(FileSystemEventHandler):
         self.__watcher = observer
 
     def on_any_event(self, event):
+        # ignore modified event for a directory, we only care about created event for a directory
+        if os.path.isdir(event.src_path) and event.event_type == "modified":
+            return
+
+        # sometimes during game state, dir event is triggered even when there are no actual modifications,
+        # at least on WIN_32 platforms
+        # on disk (I am not sure as to why this is happening, this should be further tested)
+        # should be tested with other platforms macOS, linux etc.
+        if editor.level_editor.ed_state == GAME_STATE and os.path.isdir(event.src_path):
+            return
+
+        # ignore junk files as well
+        if "pyc" in event.src_path.split("."):
+            return
+
         if event.event_type == "opened":
             return
 
-        watch_paths = [*self.__watcher.observer_paths.keys()]
-        self.__watcher.unschedule_all()
+        # watch_paths = [*self.__watcher.observer_paths.keys()]
+        # self.__watcher.unschedule_all()
 
         if self.__dir_event_task is None:
-            self.__dir_event_task = taskMgr.add(self.dir_evt_timer, "DirEventTimer", sort=0, priority=None)
+            self.__dir_event_task = taskMgr.add(self.dir_evt_timer, "DirEventTimer", sort=0, priority=None, delay=0.1)
 
-        for path in watch_paths:
-            self.__watcher.schedule(path)
+        # for path in watch_paths:
+        #     self.__watcher.schedule(path)
 
     def dir_evt_timer(self, task):
         editor.observer.trigger("EditorReload")

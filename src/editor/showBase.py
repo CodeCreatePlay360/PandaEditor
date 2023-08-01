@@ -43,9 +43,6 @@ class ShowBase(sb.ShowBase):
         # aspect windows so aspect is fixed when the window is resized.
         self.forcedAspectWins.append((self.main_win, self.ed_camera, self.__ed_aspect2d))
 
-        # turn on per pixel lightning
-        self.render.setShaderAuto()
-
     def init_editor_win(self):
         self.scene_win.initialize(use_main_win=True)
 

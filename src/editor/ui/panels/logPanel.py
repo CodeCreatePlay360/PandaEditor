@@ -34,7 +34,7 @@ class LogPanel(wx.Panel):
                                                        deselect_func=self.on_toggle_off)
             self.toggle_clear_on_reload.SetMinSize(wx.Size(80, -1))
 
-            self.toggle_clear_on_play = ToggleButton(self, 1, "ClearConsole ", select_func=self.on_toggle,
+            self.toggle_clear_on_play = ToggleButton(self, 1, "ClearOnPlay ", select_func=self.on_toggle,
                                                      deselect_func=self.on_toggle_off)
 
             self.clear_console_btn = BasicButton(self, 2, "ClearConsole ", select_func=self.on_button)

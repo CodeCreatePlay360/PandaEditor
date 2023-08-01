@@ -143,3 +143,12 @@ Exclude/Panda3D_BasicProgram/main.py
 Exclude/arrivals.xml
 Exclude/wx_guage.py
 Exclude/xmlParser.py
+Exclude/main.py
+Exclude/extra/arrivals.xml
+Exclude/extra/xmlParser.py
+Exclude/models/old_russian_house.glb
+tutorials/Tutorial_00.md
+tutorials/images_00/01.png
+tutorials/images_00/02.png
+tutorials/images_00/KilaPart01_02.jpg
+tutorials/images_00/Polyhierarchy.png

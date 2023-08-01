@@ -1,17 +1,14 @@
 import uuid
-from panda3d.core import NodePath
-from panda3d.core import LVecBase3f, LColor
+from panda3d.core import LVecBase3f
 from editor.utils import EdProperty, common_maths
 
 
-class BaseNodePath(NodePath):
+class BaseNodePath:
     def __init__(self, np, path, id_, uid=None):
-        NodePath.__init__(self, np)
-        self.setColor(LColor(1, 1, 1, 1))
 
         self.__np = np
-        self.__id = id_
         self.__path = path  # path this resource is loaded from
+        self.__id = id_
         self.__uuid = uid if uid is not None else uuid.uuid4().__str__()
         self.__properties = []
         self.__components = {}  # self.components["full_path"] = component object
@@ -22,20 +19,20 @@ class BaseNodePath(NodePath):
         label = EdProperty.Label(name="Transform", is_bold=True)
 
         pos = EdProperty.FuncProperty(name="Position ",
-                                      value=self.getPos(),
-                                      setter=self.setPos,
-                                      getter=self.getPos)
+                                      value=self.np.getPos(),
+                                      setter=self.np.setPos,
+                                      getter=self.np.getPos)
 
         rot = EdProperty.FuncProperty(name="Rotation ",
-                                      value=self.getHpr(),
-                                      setter=self.setHpr,
-                                      getter=self.getHpr)
+                                      value=self.np.getHpr(),
+                                      setter=self.np.setHpr,
+                                      getter=self.np.getHpr)
 
         scale = EdProperty.FuncProperty(name="Scale      ",
-                                        value=self.getScale(),
+                                        value=self.np.getScale(),
                                         value_limit=LVecBase3f(0.01, 0.01, 0.01),
-                                        setter=self.set_scale,
-                                        getter=self.getScale)
+                                        setter=self.np.set_scale,
+                                        getter=self.np.getScale)
 
         self.__properties.append(label)
         self.__properties.append(pos)
@@ -45,9 +42,9 @@ class BaseNodePath(NodePath):
         space = EdProperty.EmptySpace(0, 10)
         label = EdProperty.Label(name="Node Properties", is_bold=True)
         color = EdProperty.FuncProperty(name="Color",
-                                        value=self.get_color(),
-                                        setter=lambda val: self.setColor(val),
-                                        getter=self.getColor)
+                                        value=self.np.get_color(),
+                                        setter=lambda val: self.np.setColor(val, 1),
+                                        getter=self.np.getColor)
 
         self.__properties.append(space)
         self.__properties.append(label)
@@ -70,7 +67,7 @@ class BaseNodePath(NodePath):
             # print("Component: [{0}] attached to [{1}]".format(component, self.name))
         else:
             print("Warning: Attempt to attach multiple Components of same type... "
-                  "Component: [{0}] is already attached to [{1}] !".format(path, self.name))
+                  "Component: [{0}] is already attached to [{1}] !".format(path, self.np.name))
 
     def detach_component(self, path):
         if self.__components.__contains__(path):
@@ -78,6 +75,13 @@ class BaseNodePath(NodePath):
 
     def get_properties(self):
         return self.__properties
+
+    def get_copy(self, np):
+        pass
+
+    @property
+    def np(self):
+        return self.__np
 
     @property
     def ed_id(self):

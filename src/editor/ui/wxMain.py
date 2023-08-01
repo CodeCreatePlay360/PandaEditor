@@ -300,6 +300,7 @@ class WxFrame(wx.Frame):
 
         self.__notebook = WxAUINotebook(self) if self.USING_SPLITTER else AUINotebook(self)  # aui nb has issues on linux
         self.__notebook.add_pages(self.__panels)  # add panels to notebook
+
         self.__notebook.SetPageBitmap(0, self.__panels[0][2])
         self.__notebook.SetPageBitmap(1, self.__panels[1][2])
         self.__notebook.SetPageBitmap(2, self.__panels[2][2])
@@ -318,12 +319,23 @@ class WxFrame(wx.Frame):
         if not self.USING_SPLITTER:
             self.__notebook.LoadPerspective(xx)
             self.save_layout("Default")
+        else:
+            pass
 
         self.__main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
         self.__main_sizer.Add(self.__notebook, 1, wx.EXPAND)
         self.__main_sizer.Add(self.status_panel, 1, wx.EXPAND)
 
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+
+    def on_size(self, evt):
+        # Workaround, sometimes aui notebook brakes after window in minimized,
+        # this check restores the layout
+        # for panel in self.__panels:
+        #     if panel[0].GetSize().y == 0:
+        #         self.load_layout("Default")
+        evt.Skip()
 
     def do_after(self):
         self.Maximize(True)
@@ -509,8 +521,6 @@ class WxFrame(wx.Frame):
 
             self.__notebook.LoadPerspective(self.saved_layouts[layout][1])  # finally, load perspective
             self.__notebook.Refresh()
-            self.__notebook.Update()
-            self.save_layout(layout)  # update the layout
         self.Thaw()
 
     def add_page(self, page: str):

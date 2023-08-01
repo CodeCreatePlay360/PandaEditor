@@ -82,9 +82,10 @@ class Scene:
     def scene_lights(self):
         def get_all_scene_lights(np):
             for np_ in np.getChildren():
-                obj = np_.getPythonTag("__GAME_OBJECT__")
-                if obj and obj.ed_id in ["__PointLight__", "__SpotLight__", "__DirectionalLight__", "__AmbientLight__"]:
-                    lights.append(obj)
+                if np_.getPythonTag("__GAME_OBJECT__") and \
+                        np_.getPythonTag("__GAME_OBJECT__").ed_id in \
+                        ["__PointLight__", "__SpotLight__", "__DirectionalLight__", "__AmbientLight__"]:
+                    lights.append(np_)
 
                 get_all_scene_lights(np_)
 

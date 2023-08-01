@@ -93,7 +93,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         self.saved_state = None
 
         self.root = self.AddRoot("RootItem", data=None)
-        self.scene_graph_item = None
+        self.scene_graph_parent = None
         self.scene_np = None
         self.np_id_to_tree_item_map = {}  # np: tree_item
 
@@ -116,8 +116,8 @@ class SceneBrowser(customtree.CustomTreeCtrl):
     def init(self, parent_np):
         self.DeleteChildren(self.root)
         self.scene_np = parent_np
-        self.scene_graph_item = self.AppendItem(self.root, "SceneGraph", data=parent_np)
-        self.np_id_to_tree_item_map[parent_np] = self.scene_graph_item
+        self.scene_graph_parent = self.AppendItem(self.root, "SceneGraph", data=parent_np)
+        self.np_id_to_tree_item_map[parent_np] = self.scene_graph_parent
 
     def create_popup_menu(self, evt):
         for sel in self.GetSelections():
@@ -155,14 +155,11 @@ class SceneBrowser(customtree.CustomTreeCtrl):
     def on_evt_select(self, evt):
         selections = []
         for item in self.GetSelections():
-            if item == self.scene_graph_item:
+            if item == self.scene_graph_parent or item == self.GetRootItem():
                 continue
 
             np = self.GetItemData(item)
-            # print("Item {0} Data {1}".format(self.GetItemText(item), np))
-            if np:
-                np = np.getPythonTag(constants.TAG_GAME_OBJECT)
-                selections.append(np)
+            selections.append(np)
 
         if len(selections) == 0:
             return
@@ -200,8 +197,8 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         """rebuild tree from parent nodepath"""
         self.UnselectAll()
         self.np_id_to_tree_item_map.clear()
-        self.DeleteChildren(self.scene_graph_item)
-        self.np_id_to_tree_item_map[self.scene_np] = self.scene_graph_item
+        self.DeleteChildren(self.scene_graph_parent)
+        self.np_id_to_tree_item_map[self.scene_np] = self.scene_graph_parent
         for np in self.scene_np.getChildren():
             self.add(np)
 
@@ -213,12 +210,11 @@ class SceneBrowser(customtree.CustomTreeCtrl):
             for child in np_.getChildren():
                 tree_item_ = None
                 if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
-                    np__ = child.getPythonTag(constants.TAG_GAME_OBJECT)
-                    items_to_select.append(np__)
-                    image_ = self.image_to_item_map[np__.ed_id]
+                    items_to_select.append(child)
+                    image_ = self.image_to_item_map[child.getPythonTag(constants.TAG_GAME_OBJECT).ed_id]
                     tree_item_ = self.AppendItem(tree_item,
                                                  child.get_name(),
-                                                 data=np__,
+                                                 data=child,
                                                  image=image_)
 
                     self.np_id_to_tree_item_map[child] = tree_item_
@@ -234,12 +230,11 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         elif np.get_parent() in self.np_id_to_tree_item_map.keys():
             parent_item_ = self.np_id_to_tree_item_map[np.get_parent()]
         else:
-            parent_item_ = self.scene_graph_item
+            parent_item_ = self.scene_graph_parent
 
         if not only_children:
-            np = np.getPythonTag(constants.TAG_GAME_OBJECT)
             items_to_select.append(np)
-            image = self.image_to_item_map[np.ed_id]
+            image = self.image_to_item_map[np.getPythonTag(constants.TAG_GAME_OBJECT).ed_id]
             parent_item_ = self.AppendItem(parent_item_, np.get_name(), data=np, image=image)
             self.np_id_to_tree_item_map[np] = parent_item_
 
@@ -273,7 +268,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
     def select(self, selection):
         self.UnselectAll()
-        self.Collapse(self.scene_graph_item)
+        self.Collapse(self.scene_graph_parent)
 
         # temporarily unbind this, otherwise self.SelectItem will trigger
         # a call to self.on_evt_select

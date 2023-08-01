@@ -14,7 +14,6 @@ class Viewport(wx.Panel):
         built.
         """
         wx.Panel.__init__(self, *args, **kwargs)
-
         self.wx_main = args[0]
         self._win = None
         self._initialized = False
@@ -47,7 +46,6 @@ class Viewport(wx.Panel):
                 self._win = base.openWindow(props=wp, makeCamera=0)
 
         self._initialized = True
-
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.Bind(wx.EVT_CHAR, self.on_event)
 

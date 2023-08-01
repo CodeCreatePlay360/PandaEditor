@@ -1,12 +1,11 @@
 import editor.utils as ed_utils
 from editor.nodes.baseNodePath import BaseNodePath
-from panda3d.core import LColor, LVecBase3f
+from panda3d.core import NodePath, LColor, LVecBase3f
 
 
 class LightNp(BaseNodePath):
     def __init__(self, np, path, id_, uid=None):
         BaseNodePath.__init__(self, np, path, id_=id_, uid=uid)
-
         self.__ed_light_colour = LColor(1, 1, 1, 1)  # actual color(Hue), as seen, unscaled by intensity
         self.__intensity = 1.0
         self.__is_active = True
@@ -19,8 +18,8 @@ class LightNp(BaseNodePath):
 
         colour = ed_utils.EdProperty.FuncProperty(name="Light Color",
                                                   value=self.__ed_light_colour,
-                                                  setter=self.set_color,
-                                                  getter=self.get_color)
+                                                  setter=self.set_light_color,
+                                                  getter=self.np.get_color)
 
         intensity = ed_utils.EdProperty.FuncProperty(name="Color intensity",
                                                      value=self.__intensity,
@@ -48,16 +47,15 @@ class LightNp(BaseNodePath):
         g = self.__ed_light_colour.y * self.__intensity
         b = self.__ed_light_colour.z * self.__intensity
         color = LColor(r, g, b, 1)
-        self.node().setColor(color)
+        self.np.node().setColor(color)
 
-    def set_color(self, val):
-        self.setColor(LColor(val.x, val.y, val.z, 1))
+    def set_light_color(self, val):
+        self.np.setColor(LColor(val.x, val.y, val.z, 1))
         self.__ed_light_colour = LColor(val.x, val.y, val.z, 1)
-
         r = val.x * self.__intensity
         g = val.y * self.__intensity
         b = val.z * self.__intensity
-        self.node().setColor(LColor(r, g, b, 1))
+        self.np.node().setColor(LColor(r, g, b, 1))
 
     def toggle_active(self, val):
         self.__is_active = val
@@ -77,18 +75,25 @@ class LightNp(BaseNodePath):
 
 class EdDirectionalLight(LightNp):
     def __init__(self, np, path, uid=None):
-        # np = NodePath(DirectionalLight("DirectionalLight"))
         LightNp.__init__(self, np, path, id_="__DirectionalLight__", uid=uid)
         self.create_properties()
 
     def create_properties(self):
         super(EdDirectionalLight, self).create_properties()
 
+    def get_copy(self, np):
+        data = None
+        if np.hasPythonTag("__GAME_OBJECT__"):
+            data = EdDirectionalLight(np, self.path)
+            self.copy_properties(np.getPythonTag("__GAME_OBJECT__"))
+            np.setPythonTag("__GAME_OBJECT__", data)
+        return data
+
 
 class EdPointLight(LightNp):
     def __init__(self, np, path, uid=None):
-        # np = NodePath(PointLight("PointLight"))
         LightNp.__init__(self, np, path, id_="__PointLight__", uid=uid)
+        self.setColor(LColor(1, 1, 1, 1))
 
         self.__attenuation = 0
         self.__attenuation_map = {
@@ -99,8 +104,8 @@ class EdPointLight(LightNp):
         }
 
         # set default value for attenuation
-        if self.node().getAttenuation() in self.__attenuation_map.values():
-            value = [i for i in self.__attenuation_map if self.__attenuation_map[i] == self.node().getAttenuation()]
+        if self.np.node().getAttenuation() in self.__attenuation_map.values():
+            value = [i for i in self.__attenuation_map if self.__attenuation_map[i] == self.np.node().getAttenuation()]
             self.__attenuation = value[0]
 
         self.create_properties()
@@ -119,16 +124,25 @@ class EdPointLight(LightNp):
 
     def set_attenuation(self, val):
         self.__attenuation = val
-        self.node().setAttenuation(self.__attenuation_map[val])
+        self.np.node().setAttenuation(self.__attenuation_map[val])
 
     def get_attenuation(self):
         return self.__attenuation
 
+    def get_copy(self, np):
+        data = None
+        if np.hasPythonTag("__GAME_OBJECT__"):
+            data = EdPointLight(np, self.path)
+            self.copy_properties(np.getPythonTag("__GAME_OBJECT__"))
+            np.setPythonTag("__GAME_OBJECT__", data)
+        return data
+
 
 class EdSpotLight(LightNp):
-    def __init__(self, np, path, uid=None):
-        # np = NodePath(Spotlight("SpotLight"))
-        LightNp.__init__(self, np, path, id_="__SpotLight__", uid=uid)
+    def __init__(self, path, np, uid=None):
+        LightNp.__init__(self, path, id_="__SpotLight__", uid=uid)
+        NodePath.__init__(self, np)
+        self.setColor(LColor(1, 1, 1, 1))
 
         self.__attenuation = 0
         self.attenuation_map = {
@@ -173,12 +187,27 @@ class EdSpotLight(LightNp):
     def get_attenuation(self):
         return self.__attenuation
 
+    def get_copy(self, np):
+        data = None
+        if np.hasPythonTag("__GAME_OBJECT__"):
+            data = EdSpotLight(np, self.path)
+            self.copy_properties(np.getPythonTag("__GAME_OBJECT__"))
+            np.setPythonTag("__GAME_OBJECT__", data)
+        return data
+
 
 class EdAmbientLight(LightNp):
     def __init__(self, np, path, uid=None):
-        # np = NodePath(AmbientLight("AmbientLight"))
         LightNp.__init__(self, np, path, id_="__AmbientLight__", uid=uid)
         self.create_properties()
 
     def create_properties(self):
         super(EdAmbientLight, self).create_properties()
+
+    def get_copy(self, np):
+        data = None
+        if np.hasPythonTag("__GAME_OBJECT__"):
+            data = EdAmbientLight(np, self.path)
+            self.copy_properties(np.getPythonTag("__GAME_OBJECT__"))
+            np.setPythonTag("__GAME_OBJECT__", data)
+        return data

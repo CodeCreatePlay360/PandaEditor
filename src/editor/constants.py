@@ -1,5 +1,4 @@
 import pathlib
-
 import panda3d.core as p3d_core
 
 EDITOR_STATE = 0
@@ -35,7 +34,7 @@ SPOT_LIGHT_MODEL = str(pathlib.Path(MODELS_PATH + "/models/Spotlight.egg.pz"))
 AMBIENT_LIGHT_MODEL = str(pathlib.Path(MODELS_PATH + "/models/AmbientLight.obj"))
 CAMERA_MODEL = str(pathlib.Path(MODELS_PATH + "/models/camera.egg.pz"))
 
-CUBE_PATH = str(pathlib.Path(MODELS_PATH + "/models/cube.fbx"))
+CUBE_PATH = str(pathlib.Path(MODELS_PATH + "/models/Cube.glb"))
 CAPSULE_PATH = str(pathlib.Path(MODELS_PATH + "/models/capsule.fbx"))
 CONE_PATH = str(pathlib.Path(MODELS_PATH + "/models/cone.fbx"))
 PLANE_PATH = str(pathlib.Path(MODELS_PATH + "/models/plane.fbx"))

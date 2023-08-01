@@ -1,5 +1,6 @@
 from editor.commandManager import Command
 from editor.globals import editor
+from editor.constants import TAG_GAME_OBJECT
 
 
 class SelectObjects(Command):
@@ -7,6 +8,7 @@ class SelectObjects(Command):
 
         if last_selections is None:
             last_selections = []
+
         self.selected_nps = nps
         self.last_selections = last_selections
         self.from_le = from_le
@@ -16,7 +18,7 @@ class SelectObjects(Command):
         np = self.selected_nps[0]
 
         editor.wx_main.freeze()
-        editor.inspector.layout(np, np.get_name(), np.get_properties())
+        editor.inspector.layout(np, np.get_name(), np.getPythonTag(TAG_GAME_OBJECT).get_properties())
         editor.resource_browser.deselect_all_files()
 
         if self.from_le:
@@ -32,13 +34,14 @@ class SelectObjects(Command):
             editor.level_editor.set_selected(self.last_selections)
             editor.scene_graph.select(self.last_selections)
 
-            obj = self.last_selections[0]
-            editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
+            # obj = self.last_selections[0]
+            # editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
         else:
             editor.level_editor.set_selected(self.selected_nps)
             editor.scene_graph.select(self.selected_nps)
 
-            obj = self.selected_nps[0]
-            editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
+            # obj = self.selected_nps[0]
+            # editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
 
+        editor.inspector.layout_auto()
         editor.wx_main.thaw()

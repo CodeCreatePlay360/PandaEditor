@@ -1,5 +1,6 @@
 from editor.commandManager import Command
 from editor.globals import editor
+from editor.constants import TAG_GAME_OBJECT
 
 
 class ReparentNPs(Command):
@@ -22,7 +23,7 @@ class ReparentNPs(Command):
         # editor.scene_graph.select(self.src_nps)
 
         np = self.src_nps[0]
-        editor.inspector.layout(np, np.get_name(), np.get_properties())
+        editor.inspector.layout(np, np.get_name(), np.getPythonTag(TAG_GAME_OBJECT).get_properties())
         return True
 
     def undo(self):

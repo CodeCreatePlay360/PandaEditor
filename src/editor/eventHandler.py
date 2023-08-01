@@ -347,7 +347,7 @@ def clean_unused_loaded_nps(nps_to_remove):
 def reload_editor(*args):
     le = editor.level_editor
     if le.ed_state == GAME_STATE:
-        print("Cannot reload editor while in game mode.")
+        le.mark_dirty()
         return
 
     wx_main = editor.wx_main

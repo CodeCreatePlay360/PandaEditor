@@ -22,7 +22,7 @@ class Game:
         self.__mouse_watcher_node_2d = None
 
         self.__render = kwargs.pop("render", None)  # top level game render, individual
-        # scene renders should be re-parented to this.
+                                                    # scene renders should be re-parented to this.
 
         self.setup_dr_2d()
         self.setup_mouse_watcher_2d()
