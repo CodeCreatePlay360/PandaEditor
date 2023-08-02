@@ -15,7 +15,7 @@
 
 > **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-> **PandaEditor should run on all platforms supported by wxPython(the UI framework used by PandaEditor) and Panda3D, however active maintenance and support is available only for Microsoft Windows, Mac and Linux / Ubuntu.**
+> **PandaEditor should run on all platforms supported by wxPython(the UI framework used by PandaEditor) and Panda3D, however active maintenance and support is available only for Microsoft Windows, Mac, ArchLinux and Ubuntu.**
 
 > **It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.**  
 
