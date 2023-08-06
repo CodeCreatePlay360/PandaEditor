@@ -5,8 +5,9 @@ from editor.core.runtimeModule import RuntimeModule
 
 class Component(RuntimeModule, NodePath):
     def __init__(self, np, *args, **kwargs):
-        NodePath.__init__(self, np)
         RuntimeModule.__init__(self, *args, **kwargs)
+        NodePath.__init__(self, np)
+
         self.module_type = constants.Component
         self.__status = constants.SCRIPT_STATUS_OK
         self.non_serialized_attrs = "_Component__status"

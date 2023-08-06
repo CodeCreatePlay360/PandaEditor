@@ -249,12 +249,12 @@ class Game:
         components = {}  # np: [components,...]
 
         def traverse(np_):
-            np = np_.getPythonTag("__GAME_OBJECT__")
-            if np:
-                for path in np.components.keys():
-                    if not components.__contains__(np):
-                        components[np] = []
-                    components[np].append(np.components[path])
+            if np_.hasPythonTag("__GAME_OBJECT__"):
+                np_comps = np_.getPythonTag("__GAME_OBJECT__").components
+                for path in np_comps.keys():
+                    if not components.__contains__(np_):
+                        components[np_] = []
+                    components[np_].append(np_comps[path])
 
             for child in np_.getChildren():
                 traverse(child)

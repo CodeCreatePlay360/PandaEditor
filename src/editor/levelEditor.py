@@ -364,7 +364,7 @@ class LevelEditor(DirectObject):
         #
         return True
 
-    def register_component(self, paths: list, nps=None):
+    def register_component(self, paths: list, nps: list = None):
         imported = []
         for path in paths:
             result = ed_utils.safe_execute(ed_utils.Importer.import_module, path, return_func_val=True)
@@ -394,13 +394,15 @@ class LevelEditor(DirectObject):
                     # initialize
                     cls_instance = ed_utils.safe_execute(self.initialize_component, cls_name, cls, path, np,
                                                          return_func_val=True)
-                    # cls_instance = self.initialize_component(cls_name, cls, path, np)
                     if cls_instance is None:
                         continue
+
                     # wrap into a UserModule object
                     module = ed_core.UserModule(path, cls_instance, cls_instance.sort)
+
                     # and attach it to NodePath
                     np.getPythonTag(constants.TAG_GAME_OBJECT).attach_component(path, module)
+
                     #
                     registered.append(module)
 
@@ -503,7 +505,7 @@ class LevelEditor(DirectObject):
                 #
                 saved_components[np].append(comp)
             # ---------------------------------
-            np.clear_components()
+            np.getPythonTag(constants.TAG_GAME_OBJECT).clear_components()
 
         # now reload the saved_components
         for np in saved_components.keys():
@@ -513,7 +515,7 @@ class LevelEditor(DirectObject):
                 result = self.register_component(paths=[comp.path], nps=[np])  # register again
                 if len(result) == 0:  # meaning registration failed
                     # keep using the component in existing state
-                    np.attach_component(comp.path, comp)
+                    np.getPythonTag(constants.TAG_GAME_OBJECT).attach_component(comp.path, comp)
                     new_comp = comp
                     # and set the script/component status to error to inform user about it
                     comp.class_instance.set_status(constants.SCRIPT_STATUS_ERROR)
@@ -994,34 +996,51 @@ class LevelEditor(DirectObject):
         def op(np_):
             result = True
             if isinstance(np_, NodePath) and np_.hasPythonTag(constants.TAG_GAME_OBJECT):
-                original_data = np_.getPythonTag(constants.TAG_GAME_OBJECT)
+                original_node_data = np_.getPythonTag(constants.TAG_GAME_OBJECT)
                 if recreate:
                     # duplicate game node data
-                    new_data = original_data.get_copy(np_)
+                    new_data = original_node_data.get_copy(np_)
                     np_.setPythonTag(constants.TAG_GAME_OBJECT, new_data)
 
-                    # --------------------------------------
-                    # Components have to be registered again
-                    component_paths = original_data.components.keys()
-                    registered = self.register_component(component_paths, [new_data.np])
-                    # copy components data as well
-                    i = 0
-                    for key in original_data.components.keys():
-                        registered[i].copy_data(original_data.components[key])
-                        i += 1
+                    # -------------------------------------- #
+                    # Since, Components can only be registered by level editor. we will have to manually
+                    # get components from the original node_data and register them again with duplicated node_data
+                    #
+                    component_paths = original_node_data.components.keys()
+                    for path in component_paths:
+                        registered_comp = self.register_component([path], [new_data.np])
+                        if len(registered_comp) == 0:  # meaning registering component failed (this usually is because
+                            # we tried to duplicate a nodepath with a component with status ==  SCRIPT_STATUS_ERROR)
+                            # so we will manually copy the original comp and attach it to the new nodepath
+                            #
+                            original_comp = type(original_node_data.components[path].class_instance)
+                            #
+                            copy = self.initialize_component(name=original_comp.__name__,
+                                                             component=original_comp, path=path, np=np_)
+                            copy.set_status(constants.SCRIPT_STATUS_ERROR)
+                            #
+                            module = ed_core.UserModule(path, copy, copy.sort)
+                            #
+                            np_.getPythonTag(constants.TAG_GAME_OBJECT).attach_component(path, module)
+                            #
+                            registered_comp.append(module)
 
-                    original_data = new_data
+                        registered_comp[0].copy_data(original_node_data.components[path])  # index value of 0
+                        # because we are only registering one component per iteration
+                    # -------------------------------------- #
 
-                if original_data.ed_id in ["__PointLight__", "__DirectionalLight__", "__SpotLight__",
-                                           "__AmbientLight__"]:
+                    original_node_data = new_data
+
+                if original_node_data.ed_id in ["__PointLight__", "__DirectionalLight__", "__SpotLight__",
+                                                "__AmbientLight__"]:
                     if light_func:
-                        light_func(original_data.np)
-                elif original_data.ed_id == "__CameraNodePath__":
+                        light_func(original_node_data.np)
+                elif original_node_data.ed_id == "__CameraNodePath__":
                     if cam_func:
-                        cam_func(original_data.np)
+                        cam_func(original_node_data.np)
                 else:
                     if np_func:
-                        np_func(original_data.np)
+                        np_func(original_node_data.np)
 
             return result
 

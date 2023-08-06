@@ -27,7 +27,6 @@ class CamCollisionHandler(Component):
 
     def on_start(self):
         # this method is called only once
-
         # get the ralph character
         self.__ralph = self.render.find("Ralph")
         #

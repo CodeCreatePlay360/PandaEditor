@@ -5,13 +5,13 @@ from editor.utils import EdProperty, common_maths
 
 class BaseNodePath:
     def __init__(self, np, path, id_, uid=None):
-
         self.__np = np
         self.__path = path  # path this resource is loaded from
         self.__id = id_
         self.__uuid = uid if uid is not None else uuid.uuid4().__str__()
         self.__properties = []
-        self.__components = {}  # self.components["full_path"] = component object
+        self.__components = {}  # self.components["full_path"] = component object, this works because path is
+                                # guaranteed to be unique
 
     def create_properties(self):
         self.__properties.clear()
@@ -72,6 +72,9 @@ class BaseNodePath:
     def detach_component(self, path):
         if self.__components.__contains__(path):
             del self.__components[path]
+
+    def get_component(self, path):
+        return self.__components.get(path)
 
     def get_properties(self):
         return self.__properties

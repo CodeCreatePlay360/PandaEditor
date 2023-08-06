@@ -18,7 +18,7 @@ class UserModule(Resource):
         # get all attributes of module and add save them to object data
         for name, val in self.class_instance.get_savable_atts():
             # the exception check will prevent any errors/exceptions thrown from TypeEnforced
-            # (EdProperty.Properties use TypeEnforced to make sure only supported value types are sent as arguments)
+            # (EdProperty.Properties use TypeEnforced to make sure only valid types are sent as arguments)
             try:
                 prop = EdProperty.Property(name, val)
                 obj_data.add_property(prop)
