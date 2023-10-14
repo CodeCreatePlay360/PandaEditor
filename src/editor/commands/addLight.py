@@ -12,5 +12,4 @@ class AddLight(Command):
         return True
 
     def undo(self):
-        # editor.observer.trigger("OnRemoveNPs", [self.light_np])
         editor.level_editor.remove_nps([self.light_np])

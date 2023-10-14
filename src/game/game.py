@@ -1,7 +1,8 @@
 import panda3d.core as p3d_core
-from game.scene import Scene
+
 from panda3d.core import WindowProperties
-from editor.core.component import Component
+from game.scene import Scene
+from game.resources.component import Component
 
 # some static globals constants
 DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or Component regular UpdateTask
@@ -17,7 +18,7 @@ class Game:
         self.__show_base = kwargs.pop("show_base", None)
         self.__win = kwargs.pop("win", None)
         self.__dr = None
-        self.__dr_2D = None
+        self.__dr_2d = None
         self.__mouse_watcher_node = None
         self.__mouse_watcher_node_2d = None
 
@@ -108,7 +109,7 @@ class Game:
             module = self.__all_modules[key]
             module.class_instance.ignore_all()
             module.class_instance.stop()
-            module.reload_data()
+            module.reload_data(remove_differences=True)
 
             self.hide_cursor(False)
 
@@ -133,22 +134,22 @@ class Game:
         pass
 
     def setup_dr_2d(self):
-        self.__dr_2D = self.__win.makeDisplayRegion()
-        self.__dr_2D.setSort(2)
-        self.__dr_2D.setActive(True)
-        self.__dr_2D.set_dimensions((0, 0.4, 0, 0.4))
+        self.__dr_2d = self.__win.makeDisplayRegion()
+        self.__dr_2d.setSort(2)
+        self.__dr_2d.setActive(True)
+        self.__dr_2d.set_dimensions((0, 0.4, 0, 0.4))
 
     def setup_mouse_watcher_2d(self):
         self.__mouse_watcher_node_2d = p3d_core.MouseWatcher()
         self.__show_base.mouseWatcher.get_parent().attachNewNode(self.__mouse_watcher_node_2d)
-        self.__mouse_watcher_node_2d.set_display_region(self.__dr_2D)
+        self.__mouse_watcher_node_2d.set_display_region(self.__dr_2d)
 
     def setup_dr_3d(self):
         self.__dr = self.__win.makeDisplayRegion(0, 0.4, 0, 0.4)
         self.__dr.setSort(1)
         self.__dr.setClearColorActive(True)
         self.__dr.setClearDepthActive(True)
-        self.__dr.setClearColor((0.8, 0.8, 0.8, 1.0))
+        self.__dr.setClearColor((0.65, 0.65, 0.65, 1.0))
 
     def setup_mouse_watcher_3d(self):
         self.__mouse_watcher_node = p3d_core.MouseWatcher()
@@ -225,15 +226,15 @@ class Game:
         return self.__dr
 
     @property
-    def dr_2D(self):
-        return self.__dr_2D
+    def dr_2d(self):
+        return self.__dr_2d
 
     @property
     def mouse_watcher_node(self):
         return self.__mouse_watcher_node
 
     @property
-    def mouse_watcher_node_2D(self):
+    def mouse_watcher_node_2d(self):
         return self.__mouse_watcher_node_2d
 
     @property

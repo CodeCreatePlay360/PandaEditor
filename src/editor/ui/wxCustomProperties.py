@@ -41,28 +41,84 @@ def is_valid_float(curr_value):
     return value_valid
 
 
-class WxCustomProperty(wx.Window):
-    def __init__(self, parent, prop=None, h_offset=1, *args, **kwargs):
-        wx.Window.__init__(self, parent, *args)
-        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Normal"))
+class TextCtrl(wx.Window):
+    def __init__(self, *args, **kwargs):
+        """"""
+
+        wx.Window.__init__(self, *args, **kwargs)
+
+        self.__text_ctrl = wx.TextCtrl(self)
+        self.__text_ctrl.SetWindowStyleFlag(wx.BORDER_NONE)
+        self.__text_ctrl.SetBackgroundColour(wx.Colour(100, 100, 100, 255))
+        self.__text_ctrl.SetForegroundColour(wx.Colour(255, 255, 255, 255))
+
+        self.__sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.__sizer.Add(self.__text_ctrl, 1, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=1)
+        self.SetSizer(self.__sizer)
+
+        self.SetWindowStyleFlag(wx.BORDER_NONE)
+        self.SetBackgroundColour(wx.Colour(100, 100, 100, 255))
+        self.SetForegroundColour(wx.Colour(255, 255, 255, 255))
+        
+        self.Bind(wx.EVT_PAINT, self.on_paint)
+        
+    def bind_evt(self, event, handler):
+        self.__text_ctrl.Bind(event, handler)
+        self.__text_ctrl.Bind(event, handler)
+
+    def Unbind(self, event, source=None, _id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+        self.__text_ctrl.Unbind(event)
+        self.__text_ctrl.Unbind(event)
+
+    def SetValue(self, val):
+        self.__text_ctrl.SetValue(val)
+
+    def GetValue(self):
+        return self.__text_ctrl.GetValue()
+
+    def HasFocus(self):
+        return self.__text_ctrl.HasFocus()
+
+    def on_paint(self, evt):
+        pdc = wx.PaintDC(self)
+        gc = pdc
+
+        gc.SetPen(wx.Pen(wx.Colour(70, 70, 70, 255), 1))
+        gc.SetBrush(wx.Brush(wx.Colour(70, 70, 70, 255)))
+
+        gc.DrawLine(wx.Point(0, 0), wx.Point(self.GetSize().x, 0))  # top
+        gc.DrawLine(wx.Point(0, self.GetSize().y - 1), wx.Point(self.GetSize().x, self.GetSize().y - 1))  # bottom
+        gc.DrawLine(wx.Point(0, 0), wx.Point(0, self.GetSize().y - 1))  # left
+        gc.DrawLine(wx.Point(self.GetSize().x, 0), wx.Point(self.GetSize().x, self.GetSize().y - 1))  # right
+
+        evt.Skip()
+
+
+class WxCustomProperty(wx.Panel):
+    def __init__(self, parent, prop=None, *args, **kwargs):
+        wx.Panel.__init__(self, parent, *args)
+        self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
         self.__parent = parent
 
         self.__ed_property = prop
-        self.__h_offset = h_offset
         self.__font_colour = editor.ui_config.color_map("Text_Primary")
         self.__font_size = 8
         self.__ed_property_label = None
 
         # create fonts
-        self.__ed_property_font = wx.Font(self.font_size, editor.ui_config.ed_font, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
+        self.__ed_property_font = wx.Font(self.font_size, editor.ui_config.font, wx.DEFAULT, wx.FONTWEIGHT_NORMAL)
 
         self.SetSize((-1, 22))
         self.SetMinSize((-1, 22))
         self.SetMaxSize((-1, 22))
 
         self.__sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.Bind(wx.EVT_SIZE, self.on_size)
         self.SetSizer(self.__sizer)
         self.Layout()
+
+    def on_size(self, evt):
+        evt.Skip()
 
     def on_kill_focus(self, evt):
         evt.Skip()
@@ -77,6 +133,11 @@ class WxCustomProperty(wx.Window):
         self.__ed_property_label = wx.StaticText(self, label=self.ed_property.name.capitalize())
         self.__ed_property_label.SetFont(self.ed_property_font)
         self.__ed_property_label.SetForegroundColour(self.font_colour)
+
+        if self.__ed_property.length != -1:
+            self.__ed_property_label.SetMaxSize((self.__ed_property.length, -1))
+            self.__ed_property_label.SetMinSize((self.__ed_property.length, -1))
+            self.__ed_property_label.SetSize((self.__ed_property.length, -1))
 
     def get_value(self):
         return self.ed_property.get_value()
@@ -106,10 +167,6 @@ class WxCustomProperty(wx.Window):
     @property
     def ed_property(self):
         return self.__ed_property
-
-    @property
-    def h_offset(self):
-        return self.__h_offset
 
     @property
     def font_colour(self):
@@ -155,7 +212,7 @@ class LabelProperty(WxCustomProperty):
         self.ctrl_label = None
 
     def create_control(self):
-        font = editor.ui_config.ed_font
+        font = editor.ui_config.font
         if self.ed_property.is_bold:
             self.font = wx.Font(8, font, wx.DEFAULT, wx.BOLD)
         else:
@@ -176,23 +233,10 @@ class IntProperty(WxCustomProperty):
         self.__current_value = self.get_value()
         self.__old_value = None  # last value of text control before updating
 
-    def on_event_text(self, evt):
-        if is_valid_int(self.__text_ctrl.GetValue()):
-            self.__current_value = int(self.__text_ctrl.GetValue())
-            self.__old_value = int(self.__current_value)
-        else:
-            self.__current_value = self.__old_value
-
-        evt.Skip()
-
-    def on_kill_focus(self, evt):
-        self.set_value(self.__current_value)
-        evt.Skip()
-
     def create_control(self):
         super().create_control()
 
-        self.__text_ctrl = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         # set initial value
         self.__current_value = self.get_value()
@@ -208,22 +252,33 @@ class IntProperty(WxCustomProperty):
         self.bind_events()
         self.Refresh()
 
-    def bind_events(self):
-        self.__text_ctrl.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
-        self.__text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
+    def on_event_text(self, evt):
+        if is_valid_int(self.__text_ctrl.GetValue()):
+            self.__current_value = int(self.__text_ctrl.GetValue())
+            self.__old_value = int(self.__current_value)
+        else:
+            self.__current_value = self.__old_value
 
-    def unbind_events(self):
-        self.__text_ctrl.Unbind(wx.EVT_KILL_FOCUS)
-        self.__text_ctrl.Unbind(wx.EVT_TEXT)
+        evt.Skip()
+
+    def on_kill_focus(self, evt):
+        self.set_value(self.__current_value)
+        evt.Skip()
 
     def set_control_value(self, val):
         val = get_rounded_value(val)
         self.__text_ctrl.SetValue(str(val))
 
+    def bind_events(self):
+        self.__text_ctrl.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl.bind_evt(wx.EVT_TEXT, self.on_event_text)
+
+    def unbind_events(self):
+        self.__text_ctrl.Unbind(wx.EVT_KILL_FOCUS)
+        self.__text_ctrl.Unbind(wx.EVT_TEXT)
+
     def has_focus(self):
-        if self.__text_ctrl.HasFocus():
-            return True
-        return False
+        return self.__text_ctrl.HasFocus()
 
 
 class FloatProperty(WxCustomProperty):
@@ -254,7 +309,7 @@ class FloatProperty(WxCustomProperty):
 
     def create_control(self):
         super().create_control()
-        self.__text_ctrl = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         # set initial value
         property_value = self.get_value()
@@ -263,14 +318,14 @@ class FloatProperty(WxCustomProperty):
         # add to sizer
         self.sizer.Add(self.ed_property_label, 0, wx.ALIGN_CENTER_VERTICAL, border=0)
         self.sizer.AddSpacer(LABEL_TO_CONTROL_MARGIN)
-
         self.sizer.Add(self.__text_ctrl, 1, wx.ALIGN_CENTER_VERTICAL, border=0)
+
         self.bind_events()
         self.Refresh()
 
     def bind_events(self):
-        self.__text_ctrl.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
-        self.__text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl.bind_evt(wx.EVT_TEXT, self.on_event_text)
 
     def unbind_events(self):
         self.__text_ctrl.Unbind(wx.EVT_KILL_FOCUS)
@@ -303,7 +358,7 @@ class StringProperty(WxCustomProperty):
     def create_control(self):
         super().create_control()
 
-        self.__text_ctrl = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
         self.__text_ctrl.SetValue(self.get_value())
 
         # add to sizer
@@ -315,8 +370,8 @@ class StringProperty(WxCustomProperty):
         self.Refresh()
 
     def bind_events(self):
-        self.__text_ctrl.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
-        self.__text_ctrl.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl.bind_evt(wx.EVT_TEXT, self.on_event_text)
 
     def unbind_events(self):
         self.__text_ctrl.Unbind(wx.EVT_KILL_FOCUS)
@@ -466,6 +521,7 @@ class ColorProperty(WxCustomProperty):
         value.y = common_maths.map_to_range(0, 1, 0, 255, value.y)
         value.z = common_maths.map_to_range(0, 1, 0, 255, value.z)
         value.w = common_maths.map_to_range(0, 1, 0, 255, value.w)
+
         return wx.Colour(int(value.x), int(value.y), int(value.z), int(value.w))
 
     @staticmethod
@@ -473,11 +529,13 @@ class ColorProperty(WxCustomProperty):
         """converts to panda3d color value range from 0-255 range and return a panda3d.core.LColor object"""
 
         value = wx.Colour(value.red, value.green, value.blue, value.alpha)
-        value.x = common_maths.map_to_range(0, 255, 0, 1, value.red)
-        value.y = common_maths.map_to_range(0, 255, 0, 1, value.green)
-        value.z = common_maths.map_to_range(0, 255, 0, 1, value.blue)
-        value.w = common_maths.map_to_range(0, 255, 0, 1, value.alpha)
-        return LColor(value.x, value.y, value.z, value.w)
+
+        # value.x = common_maths.map_to_range(0, 255, 0, 1, value.GetRed())
+        # value.y = common_maths.map_to_range(0, 255, 0, 1, value.GetGreen())
+        # value.z = common_maths.map_to_range(0, 255, 0, 1, value.GetBlue())
+        # value.w = common_maths.map_to_range(0, 255, 0, 1, value.GetAlpha())
+
+        return LColor(value.GetRed() / 255, value.GetGreen() / 255, value.GetBlue() / 255, value.GetAlpha() / 255)
 
 
 class ColourTemperatureProperty(WxCustomProperty):
@@ -512,14 +570,6 @@ class Vector2Property(WxCustomProperty):
             h = float(self.__text_ctrl_x.GetValue())
             p = float(self.__text_ctrl_y.GetValue())
 
-            # apply value limit
-            if self.ed_property.value_limit is not None:
-                if h < self.ed_property.value_limit.x:
-                    h = self.ed_property.value_limit.x
-
-                if p < self.ed_property.value_limit.x:
-                    p = self.ed_property.value_limit.x
-
             # self.set_value(LVecBase2f(h, p))
             self.__current_value = LVecBase2f(h, p)
             self.__old_value = LVecBase2f(h, p)
@@ -538,17 +588,17 @@ class Vector2Property(WxCustomProperty):
     def create_control(self):
         super(Vector2Property, self).create_control()
 
-        font = wx.Font(8, editor.ui_config.ed_font, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
+        font = wx.Font(8, editor.ui_config.font, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
 
         label_x = wx.StaticText(self, label=" x ")
         label_x.SetFont(font)
         label_x.SetForegroundColour(editor.ui_config.color_map("Text_Secondary"))
-        self.__text_ctrl_x = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl_x = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         label_y = wx.StaticText(self, label=" y ")
         label_y.SetFont(font)
         label_y.SetForegroundColour(editor.ui_config.color_map("Text_Secondary"))
-        self.__text_ctrl_y = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl_y = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         # set initial value
         property_value = self.get_value()
@@ -568,11 +618,11 @@ class Vector2Property(WxCustomProperty):
         self.Refresh()
 
     def bind_events(self):
-        self.__text_ctrl_x.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.__text_ctrl_y.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl_x.bind_evt(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl_y.bind_evt(wx.EVT_TEXT, self.on_event_text)
 
-        self.__text_ctrl_x.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
-        self.__text_ctrl_y.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl_x.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl_y.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
 
     def unbind_events(self):
         self.__text_ctrl_x.Unbind(wx.EVT_TEXT)
@@ -637,17 +687,6 @@ class Vector3Property(WxCustomProperty):
             p = float(self.__text_ctrl_y.GetValue())
             r = float(self.__text_ctrl_z.GetValue())
 
-            # apply value limit
-            if self.ed_property.value_limit is not None:
-                if h < self.ed_property.value_limit.x:
-                    h = self.ed_property.value_limit.x
-
-                if p < self.ed_property.value_limit.y:
-                    p = self.ed_property.value_limit.y
-
-                if r < self.ed_property.value_limit.z:
-                    r = self.ed_property.value_limit.z
-
             # self.set_value(LVecBase3f(h, p, r))
             self.__current_value = LVecBase3f(h, p, r)
             self.__old_value = LVecBase3f(h, p, r)
@@ -669,22 +708,22 @@ class Vector3Property(WxCustomProperty):
         # label = wx.StaticText(self, label=self.label)
         super(Vector3Property, self).create_control()
 
-        font = wx.Font(8, editor.ui_config.ed_font, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
+        font = wx.Font(8, editor.ui_config.font, wx.DEFAULT, wx.FONTWEIGHT_BOLD)
 
         label_x = wx.StaticText(self, label="x ")
         label_x.SetFont(font)
         label_x.SetForegroundColour(editor.ui_config.color_map("Text_Secondary"))
-        self.__text_ctrl_x = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl_x = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         label_y = wx.StaticText(self, label=" y ")
         label_y.SetFont(font)
         label_y.SetForegroundColour(editor.ui_config.color_map("Text_Secondary"))
-        self.__text_ctrl_y = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl_y = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         label_z = wx.StaticText(self, label=" z ")
         label_z.SetFont(font)
         label_z.SetForegroundColour(editor.ui_config.color_map("Text_Secondary"))
-        self.__text_ctrl_z = wx.TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
+        self.__text_ctrl_z = TextCtrl(self, size=(0, 18), id=ID_TEXT_CHANGE)
 
         # set initial value
         property_value = self.get_value()
@@ -714,13 +753,13 @@ class Vector3Property(WxCustomProperty):
         self.Refresh()
 
     def bind_events(self):
-        self.__text_ctrl_x.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.__text_ctrl_y.Bind(wx.EVT_TEXT, self.on_event_text)
-        self.__text_ctrl_z.Bind(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl_x.bind_evt(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl_y.bind_evt(wx.EVT_TEXT, self.on_event_text)
+        self.__text_ctrl_z.bind_evt(wx.EVT_TEXT, self.on_event_text)
 
-        self.__text_ctrl_x.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
-        self.__text_ctrl_y.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
-        self.__text_ctrl_z.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl_x.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl_y.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
+        self.__text_ctrl_z.bind_evt(wx.EVT_KILL_FOCUS, self.on_kill_focus)
 
     def unbind_events(self):
         self.__text_ctrl_x.Unbind(wx.EVT_TEXT)
@@ -776,10 +815,6 @@ class EnumProperty(WxCustomProperty):
         # label = wx.StaticText(self, label=self.label)
         super(EnumProperty, self).create_control()
         val = self.ed_property.get_choices()
-        if type(val) is list:
-            pass
-        else:
-            val = []
 
         self.__choice_control = wx.Choice(self, choices=val)
         self.__choice_control.SetSelection(self.ed_property.get_value())
@@ -906,8 +941,8 @@ class HorizontalLayoutGroup(WxCustomProperty):
 
 
 class FoldoutGroup(WxCustomProperty):
-    FOLD_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/foldOpen_16.png"))
-    FOLD_CLOSE_ICON = str(pathlib.Path(ICONS_PATH + "/foldClose_16.png"))
+    FOLD_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/folding panel/foldOpen.png"))
+    FOLD_CLOSE_ICON = str(pathlib.Path(ICONS_PATH + "/folding panel/foldClose.png"))
 
     def __init__(self, parent, property_, *args, **kwargs):
         super().__init__(parent, property_)
@@ -929,13 +964,7 @@ class FoldoutGroup(WxCustomProperty):
     def on_click(self, evt):
         self.__is_open = not self.__is_open
         self.open() if self.__is_open else self.close()
-
-        editor.inspector.Freeze()
-        self.parent.Layout()
-        editor.inspector.fold_manager.Layout()
         editor.inspector.Layout()
-        editor.inspector.Thaw()
-
         evt.Skip()
 
     def set_properties(self, properties):
@@ -995,6 +1024,7 @@ class FoldoutGroup(WxCustomProperty):
         self.SetMaxSize((-1, 22))
 
         self.__fd_button.SetBitmap(self.__fd_close_icon)
+        self.Layout()
 
     @property
     def properties(self):

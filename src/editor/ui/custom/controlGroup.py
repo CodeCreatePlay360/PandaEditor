@@ -13,9 +13,11 @@ __ToggleButton__ = 2
 
 
 class ButtonBase(wx.Window):
-    def __init__(self, parent, btn_idx, label_text, image_path=None, image_scale: tuple = None, select_func=None,
-                 deselect_func=None, data=None,
-                 *args, **kwargs):
+    def __init__(self, parent, btn_idx, 
+                 label_text, 
+                 image_path=None, image_scale: tuple = None,
+                 select_func=None, deselect_func=None, 
+                 data=None, *args, **kwargs):
         wx.Window.__init__(self, parent)
 
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -114,7 +116,6 @@ class BasicButton(ButtonBase):
     def __init__(self, *args, **kwargs):
         ButtonBase.__init__(self, *args, **kwargs)
         self.__clear_bg = kwargs.pop("clear_bg", False)
-
         color = self.GetParent().GetBackgroundColour() if self.__clear_bg else Selection_btn_color_normal
         self.SetBackgroundColour(color)
 

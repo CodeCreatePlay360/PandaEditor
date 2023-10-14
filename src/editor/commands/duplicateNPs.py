@@ -13,5 +13,4 @@ class DuplicateNPs(Command):
         return True
 
     def undo(self):
-        # editor.observer.trigger("OnRemoveNPs", self.duplicated_nps)
         editor.level_editor.remove_nps(self.duplicated_nps, permanent=True)

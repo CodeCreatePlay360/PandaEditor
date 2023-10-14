@@ -1,22 +1,24 @@
 import sys
 import wx
 
-from direct.showbase.DirectObject import DirectObject
 from panda3d.core import WindowProperties
+from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import taskMgr
+from editor.ui.splitwindow import SplitWindow
 
 
-class Viewport(wx.Panel):
-    def __init__(self, *args, **kwargs):
+class Viewport(SplitWindow):
+    def __new__(cls, *args, **kwargs):
         """
         Initialise the wx panel. You must complete the other part of the
         init process by calling Initialise() once the wx-window has been
         built.
         """
-        wx.Panel.__init__(self, *args, **kwargs)
+        self = super().__new__(cls, *args, **kwargs)
         self.wx_main = args[0]
         self._win = None
         self._initialized = False
+        return self
 
     def get_window(self):
         return self._win

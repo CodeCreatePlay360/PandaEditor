@@ -8,11 +8,10 @@ from editor.globals import editor
 
 
 class ShowBase(sb.ShowBase):
-    def __init__(self, ed_wx_win):
+    def __init__(self, viewport):
         sb.ShowBase.__init__(self)
-        base.cTrav = None
 
-        self.scene_win = ed_wx_win  # wx python window
+        self.viewport = viewport  # wx python window
         self.main_win = None  # Panda3d editor window we will render into
 
         self.edRender = None
@@ -33,7 +32,6 @@ class ShowBase(sb.ShowBase):
         self.ed_mouse_watcher_node_2d = None
 
         self.forcedAspectWins = []
-        self.update_task = None
 
     def finish_init(self):
         self.init_editor_win()
@@ -44,7 +42,7 @@ class ShowBase(sb.ShowBase):
         self.forcedAspectWins.append((self.main_win, self.ed_camera, self.__ed_aspect2d))
 
     def init_editor_win(self):
-        self.scene_win.initialize(use_main_win=True)
+        self.viewport.initialize(use_main_win=True)
 
     def setup_editor_window(self):
         """set up an editor rendering, it included setting up 2d and 3d display regions,
@@ -64,7 +62,7 @@ class ShowBase(sb.ShowBase):
         self.dr2d.setSort(0)
         # ------------------------------------------- #
 
-        self.main_win = self.scene_win.get_window()
+        self.main_win = self.viewport.get_window()
 
         # ------------------ 2d rendering setup ------------------
         # create new 2d display region
@@ -112,7 +110,7 @@ class ShowBase(sb.ShowBase):
         self.edDr = self.main_win.makeDisplayRegion(0, 1, 0, 1)
         self.edDr.setSort(0)
         self.edDr.setClearColorActive(True)
-        self.edDr.setClearColor((0.6, 0.6, 0.6, 1.0))
+        self.edDr.setClearColor((0.3, 0.3, 0.3, 1.0))
 
         self.ed_mouse_watcher_node.set_display_region(self.edDr)
 
@@ -153,8 +151,7 @@ class ShowBase(sb.ShowBase):
         super(ShowBase, self).windowEvent(*args, **kwargs)
         self.update_aspect_ratio()
         if editor.observer:
-            editor.observer.trigger("ShowBaseResize")
+            editor.observer.trigger("on_window_event")
 
-    @property
-    def ed_aspect2d(self):
+    def get_aspect2d(self):
         return self.__ed_aspect2d

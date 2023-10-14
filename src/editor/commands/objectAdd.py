@@ -3,13 +3,13 @@ from editor.globals import editor
 
 
 class ObjectAdd(Command):
-    def __init__(self, obj_path, *args, **kwargs):
+    def __init__(self, obj_path):
         """Adds any of the default editor prototype objects, Menubar > Object > GameObject > (Any)"""
 
         self.path = obj_path
         self.object = None
 
-    def do(self, *args, **kwargs):
+    def do(self):
         self.object = editor.level_editor.add_object(self.path)
         return True
 

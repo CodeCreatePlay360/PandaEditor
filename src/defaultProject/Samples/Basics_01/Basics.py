@@ -2,9 +2,9 @@ import panda3d.core as p3dCore
 import direct.gui.DirectGui as gui
 
 from pathlib import Path
-from editor.core import RuntimeModule
-from editor.utils import EdProperty
 from direct.showbase.Loader import Loader
+from commons import EditorProperty
+from game.resources import RuntimeModule
 
 
 class Basics(RuntimeModule):
@@ -12,9 +12,8 @@ class Basics(RuntimeModule):
         RuntimeModule.__init__(self, *args, **kwargs)
 
         # __init__ should not contain anything except for variable declaration
-
         # by default all public attributes will be displayed in inspector and saved during editor reload.
-        self.add_property(EdProperty.Label(name="Default Properties", is_bold=True, layout_idx=-1))
+        self.add_property(EditorProperty.Label(name="Default Properties", is_bold=True, draw_idx=-1))
 
         self.int_property = 5
         self.float_property = 7.5
@@ -33,54 +32,53 @@ class Basics(RuntimeModule):
         # CUSTOM PROPERTIES
 
         # empty space property
-        self.add_property(EdProperty.EmptySpace(0, 5))
+        self.add_property(EditorProperty.EmptySpace(0, 5))
 
         # label property
-        self.add_property(EdProperty.Label(name="Custom Properties", is_bold=True))
+        self.add_property(EditorProperty.Label(name="Custom Properties", is_bold=True))
 
         # button property
-        self.add_property(EdProperty.ButtonProperty(name="Button Property", func=self.on_button))
+        self.add_property(EditorProperty.ButtonProperty(name="Button Property", method=self.on_button))
 
         # slider property
-        self.add_property(EdProperty.Slider(name="Slider",
-                                            value=self.__temperature,  # initial value
-                                            min_value=0,
-                                            max_value=10,
-                                            setter=self.set_temperature,
-                                            getter=lambda: self.__temperature,
-                                            ))
+        self.add_property(EditorProperty.Slider(name="Slider",
+                                                initial_value=self.__temperature,  # initial value
+                                                min_value=0,
+                                                max_value=10,
+                                                setter=self.set_temperature,
+                                                getter=lambda: self.__temperature))
 
         # choice property
         choices = ["Apple", "PineApple", "BigApple", "Blueberry"]
-        self.add_property(EdProperty.ChoiceProperty(name="Choice",
-                                                    choices=choices,
-                                                    value=self.__curr_choice,  # initial value
-                                                    setter=self.set_choice,
-                                                    getter=lambda: self.__curr_choice))
+        self.add_property(EditorProperty.ChoiceProperty(name="Choice",
+                                                        choices=choices,
+                                                        initial_value=self.__curr_choice,  # initial value
+                                                        setter=self.set_choice,
+                                                        getter=lambda: self.__curr_choice))
 
         # color property
-        self.add_property(EdProperty.FuncProperty(name="Color_picker",
-                                                  value=self.__color,
-                                                  setter=self.set_color,
-                                                  getter=lambda: self.__color))
+        self.add_property(EditorProperty.FuncProperty(name="Color_picker",
+                                                      initial_value=self.__color,
+                                                      setter=self.set_color,
+                                                      getter=lambda: self.__color))
 
         # --------------------------------
         # horizontal layout group property
         self.toggle = True
-        properties = [EdProperty.Label(name="HorizontalGroup: ", is_bold=True),
-                      EdProperty.ObjProperty(name="vector2", value=self.vector2, obj=self),
-                      EdProperty.ObjProperty(name="toggle", value=self.toggle, obj=self)]
+        properties = [EditorProperty.Label(name="HorizontalGroup: ", is_bold=True),
+                      EditorProperty.ObjProperty(name="vector2", initial_value=self.vector2, obj=self),
+                      EditorProperty.ObjProperty(name="toggle", initial_value=self.toggle, obj=self)]
 
-        horizontal_layout_group = EdProperty.HorizontalLayoutGroup(name="HLayoutGroup", properties=properties)
+        horizontal_layout_group = EditorProperty.HorizontalLayoutGroup(name="HLayoutGroup", properties=properties)
         self.add_property(horizontal_layout_group)
 
-        # --------------------------------
-        properties = [EdProperty.Label(name="StaticBox: ", is_bold=True),
-                      EdProperty.ObjProperty(name="vector2", value=self.vector2, obj=self),
-                      EdProperty.ObjProperty(name="toggle", value=self.toggle, obj=self)]
+        # -------------------------------
+        properties = [EditorProperty.Label(name="StaticBox: ", is_bold=True),
+                      EditorProperty.ObjProperty(name="vector2", initial_value=self.vector2, obj=self),
+                      EditorProperty.ObjProperty(name="toggle", initial_value=self.toggle, obj=self)]
 
         # a static box container to group together logically similar attributes
-        static_box = EdProperty.StaticBox(name="Properties-Group", properties=properties)
+        static_box = EditorProperty.StaticBox(name="Properties-Group", properties=properties)
         self.add_property(static_box)
 
         # --------------------------------------
@@ -89,17 +87,18 @@ class Basics(RuntimeModule):
         self.__boolean = False
         self.__vector = p3dCore.LVecBase3f(5, 10, 15)
 
-        properties = [EdProperty.ObjProperty(name="_Basics__integer", value=self.__integer, obj=self),
-                      EdProperty.ObjProperty(name="_Basics__boolean", value=self.__boolean, obj=self),
-                      EdProperty.ObjProperty(name="_Basics__vector", value=self.__vector, obj=self)]
+        properties = [EditorProperty.ObjProperty(name="_Basics__integer", initial_value=self.__integer, obj=self),
+                      EditorProperty.ObjProperty(name="_Basics__boolean", initial_value=self.__boolean, obj=self),
+                      EditorProperty.ObjProperty(name="_Basics__vector", initial_value=self.__vector, obj=self)]
 
-        foldout_group = EdProperty.FoldoutGroup(properties=properties)
+        foldout_group = EditorProperty.FoldoutGroup(properties=properties)
         self.add_property(foldout_group)
 
         # CUSTOMIZATION ----------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------------
         # to stop public attributes from displaying in inspector add them to list of hidden attributes
-        # self.hidden_attrs = "toggle"
+        self.hidden_attrs = "toggle"
+        self.hidden_attrs = "temperature"
 
         # ------------------------------------------------------------------------------------------------
         # to stop attributes from being saved during editor reload, add them to list of

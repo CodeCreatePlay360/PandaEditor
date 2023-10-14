@@ -3,55 +3,48 @@ from wx import DEFAULT, SWISS
 
 
 class UI_Config:
+    PINK_COLOR = (253, 114, 255, 255)
+
     def __init__(self, config):
-        self.__config = et.parse(config)
+        self.__xml_tree = et.parse(config).getroot()
+        self.__font = self.__xml_tree.find("UI").find("Font")
 
-        win32_elements = self.__config.find("./UI[@platform='any']")
-        color_palette = win32_elements.find("ColorPalette")
+    def color_map(self, key: str):
+        """Returns a color identified by arg 'key' from editor UI global color palette, see editor/config.xml"""
 
-        self.__ed_font = win32_elements.find("Font")
+        try:
+            color_str = self.__xml_tree.find("UI").find("_ColorPalette").find(key)
+            colors_list = color_str.text.split(",")
+        except AttributeError:
+            print(1 / 0)  # replace this with editor logger
+            return UI_Config.PINK_COLOR
 
-        self.__map_ = {"Panel_Light": [],
-                       "Panel_Normal": [],
-                       "Panel_Dark": [],
-
-                       "Text_Primary": [],
-                       "Text_Secondary": [],
-
-                       "Resource_Image_Tile_Sel": []}
-
-        self.populate_from_elm(elem=color_palette)
-
-    def populate_from_elm(self, elem):
-        last_tag = None
-        for elem in elem:
-            colors = elem.text.split(",")
-            for val in colors:
-                try:
-                    val_ = int(val)
-                    if self.__map_.__contains__(elem.tag):
-                        self.__map_[elem.tag].append(val_)
-                        if last_tag != elem.tag:
-                            if last_tag is not None:
-                                self.__map_[last_tag] = tuple(self.__map_[last_tag])
-                            last_tag = elem.tag
-                except ValueError:
-                    continue
-
-    def color_map(self, key):
-        if self.__map_.__contains__(key):
-            # print("Key {0} Value {1}".format(key, self.__map_[key]))
-            return self.__map_[key]
-        else:
-            print("Key {0} not found in EditorConfig/ColorPalette".format(key))
-            return 0, 0, 0, 255
+        return self.make_color(colors_list)
 
     @property
-    def ed_font(self):
-        if self.__ed_font.text == "SWISS":
+    def font(self):
+        if self.__font.text == "SWISS":
             return SWISS
         print("Font value not found returning platform default font value")
         return DEFAULT
 
-    def reset(self):
-        pass
+    @staticmethod
+    def make_color(colors_list):
+        r = int(colors_list[0])
+        g = int(colors_list[1])
+        b = int(colors_list[2])
+        a = int(colors_list[3])
+        return r, g, b, a
+
+    def widget_color(self, win: str = None, key: str = None):
+        """Returns an editor UI window (identified by arg 'win') specific color (identified by arg 'key') from editor
+         UI global color palette, see editor/config.xml"""
+
+        try:
+            color_str = self.__xml_tree.find("UI").find("_ColorPalette").find(win).find(key)
+            colors_list = color_str.text.split(",")
+        except AttributeError:
+            print(1 / 0)  # replace this with editor logger
+            return UI_Config.PINK_COLOR
+
+        return self.make_color(colors_list)

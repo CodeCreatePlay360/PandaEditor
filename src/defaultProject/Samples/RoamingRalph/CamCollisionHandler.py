@@ -1,6 +1,6 @@
 from pathlib import Path
 from panda3d.core import CollisionNode, CollisionHandlerQueue, CollisionRay, CollideMask
-from editor.core import Component
+from game.resources import Component
 
 
 class CamCollisionHandler(Component):

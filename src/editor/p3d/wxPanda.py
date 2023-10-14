@@ -3,7 +3,7 @@ import wx
 
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import WindowProperties
-from direct.showbase.ShowBase import taskMgr
+from direct.task.TaskManagerGlobal import taskMgr
 
 
 class Viewport(wx.Panel):
@@ -88,7 +88,7 @@ class App(wx.App, DirectObject):
         self.event_loop = wx.GUIEventLoop()
         self.old_loop = wx.EventLoop.GetActive()
         wx.EventLoop.SetActive(self.event_loop)
-        taskMgr.add(self.wx_step, '_ed_task_WxStep')
+        taskMgr.add(self.wx_step, 'EditorAppUpdateTask')
 
     def on_destroy(self):
         self.wx_step()

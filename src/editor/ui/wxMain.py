@@ -3,6 +3,7 @@ import sys
 import wx
 import wx.aui
 import wx.lib.agw.aui as aui
+import editor.ui.splitwindow as splitwindow
 
 from direct.showbase.ShowBase import taskMgr
 from editor.ui.menuBar import MenuBar
@@ -29,7 +30,7 @@ Evt_Play = wx.NewId()
 Evt_Toggle_Scene_Lights = wx.NewId()
 Evt_Toggle_Sounds = wx.NewId()
 
-# auiNotebook events
+# ui panel events
 EVT_CLOSE_PAGE = wx.NewId()
 
 Event_Map = {
@@ -49,160 +50,54 @@ Event_Map = {
 }
 
 # resources
+# panda editor icon file
 ICON_FILE = str(pathlib.Path(ICONS_PATH + "/pandaIcon.ico"))
 #
-NEW_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileNew_32.png"))
-OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileOpen_32.png"))
-SAVE_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileSave_32.png"))
-SAVE_SESSION_AS_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileSaveAs_32.png"))
+# status bar icons
+NEW_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/fileNew_32.png"))
+OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/fileOpen_32.png"))
+SAVE_SESSION_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/fileSave_32.png"))
+SAVE_SESSION_AS_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/fileSaveAs_32.png"))
 #
-PROJ_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/fileOpen_32.png"))
-IMPORT_LIBRARY_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/package_link.png"))
-IMPORT_PACKAGE_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/add_package.png"))
-OPEN_STORE_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/shop_network.png"))
+PROJ_OPEN_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/fileOpen_32.png"))
+IMPORT_LIBRARY_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/package_link.png"))
+IMPORT_PACKAGE_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/add_package.png"))
+OPEN_STORE_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/shop_network.png"))
 #
-ALL_LIGHTS_ON_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/lightbulb_32x_on.png"))
-ALL_LIGHTS_OFF_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/lightbulb_32x_off.png"))
-SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/soundIcon.png"))
-NO_SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/noSoundIcon.png"))
+ALL_LIGHTS_ON_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/lightbulb_32x_on.png"))
+ALL_LIGHTS_OFF_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/lightbulb_32x_off.png"))
+SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/soundIcon.png"))
+NO_SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/noSoundIcon.png"))
 #
-ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/Refresh_Icon_32.png"))
+ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/Refresh_Icon_32.png"))
 #
-ED_MODE_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/game_mode.png"))
-PLAY_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/playIcon_32x.png"))
-STOP_ICON = str(pathlib.Path(ICONS_PATH + "/ToolBar/stopIcon_32.png"))
-#
-DISABLED_ICON = str(pathlib.Path(ICONS_PATH + "/disabled_icon.png"))
-#
-SELECT_ICON = str(pathlib.Path(ICONS_PATH + "/hand_point_090.png"))
+ED_MODE_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/game_mode.png"))
+PLAY_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/playIcon_32x.png"))
+STOP_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/stopIcon_32.png"))
 #
 # notebook page icons
-VIEWPORT_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/image_16x.png"))
-INSPECTOR_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/gear_16x.png"))
-CONSOLE_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/monitor_16x.png"))
-RESOURCE_BROWSER = str(pathlib.Path(ICONS_PATH + "/NP_Pages/folder_16x.png"))
-SCENE_GRAPH_ICON = str(pathlib.Path(ICONS_PATH + "/NP_Pages/structure_16x.png"))
+VIEWPORT_ICON = str(pathlib.Path(ICONS_PATH + "/panel icons/image_16x.png"))
+INSPECTOR_ICON = str(pathlib.Path(ICONS_PATH + "/panel icons/gear_16x.png"))
+CONSOLE_ICON = str(pathlib.Path(ICONS_PATH + "/panel icons/monitor_16x.png"))
+RESOURCE_BROWSER = str(pathlib.Path(ICONS_PATH + "/panel icons/folder_16x.png"))
+SCENE_GRAPH_ICON = str(pathlib.Path(ICONS_PATH + "/panel icons/structure_16x.png"))
 #
-# status bar
-REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/StatusBar/arrow_refresh.png"))
-
-# default layout for notebook tabs
-xx = "panel631603ca0000000000000002=+0|panel631603d60000000c00000003=+1|panel631603de0000001400000004=+4|" \
-     "panel631603e60000001c00000006=+2|panel631603ec0000002200000006=+3@layout2|" \
-     "name=dummy;caption=;state=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=180;besth=180;minw=180;" \
-     "minh=180;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|" \
-     "name=panel631603ca0000000000000002;caption=;state=67372028;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=0;" \
-     "besth=0;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;" \
-     "transparent=255|name=panel631603d60000000c00000003;caption=;state=67372028;dir=2;layer=0;row=1;pos=0;" \
-     "prop=100000;bestw=392;besth=237;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;" \
-     "notebookid=-1;transparent=255|name=panel631603de0000001400000004;caption=;state=67372028;dir=4;layer=0;" \
-     "row=1;pos=0;prop=100000;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;" \
-     "floath=-1;notebookid=-1;transparent=255|name=panel631603e60000001c00000006;caption=;state=67372028;dir=3;" \
-     "layer=0;row=1;pos=0;prop=70984;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;" \
-     "floatw=-1;floath=-1;notebookid=-1;transparent=255|name=panel631603ec0000002200000006;caption=;" \
-     "state=67372028;dir=3;layer=0;row=1;pos=1;prop=129015;bestw=180;besth=180;minw=-1;minh=-1;maxw=-1;maxh=-1;" \
-     "floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|dock_size(5,0,0)=10|" \
-     "dock_size(2,0,1)=332|dock_size(4,0,1)=182|dock_size(3,0,1)=228|"
-
-
-class WxAUINotebook(wx.aui.AuiNotebook):
-    class NotebookPageAndIdx:
-        def __init__(self, idx, page, label):
-            self.idx = idx
-            self.page = page
-            self.label = label
-
-    def __init__(self, parent):
-        wx.aui.AuiNotebook.__init__(self, parent=parent)
-        self.__parent = parent
-        self.__active_pages = []  # keep track of all active pages
-
-    def AddPage(self, page, caption, select=False):
-        super().AddPage(page, caption, select=False)
-        self.__active_pages.append(caption)
-
-    def DeletePage(self, page_idx):
-        if self.GetPageText(page_idx) == "Viewport":
-            return False
-
-        self.RemovePage(page_idx)
-        return True
-
-    def RemovePage(self, page_idx):
-        self.__active_pages.remove(self.GetPageText(page_idx))
-        super().RemovePage(page_idx)
-
-    def DoGetBestSize(self):
-        return wx.Size(self.__parent.GetSize().x, -1)
-
-    def add_pages(self, pages):
-        for page, name, bitmap in pages:
-            self.AddPage(page, name, True)
-
-    def is_page_active(self, name):
-        return self.__active_pages.__contains__(name)
-
-    @property
-    def active_pages(self):
-        return self.__active_pages
-
-
-class AUINotebook(aui.AuiNotebook):
-    class NotebookPageAndIdx:
-        def __init__(self, idx, page, label, bitmap):
-            self.idx = idx
-            self.page = page
-            self.label = label
-            self.bitmap = bitmap
-
-    def __init__(self, parent):
-        aui.AuiNotebook.__init__(self, parent=parent)
-        self.__active_pages = []  # keep track of all active pages
-
-    def AddPage(self, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap, control=None,
-                tooltip=""):
-        super().AddPage(page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap, control=None,
-                        tooltip="")
-
-    def InsertPage(self, page_idx, page, caption, select=False, bitmap=wx.NullBitmap, disabled_bitmap=wx.NullBitmap,
-                   control=None, tooltip=""):
-        self.__active_pages.append(caption)
-        super().InsertPage(page_idx, page, caption, select=False, bitmap=bitmap, disabled_bitmap=wx.NullBitmap,
-                           control=None, tooltip="")
-
-    def DeletePage(self, page_idx):
-        if self.GetPageText(page_idx) == "Viewport":
-            return False
-
-        self.RemovePage(page_idx)
-        return True
-
-    def RemovePage(self, page_idx):
-        self.__active_pages.remove(self.GetPageText(page_idx))
-        super().RemovePage(page_idx)
-
-    def add_pages(self, pages):
-        for page, name, bitmap, in pages:
-            self.AddPage(page, name, True)
-
-    def is_page_active(self, name):
-        return self.__active_pages.__contains__(name)
-
-    @property
-    def active_pages(self):
-        return self.__active_pages
+# status bar icons
+REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/status bar/arrow_refresh.png"))
+#
+# other icons
+DISABLED_ICON = str(pathlib.Path(ICONS_PATH + "/disabled_icon.png"))
+SELECT_ICON = str(pathlib.Path(ICONS_PATH + "/hand_point_090.png"))
 
 
 class WxFrame(wx.Frame):
-    USING_SPLITTER = False
-
     class StatusPanel(wx.Panel):
         class InfoPanel(wx.Window):
             def __init__(self, *args, **kwargs):
                 wx.Window.__init__(self, *args, **kwargs)
                 self.SetBackgroundColour(editor.ui_config.color_map("Panel_Normal"))
 
-                font = wx.Font(8, editor.ui_config.ed_font, wx.NORMAL, wx.NORMAL)
+                font = wx.Font(8, editor.ui_config.font, wx.NORMAL, wx.NORMAL)
 
                 self.bg_tasks_text_ctrl = wx.StaticText(self)
                 self.bg_tasks_text_ctrl.SetBackgroundColour(editor.ui_config.color_map("Panel_Normal"))
@@ -263,51 +158,58 @@ class WxFrame(wx.Frame):
 
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
-
+        self.panda_app = wx.GetApp()
+        
         # set the application icon
         icon_file = ICON_FILE
         icon = wx.Icon(icon_file, wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
-        self.panda_app = wx.GetApp()
-        self.freeze()
         self.load_resources()
         #
-        # set menu bar
+        # menu bar
         self.__menu_bar = MenuBar(self)
         self.SetMenuBar(self.__menu_bar)
         #
         self.status_panel = WxFrame.StatusPanel(self)
-        #
-        self.ed_viewport_panel = Viewport(self)
-        self.inspector_panel = InspectorPanel(self)
-        self.console_panel = LogPanel(self)
-        self.resource_browser = ResourceBrowser(self)
-        self.scene_graph_panel = SceneBrowserPanel(self)
-
-        self.__panels = [(self.ed_viewport_panel, "Viewport", wx.Bitmap(VIEWPORT_ICON)),
-                         (self.inspector_panel, "Inspector", wx.Bitmap(INSPECTOR_ICON)),
-                         (self.console_panel, "ConsolePanel", wx.Bitmap(CONSOLE_ICON)),
-                         (self.resource_browser, "ResourceBrowser", wx.Bitmap(RESOURCE_BROWSER)),
-                         (self.scene_graph_panel, "SceneGraph", wx.Bitmap(SCENE_GRAPH_ICON))]
-
-        if sys.platform == "linux":
-            self.USING_SPLITTER = True
-
-        # notebook
+        # main sizer
         self.__main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.__main_sizer)
+        
+        # initialize the different UI windows
+        self.__base_panel = splitwindow.SplitWindow("BasePanel", None, self, None)
+        
+        top_pnl, btm_pnl = self.__base_panel.split(direction=splitwindow.HORIZONTAL_SPLIT)
+        scenegraph = SceneBrowserPanel("Scene Browser", SCENE_GRAPH_ICON, top_pnl.get_splitter(), top_pnl)
 
-        self.__notebook = WxAUINotebook(self) if self.USING_SPLITTER else AUINotebook(self)  # aui nb has issues on linux
-        self.__notebook.add_pages(self.__panels)  # add panels to notebook
-
-        self.__notebook.SetPageBitmap(0, self.__panels[0][2])
-        self.__notebook.SetPageBitmap(1, self.__panels[1][2])
-        self.__notebook.SetPageBitmap(2, self.__panels[2][2])
-        self.__notebook.SetPageBitmap(3, self.__panels[3][2])
-        self.__notebook.SetPageBitmap(4, self.__panels[4][2])
-
-        self.saved_layouts = {}  # saved perspectives for aui notebook
+        scenegraph_, right_pnl = top_pnl.split(direction=splitwindow.VERTICAL_SPLIT, 
+                                                 panel_01=scenegraph,
+                                                 label_01="Scene Browser")  
+        
+        self.ed_viewport_panel = Viewport("Viewport", VIEWPORT_ICON, right_pnl.get_splitter(), right_pnl)
+        self.inspector_panel = InspectorPanel("Properties Panel", INSPECTOR_ICON, right_pnl.get_splitter(), right_pnl, scrolled=True)
+        viewport, properties_pnl =  right_pnl.split(direction=splitwindow.VERTICAL_SPLIT, 
+                                                    label_01="Viewport",
+                                                    panel_01=self.ed_viewport_panel,
+                                                    label_02="Properties Panel",
+                                                    panel_02=self.inspector_panel)
+                                                    
+        self.console_panel = LogPanel("Console", CONSOLE_ICON, btm_pnl.get_splitter(), btm_pnl)
+        self.resource_browser = ResourceBrowser("Resource Browser", RESOURCE_BROWSER, btm_pnl.get_splitter(), btm_pnl)
+        console_pnl, resource_pnl = btm_pnl.split(direction=splitwindow.VERTICAL_SPLIT, 
+                                                  label_01="Console Panel",
+                                                  panel_01=self.console_panel,
+                                                  label_02="Resource Browser",
+                                                  panel_02=self.resource_browser)
+                                                  
+        self.scenegraph = scenegraph_
+                                                  
+        self.__base_panel_top = top_pnl
+        self.__base_panel_right = right_pnl
+        self.__base_panel_btm_pnl = btm_pnl
+        self.saved_layouts = {}  # saved UI layouts
+        
+        
         # create aui toolbars
         self.file_menu_tb = self.create_toolbar()
         self.file_menu_tb.SetCursor(wx.Cursor(wx.CURSOR_HAND))
@@ -316,32 +218,26 @@ class WxFrame(wx.Frame):
         self.toolbar_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.toolbar_sizer.Add(self.file_menu_tb, 0, border=0)
 
-        if not self.USING_SPLITTER:
-            self.__notebook.LoadPerspective(xx)
-            self.save_layout("Default")
-        else:
-            pass
-
         self.__main_sizer.Add(self.toolbar_sizer, 0, wx.EXPAND)
-        self.__main_sizer.Add(self.__notebook, 1, wx.EXPAND)
+        self.__main_sizer.Add(self.__base_panel, 1, wx.EXPAND)
         self.__main_sizer.Add(self.status_panel, 1, wx.EXPAND)
-
+        
         self.Bind(wx.EVT_CLOSE, self.on_event_close)
         self.Bind(wx.EVT_SIZE, self.on_size)
 
     def on_size(self, evt):
-        # Workaround, sometimes aui notebook brakes after window in minimized,
-        # this check restores the layout
-        # for panel in self.__panels:
-        #     if panel[0].GetSize().y == 0:
-        #         self.load_layout("Default")
         evt.Skip()
 
     def do_after(self):
         self.Maximize(True)
-        self.thaw()
         self.Layout()
         self.Show()
+        
+        x, y = self.__base_panel.GetSize()
+        self.__base_panel.get_splitter().SetSashPosition(y/1.5)
+        self.__base_panel_top.get_splitter().SetSashPosition(x/6)
+        self.__base_panel_right.get_splitter().SetSashPosition(x/1.65)
+        self.__base_panel_btm_pnl.get_splitter().SetSashPosition(x/3)
 
     def load_resources(self):
         # toolbar
@@ -488,53 +384,16 @@ class WxFrame(wx.Frame):
             self.save_layout(name)
 
     def save_layout(self, name):
-        if sys.platform == "linux":
-            print("Not supported on linux")
-            return
-
-        data = []
-        for i in range(self.__notebook.GetPageCount()):
-            save_obj = AUINotebook.NotebookPageAndIdx(idx=i,
-                                                      page=self.__notebook.GetPage(i),
-                                                      label=self.__notebook.GetPageText(i),
-                                                      bitmap=self.__notebook.GetPageBitmap(i))
-            data.append(save_obj)
-
-        self.saved_layouts[name] = (data, self.__notebook.SavePerspective())
+        self.saved_layouts[name] = "--> SOME LAYOUT DATA HERE <--"
         self.__menu_bar.add_ui_layout_menu(name)
         self.saved_layouts.keys()
 
     def load_layout(self, layout):
-        if sys.platform == "linux":
-            print("Not supported on linux")
-            return
-
         # check if layout exists
         self.Freeze()
         if self.saved_layouts.__contains__(layout):
-            for i in range(len(self.__notebook.active_pages)):
-                self.__notebook.RemovePage(0)
-
-            saved_data = self.saved_layouts[layout][0]
-            for i in range(len(saved_data)):
-                self.__notebook.InsertPage(saved_data[i].idx, saved_data[i].page, saved_data[i].label, bitmap=saved_data[i].bitmap)
-
-            self.__notebook.LoadPerspective(self.saved_layouts[layout][1])  # finally, load perspective
-            self.__notebook.Refresh()
+            print("--> LOAD UI LAYOUT <--")
         self.Thaw()
-
-    def add_page(self, page: str):
-        for item in self.__panels:
-            if item[1] == page:
-                if not self.__notebook.is_page_active(item[1]):
-                    self.__notebook.AddPage(item[0], item[1])
-                    # update page bitmap
-                    for i in range(len(self.__panels)):
-                        if self.__panels[i][1] == page:
-                            idx = self.__notebook.GetPageIndex(item[0])
-                            self.__notebook.SetPageBitmap(idx, self.__panels[i][2])
-                else:
-                    print("Page {0} already exists".format(item[1]))
 
     def on_evt_toolbar(self, evt):
         if evt.GetId() in Event_Map:
@@ -548,21 +407,6 @@ class WxFrame(wx.Frame):
     def on_event_close(self, event):
         editor.observer.trigger("CloseApp", close_wx=False)
         event.Skip()
-
-    def freeze(self):
-        if not hasattr(self, "panels"):
-            return
-
-        for item in self.__panels:
-            panel = item[0]
-            if panel != self.ed_viewport_panel and not panel.IsFrozen():
-                panel.Freeze()
-
-    def thaw(self):
-        for item in self.__panels:
-            panel = item[0]
-            if panel.IsFrozen():
-                panel.Thaw()
 
     @property
     def menu_bar(self):

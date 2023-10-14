@@ -1,23 +1,41 @@
 import os.path
 import pickle
 import wx
-import editor.constants as constants
 import editor.ui.custom as wx_custom
+import game.constants as constants
 
-from panda3d.core import NodePath
+from pathlib import Path
 from wx.lib.scrolledpanel import ScrolledPanel
-from editor.core import PModBase, Component
-from editor.utils import EdProperty as edProperty
+from panda3d.core import NodePath
+from commons import EditorProperty
+
+from editor.constants import ICONS_PATH
 from editor.globals import editor
+from editor.ui.splitwindow import SplitWindow
 from editor.ui.foldPanel import FoldPanelManager
 from editor.ui.wxCustomProperties import Property_And_Type
-from editor.ui.resources import *
 
+from game.resources import PModBase, Component
+
+
+# icons
+OBJECT = str(Path(ICONS_PATH + "/properties panel/box_closed.png"))
+GLOBE = str(Path(ICONS_PATH + "/properties panel/globe.png"))
+GEAR = str(Path(ICONS_PATH + "/properties panel/gear.png"))
+PLUGIN = str(Path(ICONS_PATH + "/properties panel/plugin.png"))
 #
-OBJECT_INSPECTOR_ID = 0
-WORLD_INSPECTOR_ID = 1
-ED_INSPECTOR_ID = 2
-PLUGIN_INSPECTOR_ID = 3
+Object_Icon = str(Path(ICONS_PATH + "/properties panel/cube.png"))
+Camera_Icon = str(Path(ICONS_PATH + "/properties panel/video.png"))
+Light_Icon = str(Path(ICONS_PATH + "/properties panel/lightbulb.png"))
+#
+Script_Icon = str(Path(ICONS_PATH + "/properties panel/script_code.png"))
+Component_Icon = str(Path(ICONS_PATH + "/properties panel/script_gear.png"))
+Plugin_icon = str(Path(ICONS_PATH + "/properties panel/script_code_red.png"))
+#
+PIN_ICON = str(Path(ICONS_PATH + "/properties panel/pin.png"))
+REMOVE_ICON = str(Path(ICONS_PATH + "/properties panel/close.png"))
+INFO_ICON = str(Path(ICONS_PATH + "/properties panel/information.png"))
+
 
 # map_ = object_type: (bitmap_path, scale)
 OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, (14, 14)),
@@ -32,6 +50,12 @@ OBJ_TYPE_ICON_MAP = {constants.Component: (Component_Icon, (14, 14)),
                      constants.DIRECTIONAL_LIGHT: (Light_Icon, (15, 15)),
                      constants.SPOT_LIGHT: (Light_Icon, (15, 15)),
                      constants.AMBIENT_LIGHT: (Light_Icon, (15, 15))}
+
+
+ID_PROPERTIES_PANEL_OBJECT_TAB = 0
+ID_PROPERTIES_PANEL_WORLD_TAB = 1
+ID_PROPERTIES_PANEL_INSPECTOR_TAB = 2
+ID_PROPERTIES_PANEL_PLUGINS_TAB = 3
 
 
 class SelectionGroup(wx.Window):
@@ -79,7 +103,7 @@ class TextPanel(wx.Panel):
         self.text = wx.StaticText(self, 0, text, style=wx.TE_MULTILINE)
         self.text.SetForegroundColour(editor.ui_config.color_map("Text_Primary"))
 
-        font = wx.Font(10, editor.ui_config.ed_font, wx.NORMAL, wx.NORMAL)
+        font = wx.Font(10, editor.ui_config.font, wx.NORMAL, wx.NORMAL)
         self.text.SetFont(font)
 
         self.sizer.Add(self.label, 0)
@@ -89,7 +113,7 @@ class TextPanel(wx.Panel):
         self.Layout()
 
 
-class BaseInspectorPanel(ScrolledPanel):
+class BaseInspectorPanel(SplitWindow):
     class DragDropCompPanel(wx.Panel):
         class TestDropTarget(wx.PyDropTarget):
             """ This is a custom DropTarget object designed to match drop behavior to the feedback given by the custom
@@ -155,11 +179,11 @@ class BaseInspectorPanel(ScrolledPanel):
 
             self.Bind(wx.EVT_SIZE, self.on_size)
             self.Bind(wx.EVT_PAINT, self.on_paint)
-
+            
         def on_size(self, evt):
             self.Refresh()
             evt.Skip()
-
+            
         def on_paint(self, evt):
             pdc = wx.PaintDC(self)
             gc = pdc
@@ -174,15 +198,16 @@ class BaseInspectorPanel(ScrolledPanel):
             gc.DrawLine(wx.Point(self.GetSize().x, 0), wx.Point(self.GetSize().x, self.GetSize().y))  # right
             evt.Skip()
 
-    def __init__(self, parent, *args, **kwargs):
-        ScrolledPanel.__init__(self, parent, *args, **kwargs)
-
+    def __new__(cls, *args, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
         self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
-        self.property_and_name = {}
-
+        
+        self.create_header()
+        
         self.__object = None
         self.__label = ""
         self.__properties = []
+        self.property_name_map = {}
 
         # self.fold_manager_panel = BaseInspectorPanel.FoldManagerPanel(self)
         self.__fold_manager = None  # a FoldPanelManager for laying out variables of a python module
@@ -190,13 +215,15 @@ class BaseInspectorPanel(ScrolledPanel):
 
         self.components_dnd_panel = None  # components drag and drop panel
 
-        self.__main_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.__main_sizer)
+        # self.__main_sizer = wx.BoxSizer(wx.VERTICAL)
+        # self.SetSizer(self.__main_sizer)
+        self.__main_sizer = self.GetSizer()
 
-        self.tab_id_tab = {0: OBJECT_INSPECTOR_ID,
-                           1: WORLD_INSPECTOR_ID,
-                           2: ED_INSPECTOR_ID,
-                           3: PLUGIN_INSPECTOR_ID}
+        self.tab_id_tab = {0: ID_PROPERTIES_PANEL_OBJECT_TAB,
+                           1: ID_PROPERTIES_PANEL_WORLD_TAB,
+                           2: ID_PROPERTIES_PANEL_INSPECTOR_TAB,
+                           3: ID_PROPERTIES_PANEL_PLUGINS_TAB}
+
         self.__selected_tab = -1
         self.__tabs = SelectionGroup(self)
         self.__tabs.SetMinSize(wx.Size(-1, 16))
@@ -208,38 +235,57 @@ class BaseInspectorPanel(ScrolledPanel):
         self.__tabs.set_call_back(self.on_tab_select)
 
         self.__is_dirty = False
-
         self.__main_sizer.Add(self.__tabs, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=5)
         self.__main_sizer.AddSpacer(5)
         self.SetupScrolling(scroll_x=False, scroll_y=True)
+        self.last_pos = self.GetSize()
+        
+        return self
 
-    def select_tab(self, idx):
-        self.__tabs.select(idx)
+    def create_wx_properties(self, ed_properties, parent, save=True):
+        """creates and returns a list of wx_properties from ed_property objects
+        ed_properties = list of editor property objects"""
+        properties = []
+        for prop in ed_properties:
+            wx_property = self.get_wx_property_object(prop, parent)
 
-    def on_tab_select(self, index, data=None):
-        # reset everything
-        self.__selected_tab = index
-        inspector = self.tab_id_tab[index]
+            if wx_property:
+                properties.append(wx_property)
 
-        if inspector == OBJECT_INSPECTOR_ID:
-            self.layout_auto()
-            return
+            if save:
+                self.property_name_map[prop.name] = wx_property
 
-        if inspector == WORLD_INSPECTOR_ID:
-            txt = "This section is incomplete, support PandaEditor on Patreon to help speed up its development."
-            self.set_text(txt)
-            return
+        return properties
 
-        elif inspector == ED_INSPECTOR_ID:
-            self.__object = editor.level_editor.editor_settings
-            self.__label = "Editor Settings"
-            self.__properties = self.__object.get_properties()
-            self.layout(self.__object, self.__label, self.__properties, False)
+    def clear_pinned(self, *args):
+        print("clear pinned")
+        pass
 
-        elif inspector == PLUGIN_INSPECTOR_ID:
-            txt = "This section is incomplete, support PandaEditor on Patreon to help speed up its development."
-            self.set_text(txt)
-            return
+    def get_wx_property_object(self, ed_property, parent):
+        ed_property.validate()
+        wx_property = None
+
+        if ed_property.is_valid:
+            if Property_And_Type.__contains__(ed_property.type_):
+                wx_property = Property_And_Type[ed_property.type_]
+                wx_property = wx_property(parent, ed_property)
+
+                if wx_property.ed_property.type_ in ["horizontal_layout_group", "foldout_group", "static_box"]:
+                    wx_properties = self.create_wx_properties(wx_property.ed_property.properties, wx_property, False)
+                    wx_property.set_properties(wx_properties)
+
+                wx_property.create_control()
+
+        return wx_property
+
+    def get_selected_tab(self):
+        return self.__selected_tab
+
+    def get_fold_manager(self):
+        return self.__fold_manager
+
+    def has_object(self):
+        return self.__object is not None
 
     def layout_auto(self):
         """automatically create inspector based on selected inspector and selected scene object"""
@@ -248,7 +294,7 @@ class BaseInspectorPanel(ScrolledPanel):
             return
 
         inspector = self.tab_id_tab[self.__selected_tab]
-        if inspector in [WORLD_INSPECTOR_ID, ED_INSPECTOR_ID, PLUGIN_INSPECTOR_ID]:
+        if inspector in [ID_PROPERTIES_PANEL_WORLD_TAB, ID_PROPERTIES_PANEL_INSPECTOR_TAB, ID_PROPERTIES_PANEL_PLUGINS_TAB]:
             return
 
         self.__object = self.__properties = self.__label = None
@@ -266,7 +312,7 @@ class BaseInspectorPanel(ScrolledPanel):
             path = resource_tree.selected_files[0]
             if le.is_module(path):
                 self.__object = le.get_module(path)
-                self.__label = self.__object.name
+                self.__label = self.__object.module_name
                 self.__properties = self.__object.get_properties()
                 self.layout(self.__object, self.__label, self.__properties)
 
@@ -275,7 +321,7 @@ class BaseInspectorPanel(ScrolledPanel):
                 self.set_text(text)
 
         else:
-            editor.observer.trigger("DeselectAll")
+            # editor.observer.trigger("DeselectAll")
             txt = "Select an object in scene to view its inspector."
             self.set_text(txt)
 
@@ -290,13 +336,13 @@ class BaseInspectorPanel(ScrolledPanel):
             if hasattr(obj, "_PModBase__module_type"):
                 if obj.module_type in [constants.RuntimeModule, constants.Component]:
                     # create a toggle property object
-                    property_ = edProperty.FuncProperty(name="",
-                                                        value=obj.get_active_status(),
-                                                        setter=obj.set_active,
-                                                        getter=obj.get_active_status)
+                    property_ = EditorProperty.FuncProperty(name="",
+                                                            initial_value=obj.get_active_status(),
+                                                            setter=obj.set_active,
+                                                            getter=obj.get_active_status)
                     #
                     # and wrap it into wx_property object
-                    wx_property = self.get_wx_property_object(property_, parent, False)
+                    wx_property = self.get_wx_property_object(property_, parent)
                     wx_property.SetBackgroundColour(parent.GetBackgroundColour())
 
                     wx_property.SetSize((-1, -1))
@@ -331,7 +377,7 @@ class BaseInspectorPanel(ScrolledPanel):
         # only create inspector for scene object if inspector_type == ObjectInspector
         inspector_id = self.tab_id_tab[self.__selected_tab]
         if is_editor_item:
-            if inspector_id != OBJECT_INSPECTOR_ID:
+            if inspector_id != ID_PROPERTIES_PANEL_OBJECT_TAB:
                 return
 
         self.Freeze()
@@ -352,7 +398,7 @@ class BaseInspectorPanel(ScrolledPanel):
         fold_panel = self.__fold_manager.add_panel()
 
         # create pin button the first panel only
-        if self.__fold_manager.panel_count == 1:
+        if self.__fold_manager.get_panel_count() == 1:
             try:
                 fold_panel.create_buttons(
                     label_text=obj_label,
@@ -367,12 +413,13 @@ class BaseInspectorPanel(ScrolledPanel):
                     other_controls=[(get_pin_btn(fold_panel.header))])
         else:
             if obj.module_type == constants.Component:
+
                 fold_panel.create_buttons(
                     label_text=obj_label,
                     toggle_btn=get_toggle_property(fold_panel.header),
                     obj_bitmap_path=get_object_bitmap(obj)[0],
                     obj_bitmap_scale=get_object_bitmap(obj)[1],
-                    info_bitmap=INFO_ICON if obj.status == constants.SCRIPT_STATUS_ERROR else None,
+                    info_bitmap=INFO_ICON if obj.get_status() == constants.SCRIPT_STATUS_ERROR else None,
                     other_controls=[(get_remove_btn(fold_panel.header, btn_data=(self.__object, obj.path)))]
                 )
         #
@@ -386,8 +433,9 @@ class BaseInspectorPanel(ScrolledPanel):
             obj_data = obj.getPythonTag(constants.TAG_GAME_OBJECT)
             for key in obj_data.components:
                 comp = obj_data.components[key].class_instance
+
                 self.layout(comp,
-                            obj_data.components[key].class_instance.name,
+                            comp.module_name,
                             comp.get_properties(),
                             is_editor_item=True,
                             reset=False)
@@ -397,10 +445,65 @@ class BaseInspectorPanel(ScrolledPanel):
                 self.components_dnd_panel = BaseInspectorPanel.DragDropCompPanel(self)
                 self.__main_sizer.Add(self.components_dnd_panel, 0, wx.EXPAND | wx.LEFT, border=5)
 
-        self.__fold_manager.sizer.Layout()
+        self.__fold_manager.get_sizer().Layout()
         self.__main_sizer.Layout()
         self.__is_dirty = False
         self.Thaw()
+
+    def mark_dirty(self):
+        self.__is_dirty = True
+
+    def on_tab_select(self, index, data=None):
+        self.__selected_tab = index
+        sel_tab = self.tab_id_tab[index]
+
+        if sel_tab == ID_PROPERTIES_PANEL_OBJECT_TAB:
+            self.layout_auto()
+            return
+
+        if sel_tab == ID_PROPERTIES_PANEL_WORLD_TAB:
+            txt = "This section is incomplete, support PandaEditor on Patreon to help speed up its development."
+            self.set_text(txt)
+            return
+
+        elif sel_tab == ID_PROPERTIES_PANEL_INSPECTOR_TAB:
+            self.__object = editor.level_editor.editor_settings
+            self.__label = "Editor Settings"
+            self.__properties = self.__object.get_properties()
+            self.layout(self.__object, self.__label, self.__properties, False)
+
+        elif sel_tab == ID_PROPERTIES_PANEL_PLUGINS_TAB:
+            txt = "This section is incomplete, support PandaEditor on Patreon to help speed up its development."
+            self.set_text(txt)
+            return
+
+    def remove_component(self, idx, data):
+        np = data[0].getPythonTag(constants.TAG_GAME_OBJECT)
+        comp_path = data[1]
+        np.detach_component(comp_path)
+        self.mark_dirty()
+
+    def reset(self):
+        self.__object = None
+        self.__label = None
+        self.__properties = []
+        self.property_name_map.clear()
+
+        if self.components_dnd_panel:
+            self.__main_sizer.Remove(
+                len(self.__main_sizer.GetChildren()) - 2)  # remove spacer based on its position index
+
+        # remove other panels
+        for item in [self.__text_panel, self.__fold_manager, self.components_dnd_panel]:
+            if item:
+                self.__main_sizer.Detach(item)
+                item.Destroy()
+
+        self.Layout()
+
+    def select_tab(self, idx):
+        self.__tabs.select(idx)
+        self.on_tab_select(idx)
 
     def set_text_from_file(self, text_file):
         """set text from a .txt file"""
@@ -421,24 +524,24 @@ class BaseInspectorPanel(ScrolledPanel):
 
         self.Thaw()
 
-    def update(self, label=None, force_update_all=False):
+    def set_pinned(self, *args):
+        print("pinned")
+        pass
+
+    def update(self, force_update_all=False):
         """updates the selected object's properties
         label : new label if None then existing label is used
         force_update_all : """
 
         if self.__is_dirty:
-            editor.wx_main.freeze()
+            self.Freeze()
             if self.has_object():
                 self.layout_auto()
-            editor.wx_main.thaw()
+            self.Thaw()
             return
 
-        if label:
-            self.__fold_manager.panels[0].__label = label
-            self.__label = label
-
-        for key in self.property_and_name.keys():
-            wx_prop = self.property_and_name[key]
+        for key in self.property_name_map.keys():
+            wx_prop = self.property_name_map[key]
 
             # don't update these
             if wx_prop.ed_property.type_ in ["button"]:
@@ -465,80 +568,3 @@ class BaseInspectorPanel(ScrolledPanel):
             # and bind events again
             wx_prop.bind_events()
 
-    def create_wx_properties(self, ed_properties, parent, save=True):
-        """creates and returns a list of wx_properties from ed_property objects
-        ed_properties = list of editor property objects"""
-        properties = []
-        for prop in ed_properties:
-            wx_property_obj = self.get_wx_property_object(prop, parent, save)
-            if wx_property_obj:
-                properties.append(wx_property_obj)
-        return properties
-
-    def get_wx_property_object(self, ed_property, parent, save=True):
-        ed_property.validate()
-        wx_property = None
-
-        if ed_property.is_valid:
-            if Property_And_Type.__contains__(ed_property.type_):
-                wx_property = Property_And_Type[ed_property.type_]
-                wx_property = wx_property(parent, ed_property)
-
-                if wx_property.ed_property.type_ == "horizontal_layout_group" or \
-                        wx_property.ed_property.type_ == "foldout_group" or \
-                        wx_property.ed_property.type_ == "static_box":
-                    wx_properties = self.create_wx_properties(wx_property.ed_property.properties, wx_property, False)
-                    wx_property.set_properties(wx_properties)
-
-                    # if hasattr(wx_property, "scrolled_panel"):
-                    #     wx_property.scrolled_panel = self
-
-                wx_property.create_control()
-
-                if save:
-                    self.property_and_name[ed_property.name] = wx_property
-            # ------------------------------------------------------------------------------
-
-        return wx_property
-
-    def set_pinned(self, *args):
-        print("pinned")
-        pass
-
-    def clear_pinned(self, *args):
-        print("clear pinned")
-        pass
-
-    def remove_component(self, idx, data):
-        np = data[0].getPythonTag(constants.TAG_GAME_OBJECT)
-        comp_path = data[1]
-        np.detach_component(comp_path)
-        self.mark_dirty()
-
-    def mark_dirty(self):
-        self.__is_dirty = True
-
-    def has_object(self):
-        return self.__object is not None
-
-    def reset(self):
-        self.__object = None
-        self.__label = None
-        self.__properties = []
-        self.property_and_name.clear()
-
-        if self.components_dnd_panel:
-            self.__main_sizer.Remove(
-                len(self.__main_sizer.GetChildren()) - 2)  # remove spacer based on its position index
-
-        # remove other panels
-        for item in [self.__text_panel, self.__fold_manager, self.components_dnd_panel]:
-            if item:
-                self.__main_sizer.Detach(item)
-                item.Destroy()
-
-        self.Layout()
-
-    @property
-    def fold_manager(self):
-        return self.__fold_manager

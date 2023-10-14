@@ -1,7 +1,6 @@
 import wx
-import editor.commands as commands
-import editor.constants as constants
 from editor.globals import editor
+from editor.constants import CUBE_PATH, CYLINDER_PATH, CAPSULE_PATH, SPHERE_PATH, PLANE_PATH
 
 Evt_New_Scene = wx.NewId()
 Evt_Open_Scene = wx.NewId()
@@ -21,8 +20,9 @@ Evt_Add_Point_Light = wx.NewId()
 Evt_Add_Spot_Light = wx.NewId()
 Evt_Add_Ambient_Light = wx.NewId()
 Evt_Add_Cube = wx.NewId()
+Evt_Add_Cylinder = wx.NewId()
 Evt_Add_Capsule = wx.NewId()
-Evt_Add_Cone = wx.NewId()
+Evt_Add_Sphere = wx.NewId()
 Evt_Add_Plane = wx.NewId()
 
 Evt_Add_Viewport_Panel = wx.NewId()
@@ -34,9 +34,9 @@ Evt_Add_Console_Panel = wx.NewId()
 Evt_Save_UI_Layout = wx.NewId()
 Evt_Load_UI_Layout = wx.NewId()
 
-Evt_Toggle_Hotkeys_Text = wx.NewId()
-Evt_Undo_Last_Command = wx.NewId()
 Evt_Reload_Editor = wx.NewId()
+Evt_Undo_Last_Command = wx.NewId()
+Evt_Toggle_Hotkeys_Text = wx.NewId()
 
 Evt_Frame_Selected = wx.NewId()
 Evt_Orbit_Top = wx.NewId()
@@ -51,27 +51,28 @@ Evt_Open_Patreon = wx.NewId()
 Evt_Open_Discourse = wx.NewId()
 
 EVENT_MAP = {
-    # EventID = (EventType, EventName, *args)
+    # EventType = EventName, args
     # ----------------------------------------------
-    Evt_New_Scene: ("CreateNewSession", None),
-    Evt_Open_Scene: ("OpenSession", None),
-    Evt_Save_Scene: ("SaveSession", None),
-    Evt_Save_Scene_As: ("SaveSessionAs", None),
-    Evt_Close_App: ("CloseApp", None),
+    Evt_New_Scene: ["CreateNewSession"],
+    Evt_Open_Scene: ["OpenSession"],
+    Evt_Save_Scene: ["SaveSession"],
+    Evt_Save_Scene_As: ["SaveSessionAs"],
+    Evt_Close_App: ["CloseApp"],
 
     # ----------------------------------------------
-    Evt_Create_Project: ("CreateNewProject", None),
-    Evt_Open_Project: ("OpenProject", None),
-    Evt_Append_Library: ("AppendLibrary", None),
-    Evt_Build_Project: ("BuildProject", None),
+    Evt_Create_Project: ["CreateNewProject"],
+    Evt_Open_Project: ["OpenProject"],
+    Evt_Append_Library: ["AppendLibrary"],
+    Evt_Build_Project: ["BuildProject"],
 
     # ----------------------------------------------
-    Evt_Add_Camera: ("AddCamera", None),
+    Evt_Add_Camera: ["AddCamera"],
     #
-    Evt_Add_Cube: ("AddObject", constants.CUBE_PATH),
-    Evt_Add_Capsule: ("AddObject", constants.CAPSULE_PATH),
-    Evt_Add_Cone: ("AddObject", constants.CONE_PATH),
-    Evt_Add_Plane: ("AddObject", constants.PLANE_PATH),
+    Evt_Add_Cube: ("AddObject", CUBE_PATH),
+    Evt_Add_Cylinder: ("AddObject", CYLINDER_PATH),
+    Evt_Add_Capsule: ("AddObject", CAPSULE_PATH),
+    Evt_Add_Sphere: ("AddObject", SPHERE_PATH),
+    Evt_Add_Plane: ("AddObject", PLANE_PATH),
     #
     Evt_Add_Sun_Light: ("AddLight", "__DirectionalLight__"),
     Evt_Add_Point_Light: ("AddLight", "__PointLight__"),
@@ -86,23 +87,21 @@ EVENT_MAP = {
     Evt_Add_Console_Panel: ("AddPanel", "ConsolePanel"),
 
     # ----------------------------------------------
-    Evt_Save_UI_Layout: ("SaveUILayout", None),
-    Evt_Load_UI_Layout: ("LoadUILayout", None),
+    Evt_Save_UI_Layout: ["SaveUILayout"],
+    Evt_Load_UI_Layout: ["LoadUILayout"],
 
     # ----------------------------------------------
-    Evt_Toggle_Hotkeys_Text: ("EditorEvent", "ToggleHotkeysText", None),
-    Evt_Undo_Last_Command: ("EditorEvent", "UndoLastCommand", None),
-    Evt_Reload_Editor: ("EditorEvent", "ReloadEditor", None),
+    Evt_Reload_Editor: ["EditorReload"],
+    Evt_Undo_Last_Command: ["UndoLastCommand"],
+    Evt_Toggle_Hotkeys_Text: ["ToggleHotkeysText"],
 
     # ----------------------------------------------
-    Evt_Frame_Selected: ("ViewportEvent", "FrameSelectedNPs", 0),
-    Evt_Orbit_Top: ("ViewportEvent", "FrameSelectedNPs", 2),
-    Evt_Orbit_Right: ("ViewportEvent", "FrameSelectedNPs", 1),
-    Evt_Orbit_Left: ("ViewportEvent", "FrameSelectedNPs", -1),
-    Evt_Reset_View: ("ViewportEvent", "ResetView", None),
-
-    # ----------------------------------------------
-    Evt_Align_Game_View_To_Ed_View: ("AlignToEdView", None),
+    Evt_Frame_Selected: ("FrameSelectedNPs", 0),
+    Evt_Orbit_Top: ("FrameSelectedNPs", 2),
+    Evt_Orbit_Right: ("FrameSelectedNPs", 1),
+    Evt_Orbit_Left: ("FrameSelectedNPs", -1),
+    Evt_Reset_View: ["ResetView"],
+    Evt_Align_Game_View_To_Ed_View: ["AlignToEdView"],
 
     # ----------------------------------------------
     Evt_Open_Discord: ("OpenSocialMediaLink", "Discord"),
@@ -228,8 +227,9 @@ class MenuBar(wx.MenuBar):
         # gameobjects
         game_obj_menu = wx.Menu()
         menu_items = [(Evt_Add_Cube, "Cube", None),
+                      (Evt_Add_Cylinder, "Cylinder", None),
                       (Evt_Add_Capsule, "Capsule", None),
-                      (Evt_Add_Cone, "Cone", None),
+                      (Evt_Add_Sphere, "Sphere", None),
                       (Evt_Add_Plane, "Plane", None)
                       ]
         build_menu_bar(game_obj_menu, menu_items)
@@ -364,35 +364,30 @@ class MenuBar(wx.MenuBar):
             args = EVENT_MAP[evt.GetId()][1:]
 
             if evt_name == "AddObject":
-                editor.command_mgr.do(commands.ObjectAdd(args[0]))
+                editor.observer.trigger(evt_name, args[0])
             elif evt_name == "AddLight":
-                editor.command_mgr.do(commands.AddLight(args[0]))
+                editor.observer.trigger(evt_name, args[0])
             elif evt_name == "AddCamera":
-                editor.command_mgr.do(commands.AddCamera())
-
-            elif evt_name == "SaveUILayout":
-                self.wx_main.on_save_current_layout()
-
+                editor.observer.trigger(evt_name)
+            #
             elif evt_name == "AddPanel":
                 self.wx_main.add_page(args[0])
+            elif evt_name == "SaveUILayout":
+                self.wx_main.on_save_current_layout()
+            #
+            elif evt_name == "FrameSelectedNPs":
+                editor.observer.trigger(evt_name, args[0])
+            elif evt_name == "ResetView":
+                editor.observer.trigger(evt_name)
 
-            elif evt_name == "ViewportEvent":
-                command = args[0]
-                args = args[1]
-                editor.observer.trigger(evt_name, command, args)
-
-            elif evt_name == "EditorEvent":
-                command = args[0]
-                args = args[1]
-                editor.observer.trigger(evt_name, command, args)
             else:
-                editor.observer.trigger(evt_name, args)
+                editor.observer.trigger(evt_name)
 
         elif evt.GetId() in self.ui_layout_menus.keys():
             self.wx_main.load_layout(self.ui_layout_menus[evt.GetId()])
 
         elif evt.GetId() in self.ed_plugin_menus.keys():
-            editor.observer.trigger("OnPluginMenuEntrySelected", self.ed_plugin_menus[evt.GetId()])
+            editor.observer.trigger("SelectPlugin", self.ed_plugin_menus[evt.GetId()])
 
         elif evt.GetId() in self.user_command_menu_items_id_map.keys():
             editor.observer.trigger("OnSelUserCommandMenuEntry", self.user_command_menu_items_id_map[evt.GetId()])

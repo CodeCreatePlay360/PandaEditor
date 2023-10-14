@@ -1,5 +1,5 @@
 from pathlib import Path
-from editor.core import Component
+from game.resources import Component
 from panda3d.core import NodePath
 
 

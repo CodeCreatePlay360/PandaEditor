@@ -1,6 +1,6 @@
 from editor.commandManager import Command
 from editor.globals import editor
-from editor.constants import TAG_GAME_OBJECT
+from game.constants import TAG_GAME_OBJECT
 
 
 class SelectObjects(Command):
@@ -16,20 +16,16 @@ class SelectObjects(Command):
     def do(self, *args, **kwargs):
         editor.level_editor.set_selected(self.selected_nps)
         np = self.selected_nps[0]
-
-        editor.wx_main.freeze()
+        
         editor.inspector.layout(np, np.get_name(), np.getPythonTag(TAG_GAME_OBJECT).get_properties())
         editor.resource_browser.deselect_all_files()
 
         if self.from_le:
             editor.scene_graph.select(self.selected_nps)
 
-        editor.wx_main.thaw()
         return True
 
     def undo(self):
-        editor.wx_main.freeze()
-
         if len(self.last_selections) > 0:
             editor.level_editor.set_selected(self.last_selections)
             editor.scene_graph.select(self.last_selections)
@@ -44,4 +40,3 @@ class SelectObjects(Command):
             # editor.inspector.layout(obj, obj.get_name(), obj.get_properties())
 
         editor.inspector.layout_auto()
-        editor.wx_main.thaw()

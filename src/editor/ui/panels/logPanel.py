@@ -1,19 +1,21 @@
 import sys
 import pathlib
 import wx
-import wx.richtext as richText
-import editor.constants as constants
+import wx.richtext as rich_text
+from editor.constants import ICONS_PATH
+from editor.ui.splitwindow import SplitWindow
 from editor.ui.custom.controlGroup import BasicButton, ToggleButton
 from editor.globals import editor
 
-Models_icon = str(pathlib.Path(constants.ICONS_PATH + "/3D-objects-icon.png"))
-Textures_icon = str(pathlib.Path(constants.ICONS_PATH + "/images.png"))
-Sounds_icon = str(pathlib.Path(constants.ICONS_PATH + "/music.png"))
-Scripts_icon = str(pathlib.Path(constants.ICONS_PATH + "/script_code.png"))
-Image_Clear = str(pathlib.Path(constants.ICONS_PATH + "/Console/trashBin.png"))
+
+Models_icon = str(pathlib.Path(ICONS_PATH + "/3D-objects-icon.png"))
+Textures_icon = str(pathlib.Path(ICONS_PATH + "/images.png"))
+Sounds_icon = str(pathlib.Path(ICONS_PATH + "/music.png"))
+Scripts_icon = str(pathlib.Path(ICONS_PATH + "/script_code.png"))
+Image_Clear = str(pathlib.Path(ICONS_PATH + "/Console/trashBin.png"))
 
 
-class LogPanel(wx.Panel):
+class LogPanel(SplitWindow):
     """
     Simple wxPanel containing a text control which will display the stdout and
     stderr streams.
@@ -64,35 +66,19 @@ class LogPanel(wx.Panel):
             self.terminal = terminal
             self.textCtrl = text_ctrl
 
-            # Set err to True if the stream is stderr
-            self.err = False
-            if terminal is sys.stderr:
-                self.err = True
+        def write(self, text, txt_color: () = None):
+            if txt_color is None:
+                self.textCtrl.BeginTextColour(editor.ui_config.color_map("Text_Secondary"))
+            else:
+                self.textCtrl.BeginTextColour(txt_color)
 
-        def write(self, text):
             self.terminal.write(text)
             self.textCtrl.WriteText(text)
 
-            # If the text came from stderr, thaw the top window of the 
-            # application or else we won't see the message!
-            if self.err:
-                wx.CallAfter(self.thaw_top_window)
-
-        def thaw_top_window(self):
-            """
-            If the application has thrown an assertion while the top frame has
-            been frozen then we won't be able to see the text. This method once
-            called after to write() method above will make sure the top frame
-            is thawed - making the text visible.
-            """
-            top_win = wx.GetApp().GetTopWindow()
-            if top_win.IsFrozen():
-                top_win.Thaw()
-
-    def __init__(self, *args, **kwargs):
-        wx.Panel.__init__(self, *args, **kwargs)
+    def __new__(cls, *args, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
         self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
-
+        self.create_header()
         self.clear_on_reload = False
         self.clear_on_play = False
 
@@ -100,9 +86,11 @@ class LogPanel(wx.Panel):
         self.tool_bar = LogPanel.ToolBar(self)
 
         # build log text control
-        self.tc = richText.RichTextCtrl(self, style=wx.VSCROLL | wx.NO_BORDER)
-        self.tc.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
-        self.tc.BeginTextColour(editor.ui_config.color_map("Text_Secondary"))
+        self.tc = rich_text.RichTextCtrl(self, style=wx.VSCROLL | wx.NO_BORDER)
+        self.tc.SetBackgroundColour(wx.Colour(70, 70, 70, 255))
+
+        font = wx.Font(wx.FontInfo().Family(wx.FONTFAMILY_SWISS))
+        self.tc.SetFont(font)
 
         # static line
         static_line_0 = wx.Panel(self)
@@ -118,13 +106,15 @@ class LogPanel(wx.Panel):
         sys.stderr = self.RedirectText(sys.stderr, self.tc)
 
         # build sizer
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.sizer)
+        self.sizer = self.GetSizer()
+        # self.SetSizer(self.sizer)
 
         self.sizer.Add(static_line_0, 0, wx.EXPAND)
         self.sizer.Add(self.tool_bar, 0, wx.EXPAND | wx.BOTTOM, border=0)
         self.sizer.Add(static_line_1, 0, wx.EXPAND)
         self.sizer.Add(self.tc, 1, wx.EXPAND | wx.LEFT, border=-3)
+        
+        return self
 
     def on_ed_reload(self):
         if self.clear_on_reload:

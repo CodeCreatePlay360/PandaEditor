@@ -16,8 +16,8 @@ class ThreeAxisGrid(NodePath):
         self.x_axis_color = VBase4(1, 0, 0, 1)
         self.y_axis_color = VBase4(0, 1, 0, 1)
 
-        self.grid_color = VBase4(0.25, 0.25, 0.25, 1)
-        self.sub_div_color = VBase4(.35, .35, .35, 1)
+        self.grid_color = VBase4(0.4, 0.4, 0.4, 1)
+        self.sub_div_color = VBase4(0.35, 0.35, 0.35, 1)
 
         # Line thicknesses (in pixels)
         self.axis_thickness = 1
@@ -71,10 +71,10 @@ class ThreeAxisGrid(NodePath):
             self.gridLines.drawTo(-x, self.grid_size, 0)
 
         # Draw end cap lines
-        self.gridLines.moveTo(self.grid_size, -self.grid_size, 0)
-        self.gridLines.drawTo(self.grid_size, self.grid_size, 0)
-        self.gridLines.moveTo(-self.grid_size, -self.grid_size, 0)
-        self.gridLines.drawTo(-self.grid_size, self.grid_size, 0)
+        # self.gridLines.moveTo(self.grid_size, -self.grid_size, 0)
+        # self.gridLines.drawTo(self.grid_size, self.grid_size, 0)
+        # self.gridLines.moveTo(-self.grid_size, -self.grid_size, 0)
+        # self.gridLines.drawTo(-self.grid_size, self.grid_size, 0)
 
         for z in self.myfrange(0, self.grid_size, self.gridStep):
             self.gridLines.moveTo(-self.grid_size, z, 0)
@@ -83,10 +83,10 @@ class ThreeAxisGrid(NodePath):
             self.gridLines.drawTo(self.grid_size, -z, 0)
 
         # Draw end cap lines
-        self.gridLines.moveTo(self.grid_size, -self.grid_size, 0)
-        self.gridLines.drawTo(-self.grid_size, -self.grid_size, 0)
-        self.gridLines.moveTo(-self.grid_size, self.grid_size, 0)
-        self.gridLines.drawTo(self.grid_size, self.grid_size, 0)
+        # self.gridLines.moveTo(self.grid_size, -self.grid_size, 0)
+        # self.gridLines.drawTo(-self.grid_size, -self.grid_size, 0)
+        # self.gridLines.moveTo(-self.grid_size, self.grid_size, 0)
+        # self.gridLines.drawTo(self.grid_size, self.grid_size, 0)
 
         adjusted_step = self.gridStep / self.sub_divisions
 

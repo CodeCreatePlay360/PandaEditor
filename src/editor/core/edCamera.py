@@ -63,7 +63,7 @@ class EditorCamera(NodePath):
 
     def start(self):
         # start the update task
-        self.task = taskMgr.add(self.update, "_ed_task_LECameraUpdate", sort=0, priority=None)
+        self.task = taskMgr.add(self.update, "EditorTask_ViewportCamUpdate", sort=0, priority=None)
 
     def update(self, task):
         self.mouse.update()

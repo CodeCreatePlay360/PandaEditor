@@ -1,17 +1,35 @@
 <?xml version="1.0"?>
 
-<config>
-    <UI editor_version="1.0" platform="any">
-        <ColorPalette>
+<config editor_version="1.0" platform="any">
+    <UI>
+        <_ColorPalette>
+            <!--Color palette contains global as well as colors for specific windows-->
+            <!--For visual consistency in editor UI there are 3 window colors (Panel_Light, Panel_Normal, Panel_Dark)
+            for individual UI widgets and 2 text colors (Text Primary and Text Secondary)-->
+            <!--Settings for individual windows are contained in their separate tags-->
             <Panel_Light>200,200,200,255</Panel_Light>
             <Panel_Normal>100,100,100,255</Panel_Normal>
             <Panel_Dark>80,80,80,255</Panel_Dark>
 
-            <Text_Primary>240,240,240,255</Text_Primary>
+            <Text_Primary>220,220,220,255</Text_Primary>
             <Text_Secondary>235,235,190,255</Text_Secondary>
 
-            <Resource_Image_Tile_Sel>255,255,0,255</Resource_Image_Tile_Sel>
-        </ColorPalette>
+            <_ResourcePanel>
+                <Image_Tile_Selected>255,255,0,255</Image_Tile_Selected>
+            </_ResourcePanel>>
+
+            <_ConsolePanel>
+                <Std_log_stream_color>240,240,240,255</Std_log_stream_color>
+                <Std_warning_stream_color>240,240,240,255</Std_warning_stream_color>
+                <std_err_stream_color_r>255,200,200,255</std_err_stream_color_r>
+                <std_err_stream_color_b>210,210,255,255</std_err_stream_color_b>
+            </_ConsolePanel>
+
+            <_SceneBrowser>
+                <Text_Color>220, 220, 220, 255</Text_Color>
+            </_SceneBrowser>
+        </_ColorPalette>
+
         <Font>SWISS</Font>
     </UI>
 </config>

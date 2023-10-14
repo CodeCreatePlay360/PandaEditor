@@ -2,8 +2,11 @@ import pathlib
 import pickle
 import wx
 import wx.lib.agw.customtreectrl as customtree
-import editor.constants as constants
+import editor.constants as ed_constants
+import game.constants as game_constants
+
 from panda3d.core import NodePath
+from editor.ui.splitwindow import SplitWindow
 from editor.ui.custom import SearchBox
 from editor.commands import ReparentNPs, SelectObjects, RemoveObjects, RenameNPs
 from editor.globals import editor
@@ -11,26 +14,29 @@ from editor.globals import editor
 EVT_RENAME_ITEM = wx.NewId()
 EVT_REMOVE_ITEM = wx.NewId()
 
-CAMERA_ICON = str(pathlib.Path(constants.ICONS_PATH + "/SceneGraph/video.png"))
-LIGHT_ICON = str(pathlib.Path(constants.ICONS_PATH + "/SceneGraph/lightbulb.png"))
-OBJECT_ICON = str(pathlib.Path(constants.ICONS_PATH + "/SceneGraph/cube.png"))
+CAMERA_ICON = ed_constants.ICONS_PATH + str(pathlib.Path("/scene graph/video.png"))
+LIGHT_ICON = ed_constants.ICONS_PATH + str(pathlib.Path("/scene graph/lightbulb.png"))
+OBJECT_ICON = ed_constants.ICONS_PATH + str(pathlib.Path("/scene graph/cube.png"))
 
 
-class SceneBrowserPanel(wx.Panel):
-    def __init__(self, *args, **kwargs):
-        wx.Panel.__init__(self, *args, **kwargs)
+class SceneBrowserPanel(SplitWindow):
+    def __new__(cls, *args, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
         self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
+        
+        self.create_header()
+    
         self.wx_main = args[0]
-
         self.scene_graph = SceneBrowser(self, self.wx_main)
         self.search_box = SearchBox(self)
 
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer = self.GetSizer()
         self.sizer.Add(self.search_box, 1, wx.EXPAND | wx.BOTTOM, border=1)
         self.sizer.Add(self.scene_graph, 1, wx.EXPAND)
 
-        self.SetSizer(self.sizer)
+        # self.SetSizer(self.sizer)
         self.Layout()
+        return self
 
 
 class SceneBrowser(customtree.CustomTreeCtrl):
@@ -41,6 +47,8 @@ class SceneBrowser(customtree.CustomTreeCtrl):
     def __init__(self, parent, wx_main, *args, **kwargs):
         customtree.CustomTreeCtrl.__init__(self, parent, *args, **kwargs)
         self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
+        self.SetForegroundColour(editor.ui_config.color_map("Text_Primary"))
+
         self.wx_main = wx_main
         self.parent = parent
         self.organize_tree = True  # organize a tree based on file_extensions
@@ -52,11 +60,11 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         self.SetIndent(10)
         self.SetSpacing(10)
 
-        # self.SetBorderPen(wx.Pen((0, 0, 0), 0, wx.TRANSPARENT))
-        # self.EnableSelectionGradient(True)
-        # self.SetGradientStyle(True)
-        # self.SetFirstGradientColour(wx.Colour(46, 46, 46))
-        # self.SetSecondGradientColour(wx.Colour(123, 123, 123))
+        self.SetBorderPen(wx.Pen((0, 0, 0), 0, wx.TRANSPARENT))
+        self.EnableSelectionGradient(True)
+        self.SetGradientStyle(True)
+        self.SetFirstGradientColour(wx.Colour(80, 80, 80))
+        self.SetSecondGradientColour(wx.Colour(120, 120, 120))
 
         # ---------------------------------------------------------------------------- #
         self.image_list = wx.ImageList(16, 16)  # create an image list for tree control to use
@@ -77,16 +85,16 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
         self.image_to_item_map = {
 
-            constants.CAMERA_NODEPATH: 0,
+            game_constants.CAMERA_NODEPATH: 0,
 
-            constants.AMBIENT_LIGHT: 1,
-            constants.POINT_LIGHT: 1,
-            constants.DIRECTIONAL_LIGHT: 1,
-            constants.SPOT_LIGHT: 1,
+            game_constants.AMBIENT_LIGHT: 1,
+            game_constants.POINT_LIGHT: 1,
+            game_constants.DIRECTIONAL_LIGHT: 1,
+            game_constants.SPOT_LIGHT: 1,
 
-            constants.NODEPATH: 2,
+            game_constants.NODEPATH: 2,
 
-            constants.ACTOR_NODEPATH: 2
+            game_constants.ACTOR_NODEPATH: 2
         }
         # ---------------------------------------------------------------------------- #
 
@@ -201,6 +209,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         self.np_id_to_tree_item_map[self.scene_np] = self.scene_graph_parent
         for np in self.scene_np.getChildren():
             self.add(np)
+        self.Refresh()
 
     def add(self, np, parent_item=None, only_children=False):
         """recursively add a nodepath and its children into tree"""
@@ -209,9 +218,9 @@ class SceneBrowser(customtree.CustomTreeCtrl):
         def add_(np_, tree_item):
             for child in np_.getChildren():
                 tree_item_ = None
-                if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
+                if isinstance(child, NodePath) and child.hasPythonTag(game_constants.TAG_GAME_OBJECT):
                     items_to_select.append(child)
-                    image_ = self.image_to_item_map[child.getPythonTag(constants.TAG_GAME_OBJECT).ed_id]
+                    image_ = self.image_to_item_map[child.getPythonTag(game_constants.TAG_GAME_OBJECT).ed_id]
                     tree_item_ = self.AppendItem(tree_item,
                                                  child.get_name(),
                                                  data=child,
@@ -234,7 +243,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
         if not only_children:
             items_to_select.append(np)
-            image = self.image_to_item_map[np.getPythonTag(constants.TAG_GAME_OBJECT).ed_id]
+            image = self.image_to_item_map[np.getPythonTag(game_constants.TAG_GAME_OBJECT).ed_id]
             parent_item_ = self.AppendItem(parent_item_, np.get_name(), data=np, image=image)
             self.np_id_to_tree_item_map[np] = parent_item_
 
@@ -248,7 +257,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
 
         def remove_(np_):
             for child in np_.getChildren():
-                if isinstance(child, NodePath) and child.hasPythonTag(constants.TAG_GAME_OBJECT):
+                if isinstance(child, NodePath) and child.hasPythonTag(game_constants.TAG_GAME_OBJECT):
                     if self.np_id_to_tree_item_map.__contains__(child):
                         del self.np_id_to_tree_item_map[child]
                 remove_(child)
@@ -283,7 +292,6 @@ class SceneBrowser(customtree.CustomTreeCtrl):
                 self.SelectItem(self.np_id_to_tree_item_map[np])
         else:
             self.SelectItem(self.np_id_to_tree_item_map[selection])
-            # self.Expand(self.np_id_to_tree_item_map[selection])
 
         # bind this again
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.on_begin_drag)
@@ -309,7 +317,7 @@ class SceneBrowser(customtree.CustomTreeCtrl):
             except ValueError:
                 pass
 
-            obj = src_np.getPythonTag(constants.TAG_GAME_OBJECT)
+            obj = src_np.getPythonTag(game_constants.TAG_GAME_OBJECT)
             image = self.image_to_item_map[obj.ed_id]
             tree_item = self.AppendItem(target_item, src_np.get_name(), data=src_np, image=image)
             items_to_select.append(src_np)

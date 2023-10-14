@@ -1,13 +1,14 @@
 from panda3d.core import GeomNode, CollisionNode, NodePath
 from editor.selection.marquee import Marquee
 from editor.selection.mousePicker import MousePicker
-from editor.constants import TAG_GAME_OBJECT
+from commons import ed_logging
+from game.constants import TAG_GAME_OBJECT
 
 
 class Selection:
     def __init__(self, *args, **kwargs):
 
-        self.__render = None
+        self.__active_render = None  # represents top level parent NodePath of the active scene
         self.__append = False
         self.__selected_nps = []
         self.previous_matrices = {}
@@ -24,11 +25,11 @@ class Selection:
 
     def set_render(self, render):
         assert type(render) != type(NodePath)
-        self.__render = render
+        self.__active_render = render
 
     def set_selected(self, nps, append=False):
         if type(nps) is not list:
-            print("[Selection] Input argument 'nps' must be a list")
+            ed_logging.log("[Selection] Input argument 'nps' must be a list")
             return
 
         if not append:
@@ -69,7 +70,7 @@ class Selection:
         else:
             self.deselect_all()
 
-        for pick_np in self.__render.findAllMatches('**'):
+        for pick_np in self.__active_render.findAllMatches('**'):
             if pick_np is not None:
                 if self.__marquee.IsNodePathInside(pick_np) and pick_np.hasNetPythonTag(TAG_GAME_OBJECT):
                     np = pick_np
@@ -84,10 +85,11 @@ class Selection:
 
         result = []
         for np in new_selections:
-            self.top_np = None
-            self.get_top_np(np)
-            if self.top_np not in result:
-                result.append(self.top_np)
+            # self.top_np = None
+            top_np = self.get_top_np(np)
+
+            if top_np is not None and top_np not in result:
+                result.append(top_np)
 
         return result
 
@@ -99,16 +101,14 @@ class Selection:
         picked_np = self.__picker.GetFirstNodePath()
         return picked_np
 
-    top_np = None
-
     def get_top_np(self, np):
         top_np = np.get_parent()
-        if top_np == self.__render:
-            self.top_np = np
-            return
+        if top_np == self.__active_render:
+            return np
 
-        if top_np != self.__render and top_np is not None:
-            self.get_top_np(top_np)
+        if top_np != self.__active_render and top_np is not None:
+            return self.get_top_np(top_np)
+        return top_np
 
     @property
     def selected_nps(self):
@@ -122,5 +122,5 @@ class Selection:
         return self.__marquee
 
     @property
-    def render(self):
-        return self.__render
+    def active_render(self):
+        return self.__active_render

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from editor.utils import safe_execute
+from commons import ed_logging
 
 
 class Command(ABC):
@@ -63,12 +63,13 @@ class CommandManager(object):
 
     def do(self, command, *args, **kwargs):
         """Execute the given command"""
-        res = safe_execute(command.do, *args, **kwargs)
-        if res:
+        try:
+            command.do(*args, **kwargs)
             self.push_undo_command(command)
             self.redo_commands[:] = []  # clear the redo stack when a new command was executed
-        else:
-            print("[CommandManager] Unable to execute command.")
+        except Exception as exception:
+            ed_logging.log("Unable to execute command.")
+            ed_logging.log_exception(exception)
 
     def undo(self, n=1):
         """Undo the last n commands. The default is to undo only the last
@@ -79,8 +80,12 @@ class CommandManager(object):
         for _ in range(n):
             command = self.pop_undo_command()
             if command:
-                if safe_execute(command.undo):
+                try:
+                    command.undo()
                     self.push_redo_command(command)
+                except Exception as exception:
+                    ed_logging.log("Unable to undo command.")
+                    ed_logging.log_exception(exception)
 
     def redo(self, n=1):
         """Redo the last n commands which have been undone using the undo
@@ -89,11 +94,17 @@ class CommandManager(object):
         because n is too big or because no command has been undone yet,
         EmptyCommandStackError is raised."""
 
+        # TODO This is not tested
+
         for _ in range(n):
             command = self.pop_redo_command()
             if command:
-                if safe_execute(command):
+                try:
+                    command.do()
                     self.push_undo_command(command)
+                except Exception as exception:
+                    ed_logging.log("Unable to execute command.")
+                    ed_logging.log_exception(exception)
 
     def clear(self, **kwargs):
         for cmd in self.undo_commands:

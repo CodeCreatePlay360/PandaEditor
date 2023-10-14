@@ -1,5 +1,6 @@
 import sys
 import importlib
+from commons import ed_logging
 
 
 def import_module(path):
@@ -7,8 +8,6 @@ def import_module(path):
         file = path.split("\\")[-1]
     else:
         file = path.split("/")[-1]
-
-    # print("LOADED \n FILE--> {0} \n PATH {1} \n".format(file, path))
 
     mod_name = file.split(".")[0]
     cls_name_ = mod_name[0].upper() + mod_name[1:]
@@ -27,6 +26,10 @@ def import_modules(modules_paths):
     imported = []
 
     for path in modules_paths:
-        imported.append(import_module(path))
+        try:
+            module = import_module(path)
+            imported.append(module)
+        except Exception as exception:
+            ed_logging.log_exception(exception)
 
     return imported

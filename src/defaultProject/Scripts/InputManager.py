@@ -1,5 +1,7 @@
-from panda3d.core import LVecBase2f
-from editor.core import RuntimeModule
+from panda3d.core import LVecBase2f, LVecBase3f
+from panda3d.core import WindowProperties
+from game.resources import RuntimeModule
+from commons import EditorProperty
 
 
 class InputManager(RuntimeModule):
@@ -30,19 +32,60 @@ class InputManager(RuntimeModule):
         self.__mouse_input = LVecBase2f(0, 0)
         self.__zoom = 0
         self.center_mouse = False
+        self.add_property(EditorProperty.ButtonProperty(name="Button Property", method=lambda : print("button")))
+        self.add_property(EditorProperty.ButtonProperty(name="Another button", method=lambda : print("button")))
+        self.add_property(EditorProperty.ButtonProperty(name="Button Property 2", method=lambda : print("button")))
+        # self.vector = LVecBase3f()
 
         self.non_serialized_attrs = "keys"
         self.non_serialized_attrs = "_InputManager__dx"
         self.non_serialized_attrs = "_InputManager__dy"
         self.non_serialized_attrs = "_InputManager__lastMousePos"
 
-    def register_key(self, key: str):
-        if not isinstance(key, str):
-            print("[InputManager] key must be of type string")
+    def get_mouse_input(self):
+        mouse_x = self.mouse_watcher_node.getMouseX()
+        mouse_y = self.mouse_watcher_node.getMouseY()
+
+        if self.center_mouse:
+            self.__dx = mouse_x - self.__last_mouse_pos.x
+            self.__dy = mouse_y - self.__last_mouse_pos.y
+
+            if abs(self.__dx) > 0:
+                self.__mouse_input.x = mouse_x
+            else:
+                self.__mouse_input.x = 0
+
+            if abs(self.__dy) > 0:
+                self.__mouse_input.y = mouse_y
+            else:
+                self.__mouse_input.y = 0
+
+            self.__last_mouse_pos.x = mouse_x
+            self.__last_mouse_pos.y = mouse_y
+
             return
 
-        if not self.keys.__contains__(key):
-            pass  # register key
+        else:  # calculate displacement based to previous pos
+            self.__dx = mouse_x - self.__last_mouse_pos.x
+            self.__dy = mouse_y - self.__last_mouse_pos.y
+
+        # set last pos to current pos
+        self.__last_mouse_pos.x = mouse_x
+        self.__last_mouse_pos.y = mouse_y
+
+        if self.__dx > 0:
+            self.__mouse_input.x = 1
+        elif self.__dx < 0:
+            self.__mouse_input.x = -1
+        else:
+            self.__mouse_input.x = 0
+
+        if self.__dy > 0:
+            self.__mouse_input.y = 1
+        elif self.__dy < 0:
+            self.__mouse_input.y = -1
+        else:
+            self.__mouse_input.y = 0
 
     def on_start(self):
         # self._le.app.set_mouse_mode("Relative")
@@ -92,7 +135,7 @@ class InputManager(RuntimeModule):
 
     def on_late_update(self):
         for key in self.key_map.keys():
-            # exclude 
+            # exclude
             if key not in self.keys or "-" in key:
                 self.key_map[key] = 0
 
@@ -110,50 +153,22 @@ class InputManager(RuntimeModule):
             key = key.split("-")[0]
             self.key_map[key] = 0
 
-    def get_mouse_input(self):
-        mouse_x = self.mouse_watcher_node.getMouseX()
-        mouse_y = self.mouse_watcher_node.getMouseY()
-
-        if self.center_mouse:
-            self.__dx = mouse_x - self.__last_mouse_pos.x
-            self.__dy = mouse_y - self.__last_mouse_pos.y
-
-            if abs(self.__dx) > 0:
-                self.__mouse_input.x = mouse_x
-            else:
-                self.__mouse_input.x = 0
-
-            if abs(self.__dy) > 0:
-                self.__mouse_input.y = mouse_y
-            else:
-                self.__mouse_input.y = 0
-
-            self.__last_mouse_pos.x = mouse_x
-            self.__last_mouse_pos.y = mouse_y
-
+    def register_key(self, key: str):
+        if not isinstance(key, str):
+            print("[InputManager] key must be of type string")
             return
 
-        else:  # calculate displacement based to previous pos
-            self.__dx = mouse_x - self.__last_mouse_pos.x
-            self.__dy = mouse_y - self.__last_mouse_pos.y
+        if not self.keys.__contains__(key):
+            pass  # register key
 
-        # set last pos to current pos
-        self.__last_mouse_pos.x = mouse_x
-        self.__last_mouse_pos.y = mouse_y
+    def set_mouse_mode(self, mode):
+        if mode not in [WindowProperties.M_absolute, WindowProperties.M_relative, WindowProperties.M_confined]:
+            print("[PandaApp] Incorrect mouse mode {0}, current mouse mode set to {1}".format(mode, "Absolute"))
+            mode = WindowProperties.M_absolute
 
-        if self.__dx > 0:
-            self.__mouse_input.x = 1
-        elif self.__dx < 0:
-            self.__mouse_input.x = -1
-        else:
-            self.__mouse_input.x = 0
-
-        if self.__dy > 0:
-            self.__mouse_input.y = 1
-        elif self.__dy < 0:
-            self.__mouse_input.y = -1
-        else:
-            self.__mouse_input.y = 0
+        wp = WindowProperties()
+        wp.setMouseMode(mode)
+        self.show_base.main_win.requestProperties(wp)
 
     @property
     def mouse_input(self):

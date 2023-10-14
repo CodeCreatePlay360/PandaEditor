@@ -1,10 +1,10 @@
-from editor.utils import EdProperty
+from commons import EditorProperty
 from panda3d.core import LColor
+from editor.globals import editor
 
 
 class EditorSettings:
-    def __init__(self, level_editor, *args):
-        self.level_editor = level_editor
+    def __init__(self):
         self.properties = []
 
         # editor grid settings
@@ -25,49 +25,49 @@ class EditorSettings:
         self.hidden_attrs = "sub_divisions"
         self.hidden_attrs = "bg_color"
 
-        self.properties.append(EdProperty.EmptySpace(0, 1))
+        self.properties.append(EditorProperty.EmptySpace(0, 1))
 
         # ----------------------------------------------------------------------------------------------------
         grid_settings = [
-            EdProperty.Label(name="Viewport Grid", is_bold=True),
-            EdProperty.FuncProperty("show", self.show_grid, self.toggle_grid_visible, lambda: self.show_grid),
-            EdProperty.ObjProperty(name="grid_size", value=self.grid_size, obj=self),
-            EdProperty.ObjProperty(name="gridStep", value=self.gridStep, obj=self),
-            EdProperty.ObjProperty(name="sub_divisions", value=self.sub_divisions, obj=self),
-            EdProperty.ButtonProperty("Update Grid", self.set_grid)]
+            EditorProperty.Label(name="Viewport Grid", is_bold=True),
+            EditorProperty.FuncProperty("show", self.show_grid, self.toggle_grid_visible, lambda: self.show_grid),
+            EditorProperty.ObjProperty(name="grid_size", initial_value=self.grid_size, obj=self),
+            EditorProperty.ObjProperty(name="gridStep", initial_value=self.gridStep, obj=self),
+            EditorProperty.ObjProperty(name="sub_divisions", initial_value=self.sub_divisions, obj=self),
+            EditorProperty.ButtonProperty("Update Grid", self.set_grid)]
 
-        static_box_1 = EdProperty.StaticBox(name="Grid Settings", properties=grid_settings)
+        static_box_1 = EditorProperty.StaticBox(name="Grid Settings", properties=grid_settings)
         self.properties.append(static_box_1)
 
         # ----------------------------------------------------------------------------------------------------
         editor_settings = [
-            EdProperty.Label(name="Editor", is_bold=True),
-            EdProperty.ObjProperty("auto_reload", self.auto_reload, self)]
+            EditorProperty.Label(name="Editor", is_bold=True),
+            EditorProperty.ObjProperty("auto_reload", self.auto_reload, self)]
 
-        static_box_2 = EdProperty.StaticBox(name="Editor Settings", properties=editor_settings)
-        self.properties.append(EdProperty.EmptySpace(0, 5))
+        static_box_2 = EditorProperty.StaticBox(name="Editor Settings", properties=editor_settings)
+        self.properties.append(EditorProperty.EmptySpace(0, 5))
         self.properties.append(static_box_2)
 
         # ----------------------------------------------------------------------------------------------------
-        camera_settings = [EdProperty.Label(name="Viewport Cam", is_bold=True)]
-        for prop in EdProperty.Utils.get_lens_properties(
-                self.level_editor.app.show_base.ed_camera.node().get_lens()):
+        camera_settings = [EditorProperty.Label(name="Viewport Cam", is_bold=True)]
+        for prop in EditorProperty.Utils.get_properties_for_lens(
+                editor.p3D_app.editor_workspace.ed_camera.node().get_lens()):
             camera_settings.append(prop)
 
-        static_box_3 = EdProperty.StaticBox(name="Camera Settings", properties=camera_settings)
-        self.properties.append(EdProperty.EmptySpace(0, 5))
+        static_box_3 = EditorProperty.StaticBox(name="Camera Settings", properties=camera_settings)
+        self.properties.append(EditorProperty.EmptySpace(0, 5))
         self.properties.append(static_box_3)
-        self.properties.append(EdProperty.EmptySpace(0, 5))
+        self.properties.append(EditorProperty.EmptySpace(0, 5))
 
     def toggle_grid_visible(self, val):
         self.show_grid = not self.show_grid
         if self.show_grid:
-            self.level_editor.grid_np.show()
+            editor.level_editor.grid_np.show()
         else:
-            self.level_editor.grid_np.hide()
+            editor.level_editor.grid_np.hide()
 
     def set_grid(self):
-        self.level_editor.create_grid(self.grid_size, self.gridStep, self.sub_divisions)
+        editor.level_editor.create_grid(self.grid_size, self.gridStep, self.sub_divisions)
 
     def set_bg_color(self, val):
         pass

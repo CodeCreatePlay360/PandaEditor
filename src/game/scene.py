@@ -34,7 +34,7 @@ class Scene:
 
         self.__aspect_2d = self.__render_2D.attachNewNode(p3d_core.PGTop("__aspect_2d__"))
         self.__aspect_2d.set_scale(1.0 / self.__game.show_base.getAspectRatio(self.__game.win), 1.0, 1.0)
-        self.__aspect_2d.node().set_mouse_watcher(self.__game.mouse_watcher_node_2D)
+        self.__aspect_2d.node().set_mouse_watcher(self.__game.mouse_watcher_node_2d)
 
         # create a 2d-camera
         self.__camera_2D = p3d_core.NodePath(p3d_core.Camera("__camera2D__"))
@@ -44,7 +44,7 @@ class Scene:
         self.__camera_2D.node().setLens(lens)
         self.__camera_2D.reparent_to(self.__render_2D)
 
-        self.__game.dr_2D.setCamera(self.__camera_2D)
+        self.__game.dr_2d.setCamera(self.__camera_2D)
 
     def set_active_camera(self, cam):
         self.__main_camera = cam

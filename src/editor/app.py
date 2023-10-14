@@ -1,25 +1,31 @@
 import os.path
 import pathlib
-import editor.constants as constants
-import sys
 import wx
+import editor.constants as constants
 
-from panda3d.core import WindowProperties
 from direct.showbase.ShowBase import taskMgr
-from editor.showBase import ShowBase
-from editor.eventHandler import *
+from direct.showbase import ShowBase as sb
+from editor.workspace import EditorWorkspace
 from editor.ui.wxMain import WxFrame
 from editor.ui.config import UI_Config
 from editor.levelEditor import LevelEditor
 from editor.p3d import wxPanda
 from editor.commandManager import CommandManager, Command
+from editor.build import BuildScript
 from editor.globals import editor
+from thirdparty.event.observable import Observable
+
+
+class Showbase(sb.ShowBase):
+    def __init__(self):
+        sb.ShowBase.__init__(self)
 
 
 class MyApp(wxPanda.App):
     wx_main = None
+    observer = None
     show_base = None
-    _mouse_mode = None
+    editor_workspace = None
     level_editor = None
     command_manager = None
     ui_config = None
@@ -32,64 +38,85 @@ class MyApp(wxPanda.App):
     def init(self, path):
         constants.EDITOR_PATH = path
         constants.DEFAULT_PROJECT_PATH = os.path.join(path, "defaultProject")
+
         self.ui_config = UI_Config(str(pathlib.Path("src/config.xml")))
         editor.set_ui_config(self.ui_config)
+
+        self.observer = Observable()
+        editor.set_observer(self.observer)
+
         self.wx_main = WxFrame(parent=None, title="PandaEditor (defaultProject)", size=(800, 600))
-        self.show_base = ShowBase(self.wx_main.ed_viewport_panel)
+        # self.show_base = ShowBase(self.wx_main.ed_viewport_panel)
+        self.show_base = Showbase()
+        self.editor_workspace = EditorWorkspace(self.show_base, self.wx_main.ed_viewport_panel)
 
         self.replace_event_loop()
         self.wx_main.do_after()
 
         wx.CallLater(50, self.init_editor)
 
+    def foo(self):
+        import editor.eventHandler
+        from editor.ui.eventhandler import WxEventHandler
+        self.ui_evt_hanlder = WxEventHandler
+
     def init_editor(self):
-        if self.wx_main.ed_viewport_panel.GetHandle() == 0 and self.__current_get_handle_attempts < self.__max_get_handle_attempts:
+        if self.wx_main.ed_viewport_panel.GetHandle() == 0 and \
+                self.__current_get_handle_attempts < self.__max_get_handle_attempts:
             wx.CallLater(50, self.init_editor)
             self.__max_get_handle_attempts += 1
-            print("WARNING: Unable to get platform specific handle...!")
             return
 
-        self.__current_get_handle_attempts = 0
+        if self.wx_main.ed_viewport_panel.GetHandle() == 0:
+            print("Unable to find platform specific Handle, exiting.")
+            self.quit()
 
-        self.show_base.finish_init()
+        self.__current_get_handle_attempts = 0
+        # self.show_base.finish_init()
+        self.editor_workspace.initialize()
         self.command_manager = CommandManager()
         self.level_editor = LevelEditor(self)
 
-        # manually do some setup
-        self.level_editor.create_new_project("DefaultProject", constants.DEFAULT_PROJECT_PATH)
-
         # initialize globals
         editor.init(
-            observer=self.observer,
             app=self,
-            wx_main=self.wx_main,
             command_mgr=self.command_manager,
             level_editor=self.level_editor,
-            game=self.level_editor.project.game,
+
+            wx_main=self.wx_main,
             resource_browser=self.wx_main.resource_browser,
-            scene_graph=self.wx_main.scene_graph_panel.scene_graph,
+            scene_graph=self.wx_main.scenegraph.scene_graph,
             inspector=self.wx_main.inspector_panel,
             console=self.wx_main.console_panel
         )
 
-        # create a default scene
-        self.level_editor.create_new_scene(True)
+        self.foo()
+        editor.set_ui_evt_handler(self.ui_evt_hanlder)
+        self.level_editor.start()
+        editor.observer.trigger("EditorReload")
+        # # setup some defaults
+        # self.wx_main.resource_browser.tree.create_or_rebuild_tree(self.level_editor.project.project_path,
+        #                                                           rebuild_event=False)
+        # self.level_editor.register_user_modules(self.wx_main.resource_browser.tree.resources["py"])
+        # self.level_editor.register_text_files(editor.resource_browser.resources["txt"])
+        # self.wx_main.resource_browser.tree.collapse_all()
+        #
+        # item_to_sel_path = os.path.join(constants.DEFAULT_PROJECT_PATH, "Samples/Basics_01")
+        # item_to_sel_path = str(pathlib.Path(item_to_sel_path))
+        # item_to_sel = self.wx_main.resource_browser.tree.get_item_by_path(item_to_sel_path)
+        # self.wx_main.resource_browser.tree.SelectItem(item_to_sel)
+        # self.wx_main.resource_browser.tree.Expand(item_to_sel)
+        # self.wx_main.resource_browser.tree.Refresh()
 
-        self.wx_main.resource_browser.tree.remove_all_libs()
-        self.wx_main.resource_browser.tree.create_or_rebuild_tree(self.level_editor.project.project_path,
-                                                                  rebuild_event=False)
-        self.level_editor.register_user_modules(self.wx_main.resource_browser.tree.resources["py"])
-        self.level_editor.register_text_files(editor.resource_browser.resources["txt"])
-        self.wx_main.resource_browser.tree.schedule_dir_watcher()
-        self.wx_main.resource_browser.tree.collapse_all()
+    def on_win_event(self):
+        """panda3D window_event"""
+        pass
 
-        item_to_sel_path = os.path.join(constants.DEFAULT_PROJECT_PATH, "Samples/Basics_01")
-        item_to_sel_path = str(pathlib.Path(item_to_sel_path))
-        item_to_sel = self.wx_main.resource_browser.tree.get_item_by_path(item_to_sel_path)
-        self.wx_main.resource_browser.tree.SelectItem(item_to_sel)
-        self.wx_main.resource_browser.tree.Expand(item_to_sel)
-
-        self.wx_main.resource_browser.tree.Refresh()
+    def run_build_script(self, *args, **kwargs):
+        BuildScript.run(
+            project_path=self.level_editor.project.project_path,
+            output_dir="E:\Final\P3D_Build",
+            *args, **kwargs)
 
     def wx_step(self, task=None):
         super(MyApp, self).wx_step(task)
@@ -102,30 +129,13 @@ class MyApp(wxPanda.App):
                     not self.wx_main.ed_viewport_panel._win.getProperties().getForeground():
                 self.wx_main.ed_viewport_panel.set_focus()
 
+            # Todo do something about this ui update
             if task.time > self.__current_ui_update_interval:
                 self.wx_main.status_panel.write_tasks_info(len(taskMgr.getAllTasks()))
                 self.__current_ui_update_interval += self.__ui_update_delay
+            # ----------------------------------------------------------------------------
 
             if self.level_editor:
                 self.level_editor.update(task)
 
             return task.cont
-
-    @property
-    def observer(self):
-        # defined in event_handler
-        return obs
-
-    def set_mouse_mode(self, mode):
-        if mode not in [WindowProperties.M_absolute, WindowProperties.M_relative, WindowProperties.M_confined]:
-            print("[PandaApp] Incorrect mouse mode {0}, current mouse mode set to {1}".format(mode, "Absolute"))
-            self._mouse_mode = WindowProperties.M_absolute
-            return
-
-        self._mouse_mode = mode
-        wp = WindowProperties()
-        wp.setMouseMode(WindowProperties.M_confined)
-        self.show_base.main_win.requestProperties(wp)
-
-    def has_focus(self):
-        return self.wx_main.ed_viewport_panel._win.getProperties().getForeground()

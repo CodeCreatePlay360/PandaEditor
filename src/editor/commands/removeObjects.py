@@ -13,14 +13,14 @@ class RemoveObjects(Command):
         for np in selected:
             self.saved.append((np, np.get_parent()))
 
-        editor.p3d_app.level_editor.remove_nps(selected)
+        editor.p3D_app.level_editor.remove_nps(selected)
         editor.inspector.layout_auto()
         self.selected_nps.clear()
         return True
 
     def undo(self):
         nps = editor.level_editor.restore_nps(self.saved)
-        editor.p3d_app.level_editor.set_selected(nps)
+        editor.p3D_app.level_editor.set_selected(nps)
 
     def clean(self, **kwargs):
         nps = []

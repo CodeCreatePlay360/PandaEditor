@@ -2,9 +2,8 @@ import os.path
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from direct.showbase.ShowBase import taskMgr
+from direct.task.TaskManagerGlobal import taskMgr
 from editor.globals import editor
-from editor.constants import GAME_STATE
 
 
 class DirEventProcessor(FileSystemEventHandler):
@@ -15,16 +14,17 @@ class DirEventProcessor(FileSystemEventHandler):
         self.__progress_dialog = None
         self.__watcher = observer
 
+    def dir_evt_timer(self, task):
+        taskMgr.remove("DirEventTimer")
+        self.__dir_event_task = None
+        return task.cont
+
     def on_any_event(self, event):
         # ignore modified event for a directory, we only care about created event for a directory
         if os.path.isdir(event.src_path) and event.event_type == "modified":
             return
 
-        # sometimes during game state, dir event is triggered even when there are no actual modifications,
-        # at least on WIN_32 platforms
-        # on disk (I am not sure as to why this is happening, this should be further tested)
-        # should be tested with other platforms macOS, linux etc.
-        if editor.level_editor.ed_state == GAME_STATE and os.path.isdir(event.src_path):
+        if os.path.isdir(event.src_path):
             return
 
         # ignore junk files as well
@@ -34,20 +34,7 @@ class DirEventProcessor(FileSystemEventHandler):
         if event.event_type == "opened":
             return
 
-        # watch_paths = [*self.__watcher.observer_paths.keys()]
-        # self.__watcher.unschedule_all()
-
-        if self.__dir_event_task is None:
-            self.__dir_event_task = taskMgr.add(self.dir_evt_timer, "DirEventTimer", sort=0, priority=None, delay=0.1)
-
-        # for path in watch_paths:
-        #     self.__watcher.schedule(path)
-
-    def dir_evt_timer(self, task):
         editor.observer.trigger("EditorReload")
-        taskMgr.remove("DirEventTimer")
-        self.__dir_event_task = None
-        return task.cont
 
 
 class DirWatcher:
@@ -58,6 +45,12 @@ class DirWatcher:
 
         self.__observer_paths = {}
         self.run()
+
+    def get_observer(self):
+        return self.__observer
+
+    def get_observer_paths(self):
+        return self.__observer_paths
 
     def run(self):
         self.__observer.start()
@@ -78,11 +71,3 @@ class DirWatcher:
     def unschedule_all(self):
         self.observer.unschedule_all()
         self.observer_paths.clear()
-
-    @property
-    def observer(self):
-        return self.__observer
-
-    @property
-    def observer_paths(self):
-        return self.__observer_paths

@@ -1,6 +1,6 @@
 from editor.commandManager import Command
 from editor.globals import editor
-from editor.constants import TAG_GAME_OBJECT
+from game.constants import TAG_GAME_OBJECT
 
 
 class ReparentNPs(Command):

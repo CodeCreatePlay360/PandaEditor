@@ -1,4 +1,4 @@
-from editor.core import RuntimeModule
+from game.resources import RuntimeModule
 
 
 class TestModule(RuntimeModule):

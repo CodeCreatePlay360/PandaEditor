@@ -1,4 +1,5 @@
 import os.path
+
 from panda3d.core import get_model_path, Filename
 from game.game import Game
 
@@ -33,6 +34,6 @@ class Project(object):
         self.game = Game(
             ProjectPath=self.project_path,
             show_base=self.app.show_base,
-            win=self.app.show_base.main_win,
+            win=self.app.editor_workspace.main_win,
             render=self.app.show_base.render,
         )
