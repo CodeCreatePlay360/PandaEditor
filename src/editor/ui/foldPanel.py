@@ -204,15 +204,9 @@ class FoldPanel(wx.Panel):
 class FoldPanelManager(wx.Panel):
     def __init__(self, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
-
-        self.__parent = args[0]
         self.__panels = []
         self.__sizer = wx.BoxSizer(wx.VERTICAL)
-        self.Bind(wx.EVT_SIZE, self.on_size)
         self.SetSizer(self.__sizer)
-
-    def on_size(self, evt):
-        evt.Skip()
 
     def add_panel(self):
         panel = FoldPanel(self)
@@ -225,7 +219,7 @@ class FoldPanelManager(wx.Panel):
         return panel
 
     def on_panel_foldout(self, panel):
-        self.__parent.Layout()
+        self.GetParent().Layout()
         self.PostSizeEventToParent()
         self.Refresh()
 
@@ -235,5 +229,3 @@ class FoldPanelManager(wx.Panel):
     def get_panel_count(self):
         return len(self.__panels)
 
-    def get_sizer(self):
-        return self.__sizer

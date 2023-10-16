@@ -8,8 +8,9 @@ from pathlib import Path
 from wx.lib.scrolledpanel import ScrolledPanel
 from panda3d.core import NodePath
 from commons import EditorProperty
+from commons import ed_logging
 
-from editor.constants import ICONS_PATH
+from editor.constants import ICONS_PATH, GAME_STATE
 from editor.globals import editor
 from editor.ui.splitwindow import SplitWindow
 from editor.ui.foldPanel import FoldPanelManager
@@ -113,6 +114,7 @@ class TextPanel(wx.Panel):
         self.Layout()
 
 
+
 class BaseInspectorPanel(SplitWindow):
     class DragDropCompPanel(wx.Panel):
         class TestDropTarget(wx.PyDropTarget):
@@ -201,7 +203,6 @@ class BaseInspectorPanel(SplitWindow):
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls, *args, **kwargs)
         self.SetBackgroundColour(editor.ui_config.color_map("Panel_Dark"))
-        
         self.create_header()
         
         self.__object = None
@@ -209,14 +210,10 @@ class BaseInspectorPanel(SplitWindow):
         self.__properties = []
         self.property_name_map = {}
 
-        # self.fold_manager_panel = BaseInspectorPanel.FoldManagerPanel(self)
         self.__fold_manager = None  # a FoldPanelManager for laying out variables of a python module
-        self.__text_panel = None  # a text_panel for displaying .txt files
+        self.__text_panel = None    # a text_panel for displaying .txt files
 
         self.components_dnd_panel = None  # components drag and drop panel
-
-        # self.__main_sizer = wx.BoxSizer(wx.VERTICAL)
-        # self.SetSizer(self.__main_sizer)
         self.__main_sizer = self.GetSizer()
 
         self.tab_id_tab = {0: ID_PROPERTIES_PANEL_OBJECT_TAB,
@@ -238,7 +235,6 @@ class BaseInspectorPanel(SplitWindow):
         self.__main_sizer.Add(self.__tabs, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=5)
         self.__main_sizer.AddSpacer(5)
         self.SetupScrolling(scroll_x=False, scroll_y=True)
-        self.last_pos = self.GetSize()
         
         return self
 
@@ -379,9 +375,10 @@ class BaseInspectorPanel(SplitWindow):
         if is_editor_item:
             if inspector_id != ID_PROPERTIES_PANEL_OBJECT_TAB:
                 return
-
+            
+        self.__is_dirty = True
         self.Freeze()
-
+    
         if reset:
             self.reset()
             self.__object = obj
@@ -393,10 +390,10 @@ class BaseInspectorPanel(SplitWindow):
         else:
             self.__properties.extend(properties)
             obj_label = name[0].upper() + name[1:]
-
+            
         # add a fold panel for the top object
         fold_panel = self.__fold_manager.add_panel()
-
+            
         # create pin button the first panel only
         if self.__fold_manager.get_panel_count() == 1:
             try:
@@ -445,8 +442,7 @@ class BaseInspectorPanel(SplitWindow):
                 self.components_dnd_panel = BaseInspectorPanel.DragDropCompPanel(self)
                 self.__main_sizer.Add(self.components_dnd_panel, 0, wx.EXPAND | wx.LEFT, border=5)
 
-        self.__fold_manager.get_sizer().Layout()
-        self.__main_sizer.Layout()
+        self.Layout()
         self.__is_dirty = False
         self.Thaw()
 
@@ -478,10 +474,14 @@ class BaseInspectorPanel(SplitWindow):
             return
 
     def remove_component(self, idx, data):
+        if editor.level_editor.get_ed_state() == GAME_STATE:
+            ed_logging.log("Unable to remove component during GAME_STATE")
+            return
+        
         np = data[0].getPythonTag(constants.TAG_GAME_OBJECT)
         comp_path = data[1]
         np.detach_component(comp_path)
-        self.mark_dirty()
+        wx.CallAfter(self.layout_auto)
 
     def reset(self):
         self.__object = None
@@ -534,10 +534,6 @@ class BaseInspectorPanel(SplitWindow):
         force_update_all : """
 
         if self.__is_dirty:
-            self.Freeze()
-            if self.has_object():
-                self.layout_auto()
-            self.Thaw()
             return
 
         for key in self.property_name_map.keys():

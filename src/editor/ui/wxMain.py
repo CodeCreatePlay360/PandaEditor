@@ -183,8 +183,8 @@ class WxFrame(wx.Frame):
         scenegraph = SceneBrowserPanel("Scene Browser", SCENE_GRAPH_ICON, top_pnl.get_splitter(), top_pnl)
 
         scenegraph_, right_pnl = top_pnl.split(direction=splitwindow.VERTICAL_SPLIT, 
-                                                 panel_01=scenegraph,
-                                                 label_01="Scene Browser")  
+                                               panel_01=scenegraph,
+                                               label_01="Scene Browser")  
         
         self.ed_viewport_panel = Viewport("Viewport", VIEWPORT_ICON, right_pnl.get_splitter(), right_pnl)
         self.inspector_panel = InspectorPanel("Properties Panel", INSPECTOR_ICON, right_pnl.get_splitter(), right_pnl, scrolled=True)

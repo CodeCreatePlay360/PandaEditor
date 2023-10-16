@@ -159,7 +159,7 @@ class EditorEvents:
             with open(path, "w") as file_:
                 file_.write("import math\n")
                 file_.write("import panda3d.core as p3d_core\n")
-                file_.write("from editor.core import {0}\n\n\n".format(base_class))
+                file_.write("from game.resources import {0}\n\n\n".format(base_class))
 
                 # class header and init method
                 file_.write("class {0}({1}):".format(new_class_name, base_class))
@@ -333,6 +333,7 @@ class EditorEvents:
     @editor.observer.on("EditorReload")
     def reload_editor():
         if not editor.level_editor.can_reload():
+            print("cannot reload")
             return
 
         project_path = editor.level_editor.project.project_path

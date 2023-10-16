@@ -57,31 +57,17 @@ class WxEventHandler(UIEvtHandlerABC):
             ed_selections = args[2]
 
             editor.console.on_ed_reload()
-            editor.resource_browser.save_state()
             editor.resource_browser.create_or_rebuild_tree(project_path, rebuild_event=True)
-            editor.resource_browser.reload_state()
-
-            if len(ed_selections) > 0:
-                editor.inspector.layout(
-                    ed_selections[0],
-                    ed_selections[0].get_name(),
-                    ed_selections[0].getPythonTag(TAG_GAME_OBJECT).get_properties())
-
-            else:
-                editor.inspector.layout_auto()
-
+            wx.CallAfter(editor.inspector.layout_auto)
             return editor.resource_browser.resources
 
         elif args[0] == "OnEnableEditorState":
             editor.scene_graph.rebuild()
             editor.scene_graph.UnselectAll()
-
-        elif args[0] == "OnEnableEditorState":
-            editor.scene_graph.rebuild()
-            editor.scene_graph.UnselectAll()
+            editor.inspector.layout_auto()
 
         elif args[0] == "OnEnableGameState":
-            editor.scene_graph.UnselectAll()
+            # editor.scene_graph.UnselectAll()
             editor.console.on_enter_game_state()
 
         elif args[0] == "OnRemoveNPs":

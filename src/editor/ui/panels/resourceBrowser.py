@@ -86,13 +86,6 @@ class ResourceTiles(wx.Panel):
 
 
 class ResourceBrowser(SplitWindow):
-    class State:
-        """class representing a saved state of ResourceBrowser"""
-
-        def __init__(self, open_or_close: dict):
-            """open_or_close = tree item paths to their corresponding expanded to unexpanded state map"""
-            self.open_or_close = open_or_close
-
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls, *args, **kwargs)
         self.create_header()
@@ -153,7 +146,6 @@ class ResourceTree(customtree.CustomTreeCtrl):
 
         self.__root_node = self.AddRoot("RootNode", data="")
         self.__root_path = ""
-
         self.__saved_state = None
 
         # ---------------------------------------------------------------------------- #
@@ -254,23 +246,26 @@ class ResourceTree(customtree.CustomTreeCtrl):
     # ---------------------- All methods for building tree items ---------------------- #
     def create_or_rebuild_tree(self, path, rebuild_event: bool):
         """rebuild a tree from scratch from argument path or rebuild tree from libraries if rebuild_event"""
+        self.save_state()
+        
         if not rebuild_event:
+            """
             # clear libraries
             self.__resources.clear()
             self.__path_to_item.clear()
             self.DeleteChildren(self.GetRootItem())
             self.UnselectAll()
-
+            
             self.__root_path = path
 
             # create a key for each know file type
             for ext in ALL_SUPPORTED_FORMATS:
                 self.__resources[ext] = []
-
             # setup, a default project library
             # tree_item = self.AppendItem(self.root_node, "Project", data=path, image=1)
-            tree_item = self.AppendItem(self.__root_node, "Project", data=path, image=1)
-            self.create_tree_from_dir(dir_path=path, parent=tree_item)
+            node = self.AppendItem(self.__root_node, "Project", data=path, image=1)
+            self.create_tree_from_dir(dir_path=path, parent=node)
+            """
         else:
             print("[ResourceBrowser] Rebuilding resources")
             # TODO unschedule and re-schedule directory watcher
@@ -283,14 +278,16 @@ class ResourceTree(customtree.CustomTreeCtrl):
             # create a key for each know file type
             for ext in ALL_SUPPORTED_FORMATS:
                 self.__resources[ext] = []
-
+                
+            self.__root_path = path
+                
             # recreate all the libraries
             for name, path in editor.level_editor.get_libraries().items():
                 tree_item = self.AppendItem(self.__root_node, name, data=path, image=1)
                 self.__path_to_item[name] = tree_item
                 self.create_tree_from_dir(path, tree_item)
-
-        self.ExpandAll()
+                
+        self.reload_state()
         self.Refresh()
 
     def create_tree_from_dir(self, dir_path=None, parent=None):
@@ -573,27 +570,34 @@ class ResourceTree(customtree.CustomTreeCtrl):
 
     def save_state(self):
         """saves the current state of tree e.g. currently selected tree items"""
-        open_or_close = {}  # tree item paths to their corresponding expanded to unexpanded state map
-
+        self.__saved_state = {}  # save format: path = (is expanded, is selected)
+        
         for path in self.__path_to_item.keys():
-            item = self.__path_to_item[path]
-            if self.IsExpanded(item):
-                open_or_close[path] = item
-
-        self.__saved_state = ResourceBrowser.State(open_or_close)
-
+            if self.IsExpanded(self.__path_to_item[path]):
+                self.__saved_state[path] = (True, self.IsSelected(self.__path_to_item[path]))  # expanded, selected
+            else:
+                self.__saved_state[path] = (False, self.IsSelected(self.__path_to_item[path]))
+                
     def reload_state(self):
         """reloads saved state"""
-        for path in self.__path_to_item.keys():
-            if path == "Project":
-                continue
-            item = self.__path_to_item[path]
-            self.Collapse(item)
-
-        for path in self.__saved_state.open_or_close.keys():
-            if path in self.__path_to_item.keys():
-                self.Expand(self.__path_to_item[path])
+        if not self.__saved_state:
+            return
+                
         self.__tiles_panel.remove_all_tiles()
+                
+        # first filter out saved folders from saved state not available after reload 
+        res = [k for k in self.__saved_state.keys() if k in self.__path_to_item]
+        selected = None  # *for now contents of only one selection can be displayed 
+        
+        for item in res:
+            is_expanded, is_selected = self.__saved_state[item]
+            if is_expanded:
+                self.Expand(self.__path_to_item[item])
+            if is_selected and selected is None:
+                selected = self.__path_to_item[item]
+                wx.CallAfter(self.SelectItem, selected)
+                
+        self.__saved_state = None
         self.Refresh()
 
     def can_do_drag_drop(self, drop_item):

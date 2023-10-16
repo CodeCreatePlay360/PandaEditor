@@ -545,8 +545,7 @@ class ImageTilesPanel(ScrolledPanel):
         if self.__gridSizer:
             self.__gridSizer.Clear()
 
-        self.SetupScrolling(scroll_x=False)
-        self.Refresh()
+        self.Layout()
 
     def get_selected_tiles(self, paths=False):
         selected = []

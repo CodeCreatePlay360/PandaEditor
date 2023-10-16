@@ -171,8 +171,6 @@ class LevelEditor(DirectObject):
         else:
             self.__on_screen_text.hide()
 
-    last_size = 0
-
     def update(self, task):
         # update the inspector after inspector update delay
         if task.time > self.__inspector_update_interval:
@@ -258,13 +256,13 @@ class LevelEditor(DirectObject):
     def can_reload(self):
         if self.get_ed_state() == ed_constants.GAME_STATE:
             print(ed_logging.log("Cannot reload editor in game editor"))
-            return
+            return False
 
         ed_update_task = taskMgr.getTasksNamed("EditorAppUpdateTask")[0]
         if ed_update_task.time > self.__next_ed_reload_time:
-            self.__next_ed_reload_time += ed_update_task.time + ed_constants.EDITOR_RELOAD_DELAY
+            self.__next_ed_reload_time = ed_update_task.time + ed_constants.EDITOR_RELOAD_DELAY
             return True
-
+        # print("task time {0} -- next reload time {1}".format(ed_update_task.time, self.__next_ed_reload_time))
         return False
 
     def remove_library(self, name: str):
