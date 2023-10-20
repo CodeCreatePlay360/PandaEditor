@@ -287,8 +287,8 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 self.__path_to_item[name] = tree_item
                 self.create_tree_from_dir(path, tree_item)
                 
-        self.reload_state()
         self.Refresh()
+        wx.CallAfter(self.reload_state)
 
     def create_tree_from_dir(self, dir_path=None, parent=None):
         dir_files = os.listdir(dir_path)
@@ -534,8 +534,7 @@ class ResourceTree(customtree.CustomTreeCtrl):
                 new_path = target_destination + "\\" + file_name  # create a new path
 
                 if os.path.exists(new_path):
-                    print("copy error file {0} already exists...!".format(file_name))
-                    pass
+                    ed_logging.log("error importing file {0} already exists...!".format(file_name))
 
                 try:
                     copy_item(path, new_path)
@@ -582,23 +581,19 @@ class ResourceTree(customtree.CustomTreeCtrl):
         """reloads saved state"""
         if not self.__saved_state:
             return
-                
-        self.__tiles_panel.remove_all_tiles()
-                
+                        
         # first filter out saved folders from saved state not available after reload 
         res = [k for k in self.__saved_state.keys() if k in self.__path_to_item]
         selected = None  # *for now contents of only one selection can be displayed 
-        
         for item in res:
             is_expanded, is_selected = self.__saved_state[item]
             if is_expanded:
                 self.Expand(self.__path_to_item[item])
             if is_selected and selected is None:
                 selected = self.__path_to_item[item]
-                wx.CallAfter(self.SelectItem, selected)
+                self.SelectItem(selected)
                 
         self.__saved_state = None
-        self.Refresh()
 
     def can_do_drag_drop(self, drop_item):
         def is_ok_(item_):

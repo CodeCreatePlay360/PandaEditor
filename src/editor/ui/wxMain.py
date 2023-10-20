@@ -1,9 +1,9 @@
 import pathlib
 import sys
 import wx
-import wx.aui
 import wx.lib.agw.aui as aui
 import editor.ui.splitwindow as splitwindow
+import editor.ui.utils as wxUtils
 
 from direct.showbase.ShowBase import taskMgr
 from editor.ui.menuBar import MenuBar
@@ -14,39 +14,47 @@ from editor.globals import editor
 
 
 # scene events
-Evt_Open_Project = wx.NewId()
 Evt_New_Scene = wx.NewId()
 Evt_Open_Scene = wx.NewId()
 Evt_Save_Scene = wx.NewId()
 Evt_Save_Scene_As = wx.NewId()
+Evt_Open_Project = wx.NewId()
 Evt_Append_Library = wx.NewId()
 
-# editor events
-Evt_Refresh = wx.NewId()
 
-# toolbar events
-Evt_Ed_Viewport_style = wx.NewId()
-Evt_Play = wx.NewId()
+# scene events
+Evt_Refresh = wx.NewId()
 Evt_Toggle_Scene_Lights = wx.NewId()
 Evt_Toggle_Sounds = wx.NewId()
+Evt_Toggle_Particles = wx.NewId()
+# 
+Evt_Toggle_Gizmo = wx.NewId()
+Evt_Gizmo_Options = wx.NewId()
+#
+Evt_Ed_Viewport_style = wx.NewId()
+Evt_Play = wx.NewId()
 
 # ui panel events
 EVT_CLOSE_PAGE = wx.NewId()
 
 Event_Map = {
-    Evt_Open_Project: ("OpenProject", None),
     Evt_New_Scene: ("CreateNewSession", None),
     Evt_Open_Scene: ("OpenSession", None),
     Evt_Save_Scene: ("SaveSession", None),
     Evt_Save_Scene_As: ("SaveSessionAs", None),
+    Evt_Open_Project: ("OpenProject", None),
     Evt_Append_Library: ("AppendLibrary", None),
 
     Evt_Refresh: ("ReloadEditor", None),
-
+    Evt_Toggle_Scene_Lights: ("ToggleSceneLights", None),
+    Evt_Toggle_Sounds: ("ToggleSounds", None),
+    Evt_Toggle_Particles: ("ToggleParticles", None),
+    
+    Evt_Toggle_Gizmo: ("ToggleGizmos", None),
+    Evt_Gizmo_Options: ("EvtGizmoOptions", None),
+    
     Evt_Ed_Viewport_style: ("SwitchEdViewportStyle", None),
     Evt_Play: ("SwitchEdState", None),
-    Evt_Toggle_Scene_Lights: ("ToggleSceneLights", None),
-    Evt_Toggle_Sounds: ("ToggleSounds", None)
 }
 
 # resources
@@ -64,12 +72,15 @@ IMPORT_LIBRARY_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/package_link.png"
 IMPORT_PACKAGE_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/add_package.png"))
 OPEN_STORE_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/shop_network.png"))
 #
+ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/Refresh_Icon_32.png"))
 ALL_LIGHTS_ON_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/lightbulb_32x_on.png"))
 ALL_LIGHTS_OFF_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/lightbulb_32x_off.png"))
 SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/soundIcon.png"))
 NO_SOUND_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/noSoundIcon.png"))
+TOGGLE_PARTICLES_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/fire.png"))
 #
-ED_REFRESH_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/Refresh_Icon_32.png"))
+GIZMO_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/gizmo.png"))
+GIZMO_OPTIONS_DROPDOWN = str(pathlib.Path(ICONS_PATH + "/tool bar/bullet_arrow_down.png"))
 #
 ED_MODE_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/game_mode.png"))
 PLAY_ICON = str(pathlib.Path(ICONS_PATH + "/tool bar/playIcon_32x.png"))
@@ -244,22 +255,26 @@ class WxFrame(wx.Frame):
         self.new_session_icon = wx.Bitmap(NEW_SESSION_ICON)
         self.save_session_icon = wx.Bitmap(SAVE_SESSION_ICON)
         self.save_session_as_icon = wx.Bitmap(SAVE_SESSION_AS_ICON)
-
+        #
         self.proj_open_icon = wx.Bitmap(PROJ_OPEN_ICON)
         self.import_lib_icon = wx.Bitmap(IMPORT_LIBRARY_ICON)
         self.import_package_icon = wx.Bitmap(IMPORT_PACKAGE_ICON)
         self.open_store_icon = wx.Bitmap(OPEN_STORE_ICON)
-
-        self.ed_refresh_icon = wx.Bitmap(ED_REFRESH_ICON)
-
-        self.ed_mode_icon = wx.Bitmap(ED_MODE_ICON)
-        self.play_icon = wx.Bitmap(PLAY_ICON)
-        self.stop_icon = wx.Bitmap(STOP_ICON)
-
+        #
         self.lights_on_icon = wx.Bitmap(ALL_LIGHTS_ON_ICON)
         self.lights_off_icon = wx.Bitmap(ALL_LIGHTS_OFF_ICON)
         self.sound_icon = wx.Bitmap(SOUND_ICON)
         self.no_sound_icon = wx.Bitmap(NO_SOUND_ICON)
+        self.toggle_particles_icon = wx.Bitmap(TOGGLE_PARTICLES_ICON)
+        self.gizmo_options_icon = wx.Bitmap()
+        #
+        self.ed_refresh_icon = wx.Bitmap(ED_REFRESH_ICON)
+        self.gizmo_icon = wx.Bitmap(GIZMO_ICON)
+        self.drop_down_icon = wx.Bitmap(GIZMO_OPTIONS_DROPDOWN)
+        #
+        self.ed_mode_icon = wx.Bitmap(ED_MODE_ICON)
+        self.play_icon = wx.Bitmap(PLAY_ICON)
+        self.stop_icon = wx.Bitmap(STOP_ICON)
 
         # other
         self.select_icon = wx.Cursor(wx.Image(SELECT_ICON))
@@ -328,6 +343,13 @@ class WxFrame(wx.Frame):
 
         self.file_menu_tb.AddSeparator()
         # -------------------------------------------------------------------------------------
+        
+        self.refresh_btn = self.file_menu_tb.AddTool(Evt_Refresh,
+                                                     "",
+                                                     bitmap=self.ed_refresh_icon,
+                                                     disabled_bitmap=self.ed_refresh_icon,
+                                                     kind=wx.ITEM_NORMAL,
+                                                     short_help_string="Refresh Editor")
 
         self.lights_toggle_btn = self.file_menu_tb.AddToggleTool(Evt_Toggle_Scene_Lights,
                                                                  bitmap=self.lights_off_icon,
@@ -341,22 +363,39 @@ class WxFrame(wx.Frame):
                                                                 disabled_bitmap=self.sound_icon,
                                                                 short_help_string="Toggle Sound",
                                                                 toggle=True)
-
+                                                                
+        self.toggle_particles_btn = self.file_menu_tb.AddToggleTool(Evt_Toggle_Particles,
+                                                                    bitmap=self.toggle_particles_icon,
+                                                                    disabled_bitmap=self.toggle_particles_icon,
+                                                                    short_help_string="Toggle Particles",
+                                                                    toggle=True)
+        self.file_menu_tb.ToggleTool(self.toggle_particles_btn.GetId(), True)
+        
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.refresh_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.sound_toggle_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.lights_toggle_btn)
-
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.toggle_particles_btn)
         self.file_menu_tb.AddSeparator()
         # -------------------------------------------------------------------------------------
 
-        self.refresh_btn = self.file_menu_tb.AddTool(Evt_Refresh,
-                                                     "",
-                                                     bitmap=self.ed_refresh_icon,
-                                                     disabled_bitmap=self.ed_refresh_icon,
-                                                     kind=wx.ITEM_NORMAL,
-                                                     short_help_string="Refresh Editor")
+        self.toggle_gizmos_btn = self.file_menu_tb.AddToggleTool(Evt_Toggle_Gizmo,
+                                                                 bitmap=self.gizmo_icon,
+                                                                 disabled_bitmap=self.ed_refresh_icon,
+                                                                 short_help_string="Manipulation Gizmo Options",
+                                                                 toggle=True)
+                                                                 
+        # self.file_menu_tb.ToggleTool(self.toggle_gizmos_btn.GetId(), True)
+        # self.file_menu_tb.SetToolDropDown(Evt_Gizmo_Options, True)
+        
+        self.gizmo_options_btn = self.file_menu_tb.AddTool(Evt_Gizmo_Options,
+                                                           "GizmoOptions",
+                                                           bitmap=self.drop_down_icon,
+                                                           disabled_bitmap=self.ed_refresh_icon,
+                                                           kind=wx.ITEM_NORMAL,
+                                                           short_help_string="Manipulation Gizmo Options")
 
-        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.refresh_btn)
-
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.toggle_gizmos_btn)
+        self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.gizmo_options_btn)
         self.file_menu_tb.AddSeparator()
         # -------------------------------------------------------------------------------------
 
@@ -371,10 +410,9 @@ class WxFrame(wx.Frame):
                                                        disabled_bitmap=self.play_icon,
                                                        short_help_string="Start Game",
                                                        toggle=True)
-
+                                                               
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ed_viewport_mode_btn)
         self.Bind(wx.EVT_TOOL, self.on_evt_toolbar, self.ply_btn)
-
         return self.file_menu_tb
 
     def on_save_current_layout(self):
@@ -398,6 +436,23 @@ class WxFrame(wx.Frame):
     def on_evt_toolbar(self, evt):
         if evt.GetId() in Event_Map:
             evt_name = Event_Map[evt.GetId()][0]
+            
+            '''
+            if evt_name == "EvtGizmoOptions":
+                popup_menu = wx.Menu()
+                
+                menu_items = [(wx.NewId(), "&Load Model", None),
+                              (wx.NewId(), "&Load As Actor", None)]
+
+                wxUtils.build_menu(popup_menu, menu_items)
+                
+                mposx, mposy = wx.GetMousePosition()
+                cposx, cposy = self.ScreenToClient((mposx, mposy))
+                
+                self.PopupMenu(popup_menu, wx.Point(cposx, cposy))
+                popup_menu.Destroy()
+            '''
+                
             editor.observer.trigger(evt_name)
         evt.Skip()
 

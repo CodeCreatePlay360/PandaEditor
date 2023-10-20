@@ -13,7 +13,6 @@ class WxEventHandler(UIEvtHandlerABC):
             nps = args[1]
 
             editor.resource_browser.deselect_all_files()
-
             for np in nps:
                 editor.scene_graph.add(np)
 
@@ -130,3 +129,10 @@ def resource_tile_selected(file_path):
         on_txt_file_selected(editor.level_editor.get_text_file(file_path))
     else:
         inspector.set_text("No inspector defined for this item.")
+        
+
+@editor.observer.on("ToggleGizmoIcon")
+def toggle_gizmo_icon(value):
+    wx_main = editor.wx_main
+    wx_main.file_menu_tb.ToggleTool(wx_main.toggle_gizmos_btn.GetId(), value)
+    wx_main.file_menu_tb.Refresh()

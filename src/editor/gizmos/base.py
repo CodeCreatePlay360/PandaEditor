@@ -22,7 +22,7 @@ class Base(NodePath, SingleTask):
         self.setBin('fixed', 40)
         self.setDepthTest(False)
         self.setDepthWrite(False)
-
+        
     def on_update(self):
         """
         Update method called every frame. Run the transform method if the user
@@ -127,7 +127,6 @@ class Base(NodePath, SingleTask):
         position, set its orientation and show it. Otherwise hide the gizmo.
         """
         if self.attachedNps:
-
             # Show the gizmo
             self.reparentTo(self.rootNp)
 

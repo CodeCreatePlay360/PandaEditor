@@ -633,7 +633,7 @@ class LevelEditor(DirectObject):
         return self.__user_commands
 
     # ------------------------------LEVEL_EDITOR_SECTION----------------------------- #
-
+        
     def setup_selection_system(self):
         self.__selection = Selection(
             camera=self.__app.editor_workspace.ed_camera,
@@ -688,19 +688,25 @@ class LevelEditor(DirectObject):
             self.__app.command_manager.do(cmd)
 
     def set_active_gizmo(self, gizmo):
-        self.__active_gizmo = gizmo
+        # if gizmos are already off, toggle them on
+        if self.__gizmo_mgr.GetActiveGizmo() == None and gizmo == "None":
+            gizmo = self.__active_gizmo
+        
         self.__gizmo_mgr.SetActiveGizmo(gizmo)
-
-    def set_gizmo_local(self, val):
-        self.__gizmo_mgr.SetLocal(val)
+        
+        if gizmo is not "None":
+            self.__active_gizmo = gizmo
+            
+        # Update gizmo icon
+        self.__app.observer.trigger("ToggleGizmoIcon", gizmo != "None")
+        
+    def toggle_gizmo_local(self):
+        self.__gizmo_mgr.SetLocal(not self.__gizmo_mgr.local)
 
     def set_selected(self, selections: list):
         if len(selections) > 0:
             self.__selection.set_selected(selections)
             self.update_gizmo()
-
-    def toggle_gizmo_local(self, *args):
-        self.__gizmo_mgr.ToggleLocal()
 
     def update_gizmo(self):
         if self.__active_gizmo != "None":

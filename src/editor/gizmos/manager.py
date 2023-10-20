@@ -8,6 +8,7 @@ class Manager(Object):
         Object.__init__(self, *args, **kwargs)
 
         self._gizmos = {}
+        self.local = False
         self._activeGizmo = None
 
         # Create gizmo manager mouse picker
@@ -60,28 +61,10 @@ class Manager(Object):
         if self._activeGizmo is not None:
             self._activeGizmo.Refresh()
 
-    def GetGizmoLocal(self, name):
-        """Return the gizmos local mode."""
-        gizmo = self.GetGizmo(name)
-        if gizmo is not None:
-            return gizmo.local
-
-    def SetGizmoLocal(self, name, mode):
-        """Set all gizmo local modes, then refresh the active one."""
-        gizmo = self.GetGizmo(name)
-        if gizmo is not None:
-            gizmo.local = mode
-        self.RefreshActiveGizmo()
-
     def SetLocal(self, val):
+        self.local = val
         for gizmo in self._gizmos.values():
             gizmo.local = val
-        self.RefreshActiveGizmo()
-
-    def ToggleLocal(self):
-        """Toggle all gizmos local mode on or off."""
-        for gizmo in self._gizmos.values():
-            gizmo.local = not gizmo.local
         self.RefreshActiveGizmo()
 
     def SetSize(self, factor):

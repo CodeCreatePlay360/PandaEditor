@@ -39,7 +39,7 @@ class UserModule(Resource):
             diff = new_attrs_set.difference(self.__pre_game_attrs)
             for item in diff:
                 delattr(self.class_instance, item)
-                print("Removed attr {0} from module {1}".format(self.class_instance.module_name, item))
+                print("Removed attr {0} from module {1}".format(item, self.class_instance.module_name))
 
     def copy_data(self, module_other):
         module_other.save_data()

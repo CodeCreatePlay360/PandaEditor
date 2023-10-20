@@ -129,10 +129,9 @@ class Rotation(Base):
         return task.cont
 
     def Transform(self):
-
         startVec = self.startVec
-
         axis = self.GetSelectedAxis()
+
         if axis is not None and axis.vector == CAMERA_VECTOR:
             endVec = self.getRelativeVector(self.rootNp, self.GetAxisPoint(axis) - self.getPos())
 

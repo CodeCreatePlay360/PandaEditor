@@ -333,7 +333,6 @@ class EditorEvents:
     @editor.observer.on("EditorReload")
     def reload_editor():
         if not editor.level_editor.can_reload():
-            print("cannot reload")
             return
 
         project_path = editor.level_editor.project.project_path
@@ -382,7 +381,12 @@ class EditorEvents:
     @editor.observer.on("ToggleHotkeysText")
     def toggle_hot_keys_text():
         editor.level_editor.toggle_hot_keys_text()
-
+       
+    @staticmethod
+    @editor.observer.on("ToggleGizmos")
+    def toggle_gizmos():
+        editor.level_editor.set_active_gizmo("None")
+        
     @staticmethod
     @editor.observer.on("ToggleSceneLights")
     def toggle_lights():

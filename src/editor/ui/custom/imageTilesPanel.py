@@ -209,7 +209,6 @@ class ImageTile(wx.Panel):
         self.is_selected = True
         self.text_ctrl.SetBackgroundColour(editor.ui_config.widget_color("_ResourcePanel", "Image_Tile_Selected"))
         self.Refresh()
-
         editor.observer.trigger("ResourceTileSelected", self.path)
         if evt:
             evt.Skip()
@@ -536,15 +535,16 @@ class ImageTilesPanel(ScrolledPanel):
         self.Refresh()
 
     def remove_all_tiles(self):
+        self.deselect_all()
+        if self.__gridSizer:
+            self.__gridSizer.Clear()
+        
         for tile in self.__tiles:
             tile.Destroy()
 
         self.__tiles = []
         self.__selected_tiles.clear()
-
-        if self.__gridSizer:
-            self.__gridSizer.Clear()
-
+            
         self.Layout()
 
     def get_selected_tiles(self, paths=False):
