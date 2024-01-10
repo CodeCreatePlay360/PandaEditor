@@ -1,1 +1,0 @@
-This is the first sample, it shows basic usage of a UserModule and some scripting basics in PandaEditor.

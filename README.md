@@ -1,392 +1,405 @@
-## Open source scene editor for Panda3D
+<h1 align="center">🍁 PandaEditor</h1>
 
-![Image](images//main.png)
+<h3> PandaEditor is an open-source level editor for the Panda3D game engine, it is designed to be easy to use and extend and provides end users with a convenient interface and tools to quickly prototype and create 2D or 3D scenes.</h3> 
 
-**PandaEditor is an open-source level editor for the Panda3D game engine, designed to be easy to use and extend, PandaEditor provides you with a convenient interface that allows for quickly editing your 2D or 3D scenes, it has support for all industry standard features including.**
+<h3 align="center">Features</h3>
 
-* Object manipulation
-* Object Inspection
+* Easy object manipulation 
+* Object inspection
 * Console panel
-* Project based approach,
 * Scene graph browser
 * Resources browser
+* Project based approach
 * Complete scripting support that exposes full underlying Panda3D API, scripts can be attached to NodePaths (entity component system) in scene graph defining per object behaviors or you can program in a more traditional way using P3DUserModules.
 * To extend the editor, there is a complete support for editor plugins, the developers can create (or maybe even sell) their tools.
 
-> **If you have found PandaEditor useful in any way, than consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
+***
 
-> **PandaEditor should run on all platforms supported by wxPython(the UI framework used by PandaEditor) and Panda3D, however active maintenance and support is available only for Microsoft Windows, Mac, ArchLinux and Ubuntu.**
+> 💎 **It takes a considerable amount of time and effort to maintain PandaEditor and keeping it bugfree, not to mention adding new features, writing documentation and tutorials for new users; you can support all this effort by subscribing to any tier of your choice on this patreon page, visit the tiers section to see list of all tiers and their subscription benefits.**  
+>
+> ⭐ **If you have found PandaEditor useful in your projects then consider giving it a star on GitHub, it will help PandaEditor reach more audience.**
 
-> **It takes a considerable amount of time and effort to maintain PandaEditor, keeping it bug-free, not to mention writing documentation, creating sample programs and writing tutorials for new users...so if you want to support PandaEditor, you can share your works, report bugs or support financially by subscribing to PandaEditor patreon page.**  
+<h3 align="center">Support</h3>
 
-> **PandaEditor is still in beta stage, visit the road map section to see list of all features under development.**
+<p align="center">
+If you face any issues, please report them on GitHub or post them in the #help channel of our discord server or you can also post them in Panda3D forum post, links are given below.
+</p>
 
-| ![Image](images//RoamingRalph_00.png) |
-| -- |
-| ![Image](images//RoamingRalph_01.gif) |
-| Roaming Ralph from official Panda3D sample programs running on PandaEditor using Runtime modules and Components based workflow. (Note, jitters in GIF above is due to screen recording software.) |
+<h3 align="center">Community</h3>
 
-## Links
-1. [Discord](https://discord.gg/eTMcUp2PXF)
-2. [Patreon](https://www.patreon.com/PandaEditor_)
+<p align="center">
+<a href='https://github.com/CodeCreatePlay360/Massive-Designer#tutorials' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/Panda3D forum post-100000?style=plastic&logo=Unity&logoColor=white&labelColor=323232&color=323232'/></a>
+<a href='https://discord.gg/WZ3GZCvVtg' target="_blank"><img alt='Discord' src='https://img.shields.io/badge/Discord-5865F2?style=plastic&logo=discord&logoColor=white'/></a>
+<a href='https://www.patreon.com/MassiveDesigner' target="_blank"><img alt='Patreon' src='https://img.shields.io/badge/Support on patreon-F96854?style=plastic&logo=patreon&logoColor=white'/></a>
+</p>
 
-## Dependencies
-1. Panda3D
-2. WxPython
-3. Python WatchDog
+<p align="center">
+<a href='https://github.com/CodeCreatePlay360/Massive-Designer' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/Reddit-FF4500?style=plastic&logo=reddit&logoColor=white'/></a>
+<a href='https://github.com/CodeCreatePlay360/Massive-Designer' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/YouTube-FF0000?style=plastic&logo=youtube&logoColor=white'/></a>
+</p>
 
-## Install
-**Installiation process is fairly simple, first your need to install all dependencies**,
-1. Panda3D
-2. Pip install wxPython (should work out of box for Windows and macOS, for Linux/Ubuntu users, you can follow download instructions from wxPython's website or get compatible wheel from [linix-wheels](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04/).)
-3. Pip install watchdog
-1. Download this repository
-2. Run main.py
+### 🔹Requirements
+  1. Panda3D game engine.
+  2. WxPython (this is optional, Wx is only needed if you are ever going to use the editor UI)
 
-## Manual
-* [Starting a new project](https://github.com/CodeCreatePlay360/PandaEditor#starting-a-new-project "")
-* [Object manipulation](https://github.com/CodeCreatePlay360/PandaEditor#object-manipulation "")
-* [Editor modes](https://github.com/CodeCreatePlay360/PandaEditor#editor-modes "")
-* [Editor resources](https://github.com/CodeCreatePlay360/PandaEditor#editor-resources "")
-  * [Runtime modules](https://github.com/CodeCreatePlay360/PandaEditor#runtime-modules "")
-  * [Editor plugins](https://github.com/CodeCreatePlay360/PandaEditor#editor-plugins "")
-  * [Text files](https://github.com/CodeCreatePlay360/PandaEditor#text-files "")
-  * [Nodepath Component](https://github.com/CodeCreatePlay360/PandaEditor#nodepath-component "")
-* [User commands](https://github.com/CodeCreatePlay360/PandaEditor#user-commands "")
-* [Editor UI](https://github.com/CodeCreatePlay360/PandaEditor/#editor-ui "")
-* [PandaEditor for existing Panda3D users](https://github.com/CodeCreatePlay360/PandaEditor/#pandaeditor-for-existing-panda3d-users)
-* [Known issues](https://github.com/CodeCreatePlay360/PandaEditor#known-issues "")
-* [Roadmap](https://github.com/CodeCreatePlay360/PandaEditor#roadmap "")
-* [Getting started](https://github.com/CodeCreatePlay360/PandaEditor#getting-started "")
-* [Tutorials](https://github.com/CodeCreatePlay360/PandaEditor#tutorials "")
+### 🔹Getting Started
 
-## Starting a new project
-PandaEditor has a project based workflow, when you first start PandaEditor a default project with some sample programs is created for you.
-It's located in current working directory and should not be deleted. You can use default project for any purpose, however to create a new project to go
-**Menubar > Project > Start New Project** and choose a valid name and path.
-
-## Object manipulation
-* **alt + right mouse button** to rotate
-* **alt + middle mouse** to dolly
-* **alt + left mouse button drag** to zoom
-* **control + D** to duplicate selected objects
-* **X** to remove / delete selected objects
-* **control + z** to undo
-
-## Editor states
-PandaEditor has two states **Editor** and **Game**.  
-The **Editor** state is your scene creation state, this is where you would set up your 2D or 3D scenes, write scripts, object behaviors and define game logic.  
-The game logic and object behaviors defined during editor state are executed in **Game** state, the game state is also what you would expect as final view.  
-
-## Editor resources
-In PandaEditor a resource is defined as the **"building blocks of your project"**, every editor resource is a file located on your computer, commonly they include files such as images, audio, 3D models or python scripts etc.  
-Some resources can be created from right inside the editor for example **editor plugins, run-time modules or Node-path Components**, other resources like audio or 3D models can be imported into your project.
-
-* To import resources in your project, go to **Resource browser > (select any folder, right click open context menu) > Import Resources**.
-* You can also append an external folder containing resources, **Menubar > Project > AppendLibrary (and select the folder containing resources you want to append for your project)**, editor will start monitoring changes to any appended directory, the appended folder / resources exists in you project like regular editor resources, however they are not directly imported in the project folder.
-* Some resources can be created from right inside the editor, **Resource browser > (select any folder, right click open context menu) > Add**.
-
-## RunTime modules
-
-![Image](images//02.png)
-
-One of the ways to program in PandaEditor is by using **RuntimeModules**, these are simple python scripts and are automatically loaded as an editor resource, however for editor to consider any python script as a **RuntimeModules**,
-
-* The class name should be exactly same as that of python file.
-* Class should inherit from **RuntimeModule** base class.
-
-Basic syntax of a **PandaEditor's RuntimeModule**.
+For now there is no executable to start PandaEditor, you will have to manually start it by running "main.py" python script, located in the root of PandaEditor directory. 
 
 ```
-from editor.core import RuntimeModule
+python main.py
+```
+
+### 🔹Viewport Navigation
+
+Use the following keyboard / mouse controls to move around the scene.
+
+* Alt + right mouse button + mouse drag to rotate.
+* Alt + middle mouse button + mouse drag to dolly.
+* Alt + left mouse button + mouse drag to zoom.
+* Control + D to duplicate selected objects.
+* X to remove / delete selected objects.
+* Control + Z to undo.
+
+### 🔹Running Demo Projects
+PandaEditor comes with some demo projects to demonstrate various aspects and capabilities of Panda3D and PandaEditor, most of the code is fully commented out so you can use it for your projects as a reference. All demo projects are located in "demo" folder in the root of this repository, to start any demo project, simply run "main.py" python script with an optional command line argument "-demo" followed by name of demo project from your python console, for example.
+
+```
+python main.py -demo NameOfDemoProject
+```
+
+For example to run the _AnimatedCharacter_ demo project, use the following command.
+
+```
+python main.py -demo AnimatedCharacter
+```
 
 
-class TestModule(RuntimeModule):
+~~To see more information on a particular demo there is a "readme file" along with each demo in "src/demos" folder; here is a list of all demos.~~
+1. ~~AnimatedCharacter~~
+2. ~~ThirdPersonCamera~~
+3. ~~ThirdPersonCharacterController~~
+
+
+
+<h2 align="center"> <a href="">Programmers Section</a> | <a href="">Artists Section</a> </h2>
+
+<h3 align="center"> ⚙️ Programmers section </h3>
+
+### ▪️ Programming Basics
+- Starting the editor
+- Accessing systems
+  - Using the Systems utility class
+- Event handling
+  - Handling default events
+  - Creating new events
+- Input handling
+- Managing continuously updating tasks
+
+***
+
+<h2 align="center"> Programming Basics </h2>
+
+### 🔹Starting the editor
+
+The recommended way to start PandaEditor is using the included "Demon framework" which will setup the the python side event handing, level editor, editor UI and other useful systems for you. All example code, demos and sample projects are also built using the "Demon framework", so its in best interest to use "Demon" instead of manually setting things up, to use the demon framework, create an instance of Demon class (or subclass it directly) and invoke its "run" method.
+
+```
+import sys, pathlib
+
+editor_path = ".../DemonEngine/src"
+path = str(pathlib.Path(editor_path))
+sys.path.append(editor_path)
+
+from demon import Demon
+
+
+class DemonApp(Demon):
     def __init__(self, *args, **kwargs):
-        RuntimeModule.__init__(self, *args, **kwargs)
-
-    def on_start(self):
-        # on_start is called once
-        pass
-
-    def on_update(self):
-        # on_update is called every frame
-        pass
-```
-
-The **RuntimeModule** also defines some base methods and attributes which act as the link between PandaEditor and Panda3D engine. 
-
-```
-from editor.core import RuntimeModule
-
-
-class TestModule(RuntimeModule):
-    def __init__(self, *args, **kwargs):
-        RuntimeModule.__init__(self, *args, **kwargs)
+        Demon.__init__(self, *args, **kwargs)
         
-    def on_start(self):
-        # on_start is called once
-        win = self.win                                # the window we are rendering into currently
-        mouse_watcher_node = self.mouse_watcher_node  # mouse watcher node
-        render = self.render                          # this is the current scene's parent node-path
-        game = self.game                              # instance of current running game
-        self.accept("x", self.on_x)                   # basic Panda3D event handling
+        // your code here...
 
-    def on_update(self):
-        # on_update is called every frame
-        pass
-        
+
+app = DemonApp()
+app.run()
 ```
 
-To get a complete listing of all base methods and attributes see **Basics.py** in sample programs included with default project.  
-To create a new user module **Resource Browser > Add > RuntimeModule**.  
-To see some example usages of user modules, see samples programs also included with the default project.
-
-## Editor plugins
-
-To extend the editor with custom tools and features PandaEditor has support for editor plugins, unlike **RuntimeModules** editor plugins are executed only in editor state.
-Same as with **RuntimeModules**, **the EditorPlugins** are python scripts and for the editor to consider any python script as an **EditorPlugin**,
-
-* The class name should be exactly same as that of python file.
-* Class should inherit from **EditorPlugin** base class.
-
-Basic syntax of an editor plugin.
+Demon class provides references to all the most common systems.
 
 ```
-from editor.core import EditorPlugin
-
-
-class EdPlugin(EditorPlugin):
+class DemonApp(Demon):
     def __init__(self, *args, **kwargs):
-        EditorPlugin.__init__(self, *args, **kwargs)
-
-    def on_start(self):
-        # on_start is called once
-        pass
-
-    def on_update(self):
-        # on_update is called every frame
-        pass
+        Demon.__init__(self, *args, **kwargs)
+        
+        _ = self.engine            # panda3d engine
+        _ = self.resource_manager  # resources handler
+        _ = self.event_manager     # event manager
 ```
+
+### 🔹Accessing systems
+"Engine" class is the actual panda3D engine, it sets up and starts the underlying Panda3D systems including graphics window, input handling, events etc.
+
+```
+# -------------------------------------------------------------
+# Engine class also provides reference to all the most common systems
+# for example.
+
+win = engine.win            # current graphics output window.
+
+mouse_watcher_node = engine.mouse_watcher_node
+
+dr3d = engine.dr3d          # 3d display region.
+camera = engine.cam
+render = engine.render
+
+dr2d = engine.dr2d          # 2d display region.
+cam2d = engine.cam2d
+render2d = engine.render2d
+aspect2d = engine.aspect2d  # aspect corrected 2d scene graph.
+
+input_handler = engine.input_handler
+resource_handler = engine.resource_handler
+axis_grid = engine.axis_grid
+
+# visit panda3d manual for explanation on these or
+# visit the tutorials section or take a look at the sample
+# programs.
+# -------------------------------------------------------------
+```
+
+- ### Globals
+   PandaEditor provides a utility class "Editor" to easily access various systems without the need to pass references around and this is also the recommended way to get access to various systems when programming in PandaEditor. 
+   
+   ```
+	from editor import Editor
+
+
+	class TestClass(object):
+	    def __init__(self, *args, **kwargs):
+	        object.__init__(self)
+	        
+	        demon = Editor.demon
+	        engine = Editor.engine
+	        resource_manager = Editor.resource_manager
+	        event_manager = Editor.event_manager
+   ```
+
+### 🔹Event handling
+- ### Handling default events
+
+	To catch or listen to events sent from Panda3D or PandaEditor, set the event hook callback defined in engine class.
+	
+	```
+	class DemonApp(Demon):
+	    def __init__(self, *args, **kwargs):
+	        Demon.__init__(self, *args, **kwargs)
+	
+	        self.engine.set_event_hook(self.event_handler)
+	        
+	     def event_handler(self, event, *args):
+	        // make sure to call "on_any_event" base method first 
+	        self.on_any_event(event, *args)
+	```
+	
+	For most cases you will not need to manually set the event hook callback, the demon class already sets-up one and you only need to override it, make sure to also invoke the base method first.
+	
+	```
+	class DemonApp(Demon):
+	    def __init__(self, *args, **kwargs):
+	        Demon.__init__(self, *args, **kwargs)
+	        
+	    def on_any_event(self, event, *args):
+	       """event sent from c++ side can be handled here"""
+	    
+	       super().on_any_evt(evt, args)
+	       
+	       if event.name == "window_event":
+	           // do something
+	           pass
+	```
+	
+	However, even in the case where you are manually setting the event hook callback, make sure to invoke the "on_any_event" base method first, this is necessary to handle events from PandaEditor side.
+
+- ### Creating new events
+	Creating new events is a simple two step process which involving, creating an event handler callback and registering it with the event manager object. The following code sample, registers an event "HandleMouseClick" and binds it to callback "on_mouse_click".
+	
+	```
+	class DemonApp(Demon):
+	    def __init__(self, *args, **kwargs):
+	        Demon.__init__(self, *args, **kwargs)
+
+	        self.event_manager.register("EventName", callback)
+	        
+	    def event_handler(self, *args):
+	        pass
+	```
+		
+	Once an event has been registered, it can be triggered by invoking "trigger" method of event_manager object, "trigger" function can also take an optional list of args and kwargs. 
+	
+	```
+	self.event_manager.trigger("EventName")
+	```
+
+
+### 🔹Input handling
+- ### Mouse utility class
+  PandaEditor has a nice simple utility class "Mouse" to handle mouse's movement and some other related stuff, the code below lists most of its functions, see comments along the code for details.
+  
+  ```
+  from demon import Demon
+  from commons import Mouse
+  
+  
+  class DemonApp(Demon):
+      def __init__(self, *args, **kwargs):
+	      Demon.__init__(self, *args, **kwargs)
+	      
+	      self.mouse = Mouse(self.engine)
+
+
+	      # for mouse movement
+          self.mouse.x  = 0   # mouse pos x
+          self.mouse.y  = 0   # mouse pos y
+          self.mouse.dx = 0   # mouse displacement x since last frame
+          self.mouse.dy = 0   # mouse displacement y since last frame
+  ```
+   
+- ### Keyboard and mouse
+  Whenever a mouse or keyboard button is pressed, Panda3D generates events which can be handled using the event hook callback (see event handling section); whenever a button is pressed or released the following events are generated.
+  1. An event object identified by the name of the button.
+  2. An event object identified by the name of the button post-fixed by "-repeat" keyword as long as button is held down.
+  3. An event object identified by the name of button post-fixed by "-up" keyword when the button is released.
+  4. Raw key and raw key up events.
+  
+    To see which events are being generated whenever a keyboard or mouse button is pressed or released just override the "on_any_event" base method and print the name of the event.
+
+    ```
+    from demon import Demon
+
+
+	class DemonApp(Demon):
+	    def __init__(self, *args, **kwargs):
+	        Demon.__init__(self, *args, **kwargs)
+	
+	    def on_any_evt(self, evt, *args):
+	        """event sent from c++ side can be handled here"""
+	        super().on_any_evt(evt, args)
+	        print(evt.name)
+    ```
+
+	In should be noted that regardless of the status of caps lock event names are always lowercase. As an example, the following events are generated when "a" key is pressed, held for a second and released.
+	
+	  a, a-repeat....,a-up,
+
+  Some physical keys are distinguished by their location on the keyboard, for example in addition to the regular "shift" event, pressing shift key generates separate "lshift" and "rshift" events for left and right shift keys respectively, as an example the following events are generated when shift key on left side of keyboard is pressed and released.
+
+      shift, lshift   shift-up, lshift-up
+
+
+  This however is not true for all keys, the best way to understand is by overriding the base "on_any_event" method and studying the events generated whenever an event is generated.
+
+  Whenever a key is pressed while a modifier key _shift, control, alt, meta_ is held down the name of the modifier is prefixed to the name of the key for example the following events are generated when key "a" is pressed while modifier key "shift" is pressed,
  
-And just like **RuntimeModule** base class, the **EditorPlugin** base class also defines some base attributes and methods which act as a link between **PandaEditor**, **wxPython (the PandaEditor's UI framework)** and the **Panda3D engine**. 
+ 	  shift, shift-a, shift-a-repeat.......
+ 	  
+ 	 as soon as "a" or "shift" key is released regular up events will be generated.
+ 	 
+ 	 While an event based system is good for trigger based systems __for example lights on or off or play, pause or stop an animation or events generated upon collision detection__, however sometimes it is more desirable to ask Panda3D every frame for a particular event for example as in the case of character controllers or camera controllers etc. or any other system that require constant updates from user, as for the later case Panda3D provides mechanism through the [mouse watcher](https://docs.panda3d.org/1.10/cpp/reference/panda3d.core.MouseWatcher) to continuously detect user input. 
+ 	 
+    ```
+    from demon import Demon
+    from panda3d.core import import KeyboardButton
+
+
+	class DemonApp(Demon):
+	    def __init__(self, *args, **kwargs):
+	        Demon.__init__(self, *args, **kwargs)
+	
+ 	    def on_update(self):
+ 	        is_down = __mouse_watcher_node.is_button_down
+ 	        
+ 	        if is_down(KeyboardButton.asciiKey("a")):
+ 	           // do something
+    ```
+ 	 
+
+~~To see some example usages of input handling see "AnimatedCharacter" and "ThirdPersonCamera" demo projects, the former is using events to change character animation and later is using the mouse watcher node's polling interface to update camera position.~~
+	
+### 🔹Managing continuously updating tasks
+Managing tasks that needs continuous updating can be be done using Panda3D's _AsyncTaskanager_, creating a new task involves creating a new _AsyncTask_ object and registering it with _AsyncTaskManager_, the _AsyncTask_ encapsulates a unit of work, essentially a user defined callback method, which is then invoked continuously depending on its properties, various parameters for a task can be defined for example,
+
+1. **Task Name:** A unique identifier for the task.
+2. **Task Function:** The function or method that defines the task's behavior.
+3. **Priority:** A numerical value determining the task's priority in the execution order.
+4. **Execution Interval:** The time interval between successive updates of the task.
+5. **Task Type:** Specifies whether the task should run once or loop continuously.
+
+Each task or the callback method accepts _AsyncTask_ or _PythonTask_ as a compulsory first parameter, the _AsyncTask_ defines a _DoneStatus_ enumeration, the _DoneStatus_ enumeration allows a task to communicate its completion status to the _AsyncTaskManager_, the most common used status are;
+
+- **DS_cont**: This status indicates that the task wishes to continue running and be scheduled for the next frame. It's suitable for tasks that loop continuously, such as ongoing animations or real-time updates.
+
+- **DS_done:** The task signals that it has completed its execution and should be removed from the task manager. This is useful for tasks with a specific, one-time operation.
+
+- **DS_again**: This status is employed when the task wants to be rescheduled for the next frame, even if it's a looping task. It's a way of explicitly indicating that the task needs to run again in the next frame.
+
+Visit the [_AsyncTaskanager_](https://docs.panda3d.org/1.10/python/reference/panda3d.core.AsyncTaskManager#panda3d.core.AsyncTaskManager "_AsyncTaskanager_") API reference for more info on creating and using tasks. The code below shows some of the basics of creating and using tasks.
 
 ```
-from editor.core import EditorPlugin
+from panda3d.core import AsyncTaskManager, PythonTask
 
 
-class EdPlugin(EditorPlugin):
+class DemonApp(Demon):
     def __init__(self, *args, **kwargs):
-        EditorPlugin.__init__(self, *args, **kwargs)
+        Demon.__init__(self, *args, **kwargs)
+        
+        # create a task object
+        task = PythonTask(self.task_callback, "TaskName")
 
-    def on_start(self):
-        # on_start is called once
-        win = self.win                                # the window we are rendering into currently
-        mouse_watcher_node = self.mouse_watcher_node  # mouse watcher node
-        render = self.render                          # this is the current scene's parent node-path
-        le = self.le                                  # instance of level editor
-        self.accept("x", self.on_x)                   # basic Panda3D event handling
+        task.setSort(1)             # task with lower sort values are guaranteed
+                                    # to be executed before tasks with higher
+                                    # sort values
+
+        task.setDelay(0.5)          # delay the task execution by specified time
+                                    # after it has been added to task manager,
+                                    # if this value is not
+                                    # specified and by default task will be
+                                    # executed in next frame following the one
+                                    # in which it was added
+
+        task.setUponDeath(callback) # callback function to be invoked when
+                                    # this task finishes.
+
+        # add it to the global task manager object
+        AsyncTaskManager.getGlobalPtr().add(task)
+
+     def task_callback(self, task):
+     	if some_condition:
+     	    # return task status as done, 
+     	    # this task will not be called again next frame
+     	    return task.DS_done 
+     
+        # continue running this task next frame
+        return task.DS_cont
 ```
 
-To see an example usage of **EditorPlugins**, see **SamplePlugin.py** included with sample programs.
 
-## Text files
-PandaEditor also loads plain text files as a resource and the text can be viewed in inspector panel, you can use them to create short notes or simple instructions for other users.
-
-![Image](images//03.png)
-
-## Nodepath component
-A **Component** is another way to program in PandaEditor and provide similar functionality to that of a **RuntimeModule**, however they are not automatically executed, instead they must be attached to a NodePath in the scene graph and just like a **RuntimeModule** they are executed only in game state.  
-The Component has one neat property though, is that it provides a direct reference to the NodePath it is attached to which makes it better suited for defining per object behaviors, for example a character controller.  
-For PandaEditor to consider a python script as a **Component** 
-* The class name should be exactly same as that of python file.
-* Class should inherit from **Component** base class.
-
-Basic syntax of a component,
-```
-from editor.core import Component
-
-
-class Component(Component):
-    def __init__(self, *args, **kwargs):
-        Component.__init__(self, *args, **kwargs)
-
-    def on_start(self):
-        # on_start is called once
-        self.set_pos((5, 0, 0))  # offset this nodepath by 5 units along x
-
-    def on_update(self):
-        # on_update is called every frame
-        pass
-```
-
-* To attach a component to a NodePath, select the NodePath in the scene and simply drag the component script from file browser to the InspectorPanel.
-* You can attach multiple components to a NodePath as well.  
-
-## User commands
-PandaEditor provide a way to automate repeated tasks through the **CommandManager** interface.  
-Each command is wrapped in a **Command** abstract base class, added to commands stack using the base method **add_command** of an **EditorPlugin** and provide undo redo functionality as well.  
-To user commands are added under the **Command** menu of the menu-bar.  
-To create a new command
-1. First import the Command object and create a new command, actual command execution should be carried out in **do** method,
-
-```
-from editor.commandManager import Command
-
-class MyCommand(Command):
-    def __init__(self, *args, **kwargs):
-        Command.__init__(self, *args, **kwargs)
-
-    def do(self):
-        print("do something")
-
-    def undo(self):
-        print("undo it")
-```
-
-2. Finally, from the **on_start** method of your editor plugin, add the command to command stack,
-
-```
-class EdPlugin(EditorPlugin):
-    def __init__(self, *args, **kwargs):
-        EditorPlugin.__init__(self, *args, **kwargs)
-
-    def on_start(self):
-        # on_update is called every frame
-        command = MyCommand
-        self.add_command("MyCommand", command))
-```
-
-You can also nest and group together similar commands for example,
-
-```
-        self.add_command("Math/Vector/Add", Add)
-        self.add_command("Math/Vector/Multiply", Multiply)
-        self.add_command("Math/Vector/Dot", Dot)
-```
-
-Here is an sample code for a simple command that randomly offsets position of a NodePath.
-
-```
-class OffsetCube(Command):
-    def __init__(self, *args, **kwargs):
-        Command.__init__(self, *args, **kwargs)
-        self.np = args[0]
-        self.last_pos = p3d_core.LVecBase3f()
-
-    def do(self):
-        # record the last position
-        self.last_pos = self.np.getPos()
-
-        # randomly offset the node-path
-        x = random.randrange(0, 500)
-        y = random.randrange(0, 500)
-        z = random.randrange(0, 500)
-        self.np.setPos(p3d_core.LVecBase3f(x, y, z))
-
-    def undo(self):
-        self.np.setPos(self.last_pos)
-```
-
-When creating commands involving NodePaths, there is catch tough, when you remove NodePath in the scene, PandaEditor does not removes them from the scene-graph, instead it reparents them to a hidden NodePath, until max undo count is reached (by default it is 50) after that it permanently removes them and you cannot undo the remove operation.  
-
-So if your command stack look something like this
-1. Add Cube
-2. Offset_Cube  (User Command)
-3. Remove Cube
-4. Offset_Cube  (User Command)
-
-In this case the last offset command will definitely execute since the NodePath is not removed and it is being referenced in the command object, however it will have no visual effect.  
-So as a sanity check make sure the NodePath always exists in the scene, otherwise raise an exception or use the assertion (the command will not execute if an exception is raised), the above Command can be better written as,
-
-```
-from editor.commandManager import Command
-from editor.globals import editor
-
-
-class OffsetCube(Command):
-    def __init__(self, *args, **kwargs):
-        Command.__init__(self, *args, **kwargs)
-        self.np = None
-        self.last_pos = p3d_core.LVecBase3f()
-
-    def do(self):
-        render = editor.game.active_scene.render  # get the active scene render
-        np = render.find("**/cube.fbx")  # get the NodePath
-
-        # make sure NodePath exists otherwise return False
-        if np:
-            self.np = np
-        else:  # np is None, raise assertion
-            assert np is None
-
-        # record the last position
-        self.last_pos = self.np.getPos()
-
-        # randomly offset the node-path
-        x = random.randrange(0, 500)
-        y = random.randrange(0, 500)
-        z = random.randrange(0, 500)
-        self.np.setPos(p3d_core.LVecBase3f(x, y, z))
-
-    def undo(self):
-        self.np.setPos(self.last_pos)
-```
-
-![Image](images//04.gif)
-
-## Editor UI
-The editor's user interface is divided into 5 main panels,
-1. ViewPort
-2. SceneGraph
-3. Console or LogPanel
-4. ResourcesBrowser and
-5. InspectorPanel
-
-When you first start Editor a default layout (arrangement of panels) is created for you but you can also drag panels around and create custom layouts and save them **menu_bar > Layout > SaveLayout**.
-
-## PandaEditor for existing Panda3D users
-Working in PandaEditor will feel like home to existing Panda3D users, as it exposes the full underlying Panda's API without any modifications, however PandaEditor exposes this API using either **RuntimeModules**, **NodePath Components** or the **EditorPlugin** interface, so in regard to this, here are a few examples.
-
-- Initialization of the engine is done by editor itself, so for example the PandaEditor's equivalent of a simple code that loads a 3D model from disk would look something like this.
-
-```
-import pathlib
-from direct.showbase.Loader import Loader
-from editor.core import RuntimeModule
-
-
-class Basics(RuntimeModule):
-    def __init__(self, *args, **kwargs):
-        RuntimeModule.__init__(self, *args, **kwargs)
-
-        # first we create an instance of loader class 
-        self.__loader = Loader(self.show_base)
-
-    def on_start(self):
-        model_path = "/someModelFile.egg"                # path to the model file on disk
-        model_path = pathlib.Path(model_path)            # convert to OS specific
-        model_path = str(model_path)                     # convert it back to a string
-        model_np = self.__loader.load_model(model_path)  # load the model
-        model_np.reparent_to(self.render)                # attach model_np to active scene's render
-```
-
-## Known issues
-1. Due to a known bug in wxPython editor UI layouts currently cannot be saved in under Linux platforms.
-
-## Roadmap
-**(For version 1.0)**
-1. Add system to save and reload project and individual scenes.
-2. Building project to Panda3D executable.
-3. Object manipulation gizmos need overhauling.
-4. Add snapping support for gizmo tool.
-
-## Getting started
-To get started, there are sample programs included with the default project, with each sample project there is an accompanying text file, detailing how to setup the sample program.
-
-## Tutorials
-1. [Your first day at PandaEditor]("")
-2. [Getting staring with basics]("")
-
-
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
