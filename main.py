@@ -20,8 +20,7 @@ parser.add_argument("-d", "--Demo")
 parser.add_argument("-ds", "--DefaultScene")
 parser.add_argument("-le", "--OpenLE")
 
-# samples = {"AnimatedCharacter": demos.AnimatedCharacter,
-           # "ThirdPersonCamera": demos.RoamingRalph}
+# AnimatedCharacter": demos.AnimatedCharacter
 samples = {}
 
 

@@ -1,4 +1,4 @@
-<h1 align="center">🍁 PandaEditor</h1>
+<h1 align="center">PandaEditor</h1>
 
 <h3> PandaEditor is an open-source level editor for the Panda3D game engine, it is designed to be easy to use and extend and provides end users with a convenient interface and tools to quickly prototype and create 2D or 3D scenes.</h3> 
 
@@ -10,7 +10,7 @@
 * Scene graph browser
 * Resources browser
 * Project based approach
-* Complete scripting support that exposes full underlying Panda3D API, scripts can be attached to NodePaths (entity component system) in scene graph defining per object behaviors or you can program in a more traditional way using P3DUserModules.
+* Complete scripting support that exposes full underlying engine's API, scripts can be attached directly to nodes in scene graph (entity component system) defining per object behaviors or you can also program in a more traditional way in which you usually have one main function as the entry point to the rest of your program.
 * To extend the editor, there is a complete support for editor plugins, the developers can create (or maybe even sell) their tools.
 
 ***
@@ -28,14 +28,10 @@ If you face any issues, please report them on GitHub or post them in the #help c
 <h3 align="center">Community</h3>
 
 <p align="center">
-<a href='https://github.com/CodeCreatePlay360/Massive-Designer#tutorials' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/Panda3D forum post-100000?style=plastic&logo=Unity&logoColor=white&labelColor=323232&color=323232'/></a>
-<a href='https://discord.gg/WZ3GZCvVtg' target="_blank"><img alt='Discord' src='https://img.shields.io/badge/Discord-5865F2?style=plastic&logo=discord&logoColor=white'/></a>
-<a href='https://www.patreon.com/MassiveDesigner' target="_blank"><img alt='Patreon' src='https://img.shields.io/badge/Support on patreon-F96854?style=plastic&logo=patreon&logoColor=white'/></a>
-</p>
-
-<p align="center">
-<a href='https://github.com/CodeCreatePlay360/Massive-Designer' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/Reddit-FF4500?style=plastic&logo=reddit&logoColor=white'/></a>
-<a href='https://github.com/CodeCreatePlay360/Massive-Designer' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/YouTube-FF0000?style=plastic&logo=youtube&logoColor=white'/></a>
+<a href='https://discord.gg/WZBFcpW3Mf' target="_blank"><img alt='Discord' src='https://img.shields.io/badge/Discord-5865F2?style=plastic&logo=discord&logoColor=white'/></a>
+<a href='https://www.patreon.com/panda3deditor' target="_blank"><img alt='Patreon' src='https://img.shields.io/badge/Sponsor-F96854?style=plastic&logo=patreon&logoColor=white'/></a>
+<a href='https://github.com/CodeCreatePlay360/PandaEditor' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/Reddit-FF4500?style=plastic&logo=reddit&logoColor=white'/></a>
+<a href='https://github.com/CodeCreatePlay360/PandaEditor' target="_blank"><img alt='Unity' src='https://img.shields.io/badge/YouTube-FF0000?style=plastic&logo=youtube&logoColor=white'/></a>
 </p>
 
 ### 🔹Requirements
@@ -44,10 +40,16 @@ If you face any issues, please report them on GitHub or post them in the #help c
 
 ### 🔹Getting Started
 
-For now there is no executable to start PandaEditor, you will have to manually start it by running "main.py" python script, located in the root of PandaEditor directory. 
+For now there is no executable to start PandaEditor, you will have to manually start it by running _main.py_ python script, located in the root of PandaEditor directory. 
 
 ```
-python main.py
+ppython main.py
+```
+
+You can optionally start the editor with an optional default scene that sets up a directional (sun) light and an ambient light instead of the usual grid.
+
+```
+ppython main.py -ds DefaultScene
 ```
 
 ### 🔹Viewport Navigation
@@ -61,28 +63,30 @@ Use the following keyboard / mouse controls to move around the scene.
 * X to remove / delete selected objects.
 * Control + Z to undo.
 
+If you are using the default scene use _a and shift + a keys_ to orbit sun light clockwise and counter-clockwise around z-axis and _d and shift + d keys_ to orbit around x-axis.
+
 ### 🔹Running Demo Projects
-PandaEditor comes with some demo projects to demonstrate various aspects and capabilities of Panda3D and PandaEditor, most of the code is fully commented out so you can use it for your projects as a reference. All demo projects are located in "demo" folder in the root of this repository, to start any demo project, simply run "main.py" python script with an optional command line argument "-demo" followed by name of demo project from your python console, for example.
+PandaEditor comes with some demo projects to demonstrate various aspects and capabilities of Panda3D and PandaEditor, most of the code is fully commented out so you can use it for your projects as a reference. All demo projects are located in _demos_ folder in the root of this repository, to start any demo project, simply run _main.py_ python script with an optional command line argument _-d_ followed by name of demo project from your python console, for example.
 
 ```
-python main.py -demo NameOfDemoProject
+python main.py -d NameOfDemoProject
 ```
 
 For example to run the _AnimatedCharacter_ demo project, use the following command.
 
 ```
-python main.py -demo AnimatedCharacter
+python main.py -d AnimatedCharacter
 ```
 
-
 ~~To see more information on a particular demo there is a "readme file" along with each demo in "src/demos" folder; here is a list of all demos.~~
-1. ~~AnimatedCharacter~~
-2. ~~ThirdPersonCamera~~
-3. ~~ThirdPersonCharacterController~~
+1. ~~RoamingRalph~~
+2. ~~AnimatedCharacter~~
+3. ~~ThirdPersonCamera~~
+4. ~~ThirdPersonCharacterController~~
 
 
 
-<h2 align="center"> <a href="">Programmers Section</a> | <a href="">Artists Section</a> </h2>
+<h2 align="center"> <a href="https://github.com/CodeCreatePlay360/PandaEditor/tree/main?tab=readme-ov-file#-%EF%B8%8F-programmers-section-">Programmers Section</a> | <a href="">Artists Section</a> </h2>
 
 <h3 align="center"> ⚙️ Programmers section </h3>
 
@@ -102,7 +106,7 @@ python main.py -demo AnimatedCharacter
 
 ### 🔹Starting the editor
 
-The recommended way to start PandaEditor is using the included "Demon framework" which will setup the the python side event handing, level editor, editor UI and other useful systems for you. All example code, demos and sample projects are also built using the "Demon framework", so its in best interest to use "Demon" instead of manually setting things up, to use the demon framework, create an instance of Demon class (or subclass it directly) and invoke its "run" method.
+The recommended way to start PandaEditor is using the included _Demon framework_ which automatically handles setting up the Panda3D engine, python side event handing, level editor, editor UI and other useful systems for you. All example code, demos and sample projects are also built using the demon framework, so its in best interest to use demon instead of manually setting things up, to use the demon framework, create an instance of _Demon class_ (or subclass it directly) and invoke its "run" method.
 
 ```
 import sys, pathlib
@@ -125,7 +129,7 @@ app = DemonApp()
 app.run()
 ```
 
-Demon class provides references to all the most common systems.
+_Demon class_ provides references to all the important systems.
 
 ```
 class DemonApp(Demon):
@@ -138,7 +142,7 @@ class DemonApp(Demon):
 ```
 
 ### 🔹Accessing systems
-"Engine" class is the actual panda3D engine, it sets up and starts the underlying Panda3D systems including graphics window, input handling, events etc.
+_Engine_ class is the actual Panda3D engine, it sets up and starts the underlying Panda3D systems including graphics window, input handling, events etc.
 
 ```
 # -------------------------------------------------------------
@@ -169,26 +173,26 @@ axis_grid = engine.axis_grid
 ```
 
 - ### Globals
-   PandaEditor provides a utility class "Editor" to easily access various systems without the need to pass references around and this is also the recommended way to get access to various systems when programming in PandaEditor. 
+   PandaEditor provides a utility class _Systems_ to easily access various systems without the need to pass references around and this is also the recommended way to get access to various systems when programming in PandaEditor. 
    
    ```
-	from editor import Editor
+	from system import Systems
 
 
 	class TestClass(object):
 	    def __init__(self, *args, **kwargs):
 	        object.__init__(self)
 	        
-	        demon = Editor.demon
-	        engine = Editor.engine
-	        resource_manager = Editor.resource_manager
-	        event_manager = Editor.event_manager
+	        demon = Systems.demon
+	        engine = Systems.engine
+	        resource_manager = Systems.resource_manager
+	        event_manager = Systems.event_manager
    ```
 
 ### 🔹Event handling
 - ### Handling default events
 
-	To catch or listen to events sent from Panda3D or PandaEditor, set the event hook callback defined in engine class.
+	To catch or listen to events sent from Panda3D or PandaEditor, set the event hook callback method defined in engine class.
 	
 	```
 	class DemonApp(Demon):
@@ -202,7 +206,7 @@ axis_grid = engine.axis_grid
 	        self.on_any_event(event, *args)
 	```
 	
-	For most cases you will not need to manually set the event hook callback, the demon class already sets-up one and you only need to override it, make sure to also invoke the base method first.
+	For most cases you will not need to manually set the event hook directly, the demon class already sets-up one for you and you only need to override it, make sure to also invoke the base method first.
 	
 	```
 	class DemonApp(Demon):
@@ -219,23 +223,23 @@ axis_grid = engine.axis_grid
 	           pass
 	```
 	
-	However, even in the case where you are manually setting the event hook callback, make sure to invoke the "on_any_event" base method first, this is necessary to handle events from PandaEditor side.
+	However, even in the case where you are manually setting the event hook callback, make sure to invoke the _on_any_event_ base method first, this is necessary to handle editor side events.
 
 - ### Creating new events
-	Creating new events is a simple two step process which involving, creating an event handler callback and registering it with the event manager object. The following code sample, registers an event "HandleMouseClick" and binds it to callback "on_mouse_click".
+	Creating new events is a simple two step process which involving, creating an event handler method and registering it with the event manager object. The following code sample, registers an event _HandleMouseClick_ and binds it to callback _on_mouse_click_.
 	
 	```
 	class DemonApp(Demon):
 	    def __init__(self, *args, **kwargs):
 	        Demon.__init__(self, *args, **kwargs)
 
-	        self.event_manager.register("EventName", callback)
+	        self.event_manager.register("HandleMouseClick", callback)
 	        
-	    def event_handler(self, *args):
+	    def on_mouse_click(self, *args):
 	        pass
 	```
 		
-	Once an event has been registered, it can be triggered by invoking "trigger" method of event_manager object, "trigger" function can also take an optional list of args and kwargs. 
+	Once an event has been registered, it can be triggered by invoking _trigger_ method of event_manager object, _trigger_ function can also take an optional list of arguments and keyword arguments.
 	
 	```
 	self.event_manager.trigger("EventName")
@@ -244,7 +248,7 @@ axis_grid = engine.axis_grid
 
 ### 🔹Input handling
 - ### Mouse utility class
-  PandaEditor has a nice simple utility class "Mouse" to handle mouse's movement and some other related stuff, the code below lists most of its functions, see comments along the code for details.
+  PandaEditor provides a simple utility class _Mouse_ to handle mouse's movement and some other related stuff, the code below lists some of its functions, see comments along the code for details.
   
   ```
   from demon import Demon
@@ -272,7 +276,7 @@ axis_grid = engine.axis_grid
   3. An event object identified by the name of button post-fixed by "-up" keyword when the button is released.
   4. Raw key and raw key up events.
   
-    To see which events are being generated whenever a keyboard or mouse button is pressed or released just override the "on_any_event" base method and print the name of the event.
+    To see which events are being generated whenever a keyboard or mouse button is pressed or released just override the _on_any_event_ base method and print the name of the event.
 
     ```
     from demon import Demon
@@ -288,24 +292,24 @@ axis_grid = engine.axis_grid
 	        print(evt.name)
     ```
 
-	In should be noted that regardless of the status of caps lock event names are always lowercase. As an example, the following events are generated when "a" key is pressed, held for a second and released.
+	In should be noted that regardless of the status of caps lock, event names are always lowercase. As an example, the following events are generated when _a_ key is pressed, held for a second and released.
 	
-	  a, a-repeat....,a-up,
+	  a, a-repeat...., a-up,
 
-  Some physical keys are distinguished by their location on the keyboard, for example in addition to the regular "shift" event, pressing shift key generates separate "lshift" and "rshift" events for left and right shift keys respectively, as an example the following events are generated when shift key on left side of keyboard is pressed and released.
+  Some physical keys are distinguished by their location on the keyboard, for example in addition to the regular _shift_ event pressing shift key generates separate _lshift_ and _rshift_ events for left and right shift keys respectively, as an example the following events are generated when shift key on left side of keyboard is pressed and released.
 
       shift, lshift   shift-up, lshift-up
 
 
-  This however is not true for all keys, the best way to understand is by overriding the base "on_any_event" method and studying the events generated whenever an event is generated.
+  This however is not true for all keys, the best way to understand is by overriding the base _on_any_event_ method and studying the events generated whenever an event is generated.
 
-  Whenever a key is pressed while a modifier key _shift, control, alt, meta_ is held down the name of the modifier is prefixed to the name of the key for example the following events are generated when key "a" is pressed while modifier key "shift" is pressed,
+  Whenever a key is pressed while a modifier key _shift, control, alt, meta_ is held down the name of the modifier is prefixed to the name of the key for example the following events are generated when key _a_ is pressed while modifier key _shift_ is pressed,
  
  	  shift, shift-a, shift-a-repeat.......
  	  
- 	 as soon as "a" or "shift" key is released regular up events will be generated.
+ 	 as soon as _a_ or _shift_ key is released regular up events will be generated.
  	 
- 	 While an event based system is good for trigger based systems __for example lights on or off or play, pause or stop an animation or events generated upon collision detection__, however sometimes it is more desirable to ask Panda3D every frame for a particular event for example as in the case of character controllers or camera controllers etc. or any other system that require constant updates from user, as for the later case Panda3D provides mechanism through the [mouse watcher](https://docs.panda3d.org/1.10/cpp/reference/panda3d.core.MouseWatcher) to continuously detect user input. 
+ 	 While an event based system is good for trigger based systems for example _lights on or off or play, pause or stop an animation or events generated upon collision detection_, however sometimes it is more desirable to ask Panda3D every frame for a particular event for example as in the case of character controllers or camera controllers etc. or any other system that require constant updates from user, as for the later case Panda3D provides mechanism through the _[mouse watcher](https://docs.panda3d.org/1.10/cpp/reference/panda3d.core.MouseWatcher)_ data node to continuously detect user input. 
  	 
     ```
     from demon import Demon
@@ -327,7 +331,7 @@ axis_grid = engine.axis_grid
 ~~To see some example usages of input handling see "AnimatedCharacter" and "ThirdPersonCamera" demo projects, the former is using events to change character animation and later is using the mouse watcher node's polling interface to update camera position.~~
 	
 ### 🔹Managing continuously updating tasks
-Managing tasks that needs continuous updating can be be done using Panda3D's _AsyncTaskanager_, creating a new task involves creating a new _AsyncTask_ object and registering it with _AsyncTaskManager_, the _AsyncTask_ encapsulates a unit of work, essentially a user defined callback method, which is then invoked continuously depending on its properties, various parameters for a task can be defined for example,
+Managing tasks that needs continuous updating can be be done using Panda3D's _[AsyncTaskanager](https://docs.panda3d.org/1.10/python/reference/panda3d.core.AsyncTaskManager)_, creating a new task involves creating a new _[AsyncTask](https://docs.panda3d.org/1.10/python/reference/panda3d.core.AsyncTask#panda3d.core.AsyncTask)_ object and registering it with _AsyncTaskManager_, the _AsyncTask_ encapsulates a unit of work, essentially a user defined method, which is then invoked continuously depending on its properties, various parameters for a task can be defined for example,
 
 1. **Task Name:** A unique identifier for the task.
 2. **Task Function:** The function or method that defines the task's behavior.
@@ -343,7 +347,7 @@ Each task or the callback method accepts _AsyncTask_ or _PythonTask_ as a compul
 
 - **DS_again**: This status is employed when the task wants to be rescheduled for the next frame, even if it's a looping task. It's a way of explicitly indicating that the task needs to run again in the next frame.
 
-Visit the [_AsyncTaskanager_](https://docs.panda3d.org/1.10/python/reference/panda3d.core.AsyncTaskManager#panda3d.core.AsyncTaskManager "_AsyncTaskanager_") API reference for more info on creating and using tasks. The code below shows some of the basics of creating and using tasks.
+Visit the _[AsyncTaskanager](https://docs.panda3d.org/1.10/python/reference/panda3d.core.AsyncTaskManager#panda3d.core.AsyncTaskManager "_AsyncTaskanager_")_ API reference for more info on creating and using tasks. The code below shows some of the basics of creating and using tasks.
 
 ```
 from panda3d.core import AsyncTaskManager, PythonTask
