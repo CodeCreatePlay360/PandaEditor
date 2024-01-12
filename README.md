@@ -1,5 +1,7 @@
 <h1 align="center">PandaEditor</h1>
 
+<img align="center" src="images/main.png" alt="main">
+
 <h3> PandaEditor is an open-source level editor for the Panda3D game engine, it is designed to be easy to use and extend and provides end users with a convenient interface and tools to quickly prototype and create 2D or 3D scenes.</h3> 
 
 <h3 align="center">Features</h3>
@@ -88,7 +90,6 @@ python main.py -d AnimatedCharacter
 
 <h2 align="center"> <a href="https://github.com/CodeCreatePlay360/PandaEditor/tree/main?tab=readme-ov-file#-%EF%B8%8F-programmers-section-">Programmers Section</a> | <a href="">Artists Section</a> </h2>
 
-<h3 align="center"> ⚙️ Programmers section </h3>
 
 ### ▪️ Programming Basics
 - Starting the editor
@@ -101,8 +102,6 @@ python main.py -d AnimatedCharacter
 - Managing continuously updating tasks
 
 ***
-
-<h2 align="center"> Programming Basics </h2>
 
 ### 🔹Starting the editor
 
@@ -358,7 +357,7 @@ class DemonApp(Demon):
         Demon.__init__(self, *args, **kwargs)
         
         # create a task object
-        task = PythonTask(self.task_callback, "TaskName")
+        task = PythonTask(self.task, "TaskName")
 
         task.setSort(1)             # task with lower sort values are guaranteed
                                     # to be executed before tasks with higher
@@ -377,7 +376,7 @@ class DemonApp(Demon):
         # add it to the global task manager object
         AsyncTaskManager.getGlobalPtr().add(task)
 
-     def task_callback(self, task):
+     def task(self, task):
      	if some_condition:
      	    # return task status as done, 
      	    # this task will not be called again next frame

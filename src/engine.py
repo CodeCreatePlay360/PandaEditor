@@ -62,6 +62,9 @@ class Engine(object):
                                                            
         # reset everything, 
         self.__scene_cam.reset()
+        
+        # reset clock
+        self.reset_clock()
 
     def create_win(self):
         engine = p3d.GraphicsEngine.get_global_ptr()
@@ -233,6 +236,21 @@ class Engine(object):
         # send the event down into C++ lands.
         if self.__event_handler:
             self.__event_handler.dispatchEvent(event)
+        
+    def reset_clock(self):
+        # make sure the globalClock object is exactly in sync with 
+        # the TrueClock.
+
+        clock = p3d.ClockObject.getGlobalClock()  # this ClockObject keeps 
+                                                  # track of elapsed real and 
+                                                  # discrete time
+
+        true_clock = p3d.TrueClock.getGlobalPtr() 
+        
+        clock.setRealTime(true_clock.getShortTime())
+        clock.tick()
+        
+        p3d.AsyncTaskManager.getGlobalPtr().setClock(clock)
         
     def setup_input_handling(self):
         mouse_and_keyboard = p3d.MouseAndKeyboard(self.__win, 0, "MouseAndKeyboard_01")
