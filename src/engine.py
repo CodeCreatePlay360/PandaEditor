@@ -162,7 +162,7 @@ class Engine(object):
         self.__grid_np = ThreeAxisGrid()
         self.__grid_np.create(100, 10, 2)
         self.__grid_np.reparent_to(self.__render)
-        self.__render.clearLight(self.__grid_np)
+        self.__grid_np.set_light_off()
         
     def create_scene_cam(self):
         self.__scene_cam = SceneCamera(self)

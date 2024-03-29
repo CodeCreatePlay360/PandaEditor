@@ -86,7 +86,6 @@ class Selection:
         result = []
         for np in new_selections:
             if np == self.__render:
-                print("__see__")
                 continue
             
             top_np = self.get_top_np(np)
