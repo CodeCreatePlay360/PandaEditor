@@ -1,6 +1,6 @@
 import os
 import panda3d.core as p3d
-from gltf import load_model as gltf_loader
+from loader.gltf_loader import load_model as gltf_loader
 
 
 class ResourceManager(object):
@@ -47,13 +47,15 @@ class ResourceManager(object):
             else:
                 node = self.__loader.loadSync(p3d.Filename(path),
                                                 loader_options)
+        else:
+            print("not a file {0}".format(path))
 
         result = None if not node else node
         return result
     
     def load_texture(self,
                      path,
-                     alpha_path=None,
+                     cube_map=False,
                      loader_options=None,
                      readMipmaps = False,
                      minfilter = None, magfilter = None,
@@ -75,12 +77,20 @@ class ResourceManager(object):
             loader_options.setTextureFlags(flags)
         
         # ____________________________________________________________________
-        if alpha_path:
-            texture = p3d.TexturePool.loadTexture(path, alpha_path, 0, 0,
-                                              readMipmaps, loader_options)
-        else:
-            texture = p3d.TexturePool.loadTexture(path, 0, readMipmaps,
-                                              loader_options)
+        if not cube_map:
+            alpha_path = kwargs.pop("alpha_path")
+            if alpha_path:
+                texture = p3d.TexturePool.loadTexture(path, alpha_path, 0, 0,
+                                                  readMipmaps, loader_options)
+            else:
+                texture = p3d.TexturePool.loadTexture(path, 0, readMipmaps,
+                                                  loader_options)
+        
+        if cube_map:
+            texture_pattern = kwargs.pop("texture_pattern")
+            texture = p3d.TexturePool.loadCubeMap(texture_pattern,
+                                                  readMipmaps,
+                                                  loader_options)
         
         # ____________________________________________________________________
         if texture:

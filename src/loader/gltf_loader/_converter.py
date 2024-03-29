@@ -194,6 +194,7 @@ class Converter():
 
         for texid, gltf_tex in enumerate(gltf_data.get('textures', [])):
             self.load_texture(texid, gltf_tex, gltf_data)
+
         self.load_fallback_texture()
 
         for matid, gltf_mat in enumerate(gltf_data.get('materials', [])):

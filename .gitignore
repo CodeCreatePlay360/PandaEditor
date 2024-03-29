@@ -178,3 +178,14 @@ exclude/pypreprocessor/tests/deprecationtest.py
 exclude/pypreprocessor/tests/maintest.py
 exclude/pypreprocessor/tests/parsetarget.py
 exclude/pypreprocessor/tests/.isolated/directivetest.py
+exclude/testTask.py
+exclude/complexpbr/__init__.py
+exclude/complexpbr/brdf_lut_calculator.py
+exclude/complexpbr/ibl_f.frag
+exclude/complexpbr/ibl_v.vert
+exclude/complexpbr/mainx.py
+exclude/complexpbr/min_f.frag
+exclude/complexpbr/min_v.vert
+exclude/complexpbr/output_brdf_lut.png
+exclude/complexpbr/sample_output_brdf_lut.png
+exclude/complexpbr/simplepbr_license.txt

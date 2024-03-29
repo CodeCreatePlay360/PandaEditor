@@ -5,7 +5,7 @@ class Mouse(object):
     def __init__(self, engine):
         object.__init__(self)
 
-        self.__mouse_watcher_node = engine.mouse_watcher_node
+        self.__mouse_watcher_node = engine.mwn
         self.__win = engine.win
 
         # 
@@ -50,7 +50,7 @@ class Mouse(object):
  
         # print("dx: {0} dy: {1} x: {2} y: {3}".format(self.__dx, self.__dy,
                                                      # self.__x, self.__y))
-        
+
     @property
     def dx(self):
         return self.__dx
@@ -58,6 +58,10 @@ class Mouse(object):
     @property
     def dy(self):
         return self.__dy
+        
+    @property
+    def has_mouse(self):
+        return self.__mouse_watcher_node.hasMouse()
         
     @property
     def mouse_btns(self):

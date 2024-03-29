@@ -3,7 +3,7 @@ import panda3d.core as p3d
 from sceneCam import SceneCamera
 from axisGrid import ThreeAxisGrid
 from resourceManager import ResourceManager
-from scripts import Mouse
+from utils import Mouse
 
 
 class Engine(object):
@@ -162,6 +162,7 @@ class Engine(object):
         self.__grid_np = ThreeAxisGrid()
         self.__grid_np.create(100, 10, 2)
         self.__grid_np.reparent_to(self.__render)
+        self.__render.clearLight(self.__grid_np)
         
     def create_scene_cam(self):
         self.__scene_cam = SceneCamera(self)
@@ -355,9 +356,9 @@ class Engine(object):
     @property
     def mouse(self):
         return self.__mouse
-    
+        
     @property
-    def mouse_watcher_node(self):
+    def mwn(self):
         return self.__mouse_watcher_node
     
     @property
@@ -365,7 +366,7 @@ class Engine(object):
         return self.__render
         
     @property
-    def render2d(self):
+    def render2D(self):
         return self.__render2d
 
     @property

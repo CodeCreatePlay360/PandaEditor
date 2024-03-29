@@ -15,7 +15,7 @@ class Demon(object):
         # set this to true if using wx
         self.__wx = start_wx
                 
-        # initialize event handler for python side on evt handling
+        # initialize event handler for python side event handling
         self.__event_manager = EventManager()
                 
         # init the engine
@@ -31,6 +31,7 @@ class Demon(object):
         self.__editor = Systems(
                                demon=self,
                                event_system=self.__event_manager,
+                               engine=self.__engine,
                                resource_manager=self.__engine.resource_manager)
                                
         
@@ -39,8 +40,9 @@ class Demon(object):
         # self.__event_manager.trigger("OnExit")
         
         # other
-        self.__is_down = self.engine.mouse_watcher_node.is_button_down
+        self.__is_down = self.engine.mwn.is_button_down
         self.__shift = False
+        self.__default_lights = False
        
     '''
     def on_exit(self, *args, **kwargs):
@@ -48,20 +50,8 @@ class Demon(object):
     '''
     
     def setup_scene(self):
-        path = "src/resources/defaultScene.glb"
-        # path = "src/resources/environment.egg.pz"
-        self.scene = p3d.NodePath(self.engine.resource_manager.load_model(path))
-        self.scene.reparent_to(self.engine.render)
-          
-        # first remove all textures from this scene
-        for c in self.scene.findAllMatches("**/+GeomNode"):
-          gn = c.node()
-          for i in range(gn.getNumGeoms()):
-              state = gn.getGeomState(i)
-              state = state.removeAttrib(p3d.TextureAttrib.getClassType())
-              state = state.removeAttrib(p3d.MaterialAttrib.getClassType())
-              gn.setGeomState(i, state)
-        
+        pass
+         
     def create_default_lights(self):
         # ambient light
         ambientlight = p3d.AmbientLight("AmbientLight")
@@ -94,6 +84,8 @@ class Demon(object):
         self.__sunlight = sunlight_np
         self.orbit_sun()
         
+        self.__default_lights = True
+        
     def exit(self):
         pass
         
@@ -101,13 +93,15 @@ class Demon(object):
         self.__game.on_any_event(evt, args)
 
     def on_update(self):
-        self.__shift = self.__is_down(p3d.KeyboardButton.shift())
-        
-        if self.__is_down(p3d.KeyboardButton.asciiKey("a")):
-            self.orbit_sun(dx=-1) if self.__shift else self.orbit_sun(dx=1)
-        elif self.__is_down(p3d.KeyboardButton.asciiKey("d")):
-            self.orbit_sun(dy=-1) if self.__shift else self.orbit_sun(dy=1)
-                    
+        if self.__default_lights:
+            self.__shift = self.__is_down(p3d.KeyboardButton.shift())
+            
+            if self.__is_down(p3d.KeyboardButton.asciiKey("a")):
+                self.orbit_sun(dx=-1) if self.__shift else self.orbit_sun(dx=1)
+                
+            elif self.__is_down(p3d.KeyboardButton.asciiKey("d")):
+                self.orbit_sun(dy=-1) if self.__shift else self.orbit_sun(dy=1)
+
     def run(self):
         while not self.__engine.win.isClosed():
             self.__engine.update()

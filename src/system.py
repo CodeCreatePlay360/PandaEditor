@@ -13,11 +13,13 @@ class Systems(object):
     
     __demon = -1
     __event_system = -1
+    __engine = -1
     __resource_manager = -1
     
-    __args_list = (("demon", "_Editor__demon"),
-                   ("event_system", "_Editor__event_system"),
-                   ("resource_manager", "_Editor__resource_manager"))
+    __args_list = (("demon", "_Systems__demon"),
+                   ("event_system", "_Systems__event_system"),
+                   ("engine", "_Systems__engine"),
+                   ("resource_manager", "_Systems__resource_manager"))
     
     def __new__(cls, **kwargs):
         if not hasattr(cls, 'instance'):
@@ -25,7 +27,7 @@ class Systems(object):
             cls.update(**kwargs)
             # cls.__event_system = kwargs.pop("event_manager", None)
         else:
-            print("Tried to instantiate singelton class '{0}' twice.".format("A"))
+            print("Tried to instantiate singelton class '{0}' twice.".format("System"))
             
         return cls.instance
         
@@ -45,6 +47,10 @@ class Systems(object):
     @classproperty
     def event_manager(self):
         return Systems.__event_system
+    
+    @classproperty
+    def engine(self):
+        return Systems.__engine
     
     @classproperty
     def resource_manager(self):
