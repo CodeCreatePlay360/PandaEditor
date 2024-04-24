@@ -8,12 +8,12 @@ class Marquee(NodePath, SingleTask):
     
     """Class representing a 2D marquee drawn by the mouse."""
     
-    def __init__(self, name, cam, render2d, mwn, *args, **kwargs):
-        SingleTask.__init__(self, name, *args, **kwargs)
+    def __init__(self, name, **kwargs):
+        SingleTask.__init__(self, name, **kwargs)
         
-        self.cam = cam
-        self.render2d = render2d
-        self.mwn = mwn
+        self.cam = kwargs.pop("camera")
+        self.render2d = kwargs.pop("render2D")
+        self.mwn = kwargs.pop("mwn")
         color = kwargs.pop('Color', (1, 1, 1, 0.2))
 
         # Create a card maker

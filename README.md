@@ -105,7 +105,7 @@ python main.py -d AnimatedCharacter
 
 ### 🔹Starting the editor
 
-The recommended way to start PandaEditor is using the included _Demon framework_ which automatically handles setting up the Panda3D engine, python side event handing, level editor, editor UI and other useful systems for you. All example code, demos and sample projects are also built using the demon framework, so its in best interest to use demon instead of manually setting things up, to use the demon framework, create an instance of _Demon class_ (or subclass it directly) and invoke its "run" method.
+The recommended way to start PandaEditor is using the included _Demon framework_ which automatically handles setting up the Panda3D engine, python side event handing, level editor, editor UI and other useful systems for you. All example code, demos and sample projects are also built using the demon framework, so its in best interest to use demon instead of manually setting things up, to use the demon framework, create an instance of 'Demon' class (or subclass it directly) and invoke its "run" method.
 
 ```
 import sys, pathlib
@@ -128,7 +128,7 @@ app = DemonApp()
 app.run()
 ```
 
-_Demon class_ provides references to all the important systems.
+'Demon' class provides references to all the important systems.
 
 ```
 class DemonApp(Demon):
@@ -141,7 +141,7 @@ class DemonApp(Demon):
 ```
 
 ### 🔹Accessing systems
-_Engine_ class is the actual Panda3D engine, it sets up and starts the underlying Panda3D systems including graphics window, input handling, events etc.
+'Engine' class is the actual Panda3D engine, it sets up and starts the underlying Panda3D systems including graphics window, input handling, events etc.
 
 ```
 # -------------------------------------------------------------

@@ -1,13 +1,11 @@
 import math
 
 from panda3d.core import Mat4, Vec3, Point3, CollisionSphere, NodePath
-
-from editor.p3d import commonUtils
-from editor.p3d.geometry import Box, Line
-
-from editor.gizmos.axis import Axis
-from editor.gizmos.base import Base
-from editor.gizmos.constants import *
+from utils.geometry import Box, Line
+from utils.math import get_trs_matrices
+from .axis import Axis
+from .base import Base
+from .constants import *
 
 
 class Scale(Base):
@@ -15,15 +13,15 @@ class Scale(Base):
     def __init__(self, *args, **kwargs):
         Base.__init__(self, *args, **kwargs)
 
-        self.complementary = False
+        self.__complementary = False
 
         # Create x, y, z and center axes
-        self.axes.append(self.CreateBox(Vec3(1, 0, 0), RED))
-        self.axes.append(self.CreateBox(Vec3(0, 1, 0), GREEN))
-        self.axes.append(self.CreateBox(Vec3(0, 0, 1), BLUE))
-        self.axes.append(self.CreateCenter(Vec3(1, 1, 1), TEAL))
+        self.axes.append(self.create_box(Vec3(1, 0, 0), RED))
+        self.axes.append(self.create_box(Vec3(0, 1, 0), GREEN))
+        self.axes.append(self.create_box(Vec3(0, 0, 1), BLUE))
+        self.axes.append(self.create_center(Vec3(1, 1, 1), TEAL))
 
-    def CreateBox(self, vector, colour):
+    def create_box(self, vector, colour):
 
         # Create the geometry and collision
         line = NodePath(Line((0, 0, 0), vector))
@@ -33,36 +31,36 @@ class Scale(Base):
 
         # Create the axis, add the geometry and collision
         axis = Axis(self.name, vector, colour)
-        axis.AddGeometry(line, colour=GREY, highlight=False, sizeStyle=SCALE)
-        axis.AddGeometry(box, vector, colour)
-        axis.AddCollisionSolid(collSphere, vector)
+        axis.add_geometry(line, colour=GREY, highlight=False, sizeStyle=SCALE)
+        axis.add_geometry(box, vector, colour)
+        axis.add_collision_solid(collSphere, vector)
         axis.reparentTo(self)
 
         return axis
 
-    def CreateCenter(self, vector, colour):
+    def create_center(self, vector, colour):
 
         # Create the axis, add the geometry and collision
         axis = Axis(self.name, vector, colour, default=True)
-        axis.AddGeometry(NodePath(Box(0.1, 0.1, 0.1)), sizeStyle=NONE)
-        axis.AddCollisionSolid(CollisionSphere(0, 0.1), sizeStyle=NONE)
+        axis.add_geometry(NodePath(Box(0.1, 0.1, 0.1)), sizeStyle=NONE)
+        axis.add_collision_solid(CollisionSphere(0, 0.1), sizeStyle=NONE)
         axis.reparentTo(self)
 
         return axis
 
-    def Transform(self):
+    def transform(self):
 
         # Get the distance the mouse has moved during the drag operation -
         # compensate for how big the gizmo is on the screen
-        axis = self.GetSelectedAxis()
-        axisPoint = self.GetAxisPoint(axis)
-        distance = (axisPoint - self.startAxisPoint).length() / self.getScale()[0]
+        axis = self.get_selected_axis()
+        axisPoint = self.get_axis_point(axis)
+        distance = (axisPoint - self.start_axis_point).length() / self.getScale()[0]
 
         # Using length() will give us a positive number, which doesn't work if
         # we're trying to scale down the object. Get the sign for the distance
         # from the dot of the axis and the mouse direction
         mousePoint = self.getRelativePoint(self.rootNp, axisPoint) - self.getRelativePoint(self.rootNp,
-                                                                                           self.startAxisPoint)
+                                                                                           self.start_axis_point)
         direction = axis.vector.dot(mousePoint)
         sign = math.copysign(1, direction)
         distance = distance * sign
@@ -70,13 +68,13 @@ class Scale(Base):
         # Transform the gizmo
         if axis.vector == Vec3(1, 1, 1):
             for otherAxis in self.axes:
-                otherAxis.SetSize(distance + self.size)
+                otherAxis.set_size(distance + self.size)
         else:
-            axis.SetSize(distance + self.size)
+            axis.set_size(distance + self.size)
 
         # Use the "complementary" vector if in complementary mode
         vector = axis.vector
-        if self.complementary:
+        if self.__complementary:
             vector = Vec3(1, 1, 1) - axis.vector
 
         # Create a scale matrix from the resulting vector
@@ -84,21 +82,21 @@ class Scale(Base):
         newScaleMat = Mat4().scaleMat(scaleVec)
 
         # Transform attached node paths
-        for i, np in enumerate(self.attachedNps):
+        for i, np in enumerate(self.attached_nps):
 
             # Perform transforms in local or world space
             if self.local:
-                np.setMat(newScaleMat * self.initNpXforms[i].getMat())
+                np.setMat(newScaleMat * self.init_np_xforms[i].getMat())
             else:
-                transMat, rotMat, scaleMat = commonUtils.GetTrsMatrices(self.initNpXforms[i])
+                transMat, rotMat, scaleMat = get_trs_matrices(self.initNpXforms[i])
                 np.setMat(scaleMat * rotMat * newScaleMat * transMat)
 
-    def OnNodeMouse1Down(self, planar, collEntry):
+    def on_node_mouse1_down(self, planar, collEntry):
 
         # Cheating a bit here. We just need the planar flag taken from the
         # user ctrl-clicking the gizmo, none of the maths that come with it.
         # We'll use the complementary during the transform operation.
-        self.complementary = planar
+        self.__complementary = planar
         planar = False
 
-        Base.OnNodeMouse1Down(self, planar, collEntry)
+        Base.on_node_mouse1_down(self, planar, collEntry)

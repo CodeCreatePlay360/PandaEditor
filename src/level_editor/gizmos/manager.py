@@ -1,85 +1,98 @@
-from pandac.PandaModules import DirectionalLight
-from editor.utils import Object
-from editor.selection.mousePicker import MousePicker
+from panda3d.core import DirectionalLight
+from utils.mousePicker import MousePicker
 
 
-class Manager(Object):
-    def __init__(self, *args, **kwargs):
-        Object.__init__(self, *args, **kwargs)
+class Manager(object):
+    def __init__(self, **kwargs):
+        object.__init__(self)
 
-        self._gizmos = {}
+        self.__demon = kwargs.pop("demon")
+        self.__cam = kwargs.pop("camera")
+        self.__render = kwargs.pop("render")
+
+        self.__gizmos = {}
         self.local = False
-        self._activeGizmo = None
+        self.__active_gizmo = None
 
         # Create gizmo manager mouse picker
-        self.picker = MousePicker('GizmoMgrMousePicker', *args, **kwargs)
-        self.picker.Start()
+        self.__picker = MousePicker('GizmoMgrMousePicker',
+                                    demon=self.__demon,
+                                    camera=self.__cam,
+                                    render=self.__render,
+                                    mwn=kwargs.pop("mwn"),
+                                    evt_mgr=self.__demon.event_manager)
+        self.__picker.start()
 
         # Create a directional light and attach it to the camera so the gizmos
         # don't look flat
         dl = DirectionalLight('GizmoManagerSunLight')
-        self.dlNp = self.camera.attachNewNode(dl)
+        self.__directional_light = self.__cam.attachNewNode(dl)
 
-    def AddGizmo(self, gizmo):
+    def add_gizmo(self, gizmo):
         """Add a gizmo to be managed by the gizmo manager."""
-        gizmo.rootNp = self.rootNp
-        self._gizmos[gizmo.getName()] = gizmo
+        gizmo.rootNp = self.__render
+        self.__gizmos[gizmo.getName()] = gizmo
 
         for axis in gizmo.axes:
-            axis.setLight(self.dlNp)
+            axis.setLight(self.__directional_light)
 
-    def GetGizmo(self, name):
+    def get_gizmo(self, name):
         """
         Find and return a gizmo by name, return None if no gizmo with the
         specified name exists.
         """
-        if name in self._gizmos:
-            return self._gizmos[name]
+        if name in self.__gizmos:
+            return self.__gizmos[name]
 
         return None
 
-    def GetActiveGizmo(self):
+    def get_active_gizmo(self):
         """Return the active gizmo."""
-        return self._activeGizmo
+        return self.__active_gizmo
 
-    def SetActiveGizmo(self, name):
+    def set_active_gizmo(self, name):
         """
         Stops the currently active gizmo then finds the specified gizmo by
         name and starts it.
         """
         # Stop the active gizmo
-        if self._activeGizmo is not None:
-            self._activeGizmo.Stop()
+        if self.__active_gizmo is not None:
+            self.__active_gizmo.stop()
 
         # Get the gizmo by name and start it if it is a valid gizmo
-        self._activeGizmo = self.GetGizmo(name)
-        if self._activeGizmo is not None:
-            self._activeGizmo.Start()
 
-    def RefreshActiveGizmo(self):
+        self.__active_gizmo = self.get_gizmo(name)
+        if self.__active_gizmo is not None:
+            self.__active_gizmo.start()
+
+    def refresh_active_gizmo(self):
         """Refresh the active gizmo if there is one."""
-        if self._activeGizmo is not None:
-            self._activeGizmo.Refresh()
+        if self.__active_gizmo is not None:
+            self.__active_gizmo.refresh()
 
-    def SetLocal(self, val):
+    def set_local(self, val):
         self.local = val
-        for gizmo in self._gizmos.values():
+        for gizmo in self.__gizmos.values():
             gizmo.local = val
-        self.RefreshActiveGizmo()
+        self.refresh_active_gizmo()
 
-    def SetSize(self, factor):
+    def set_size(self, factor):
         """Resize the gizmo by a factor."""
-        for gizmo in self._gizmos.values():
-            gizmo.SetSize(factor)
+        for gizmo in self.__gizmos.values():
+            gizmo.set_size(factor)
 
-    def AttachNodePaths(self, nps):
+    def attach_nodepaths(self, nps=None):
         """Attach node paths to be transformed by the gizmos."""
-        for gizmo in self._gizmos.values():
-            gizmo.AttachNodePaths(nps)
 
-    def IsDragging(self):
+        if nps is None:
+            nps = []
+
+        for gizmo in self.__gizmos.values():
+            gizmo.attach_nodepaths(nps)
+
+    def is_dragging(self):
         """
         Return True if the active gizmo is in the middle of a dragging
         operation, False otherwise.
         """
-        return self._activeGizmo is not None and self._activeGizmo.dragging
+        return self.__active_gizmo is not None and self.__active_gizmo.dragging

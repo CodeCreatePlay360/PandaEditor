@@ -1,7 +1,6 @@
 from panda3d.core import Point3, Vec3, Plane, NodePath
-from editor.utils import SingleTask
-from editor.p3d import commonUtils as utils
-from editor.gizmos.constants import *
+from .constants import *
+from utils import SingleTask, math
 
 
 class Base(NodePath, SingleTask):
@@ -10,26 +9,34 @@ class Base(NodePath, SingleTask):
         NodePath.__init__(self, name)
         SingleTask.__init__(self, name, *args, **kwargs)
 
-        self.attachedNps = []
-        self.dragging = False
-        self.local = True
-        self.planar = False
+        self.demon = kwargs.pop("demon")
+        self.render = kwargs.pop("render")
+        self.camera = kwargs.pop("camera")
+
+        self.attached_nps = []
+        self.axes = []
         self.size = 1
 
-        self.axes = []
+        self.last_axis_point = None
+        self.start_axis_point = None
+        self.init_np_xforms = None
+
+        self.dragging = False
+        self.planar = False
+        self.local = False
 
         # Set this node up to be drawn over everything else
         self.setBin('fixed', 40)
         self.setDepthTest(False)
         self.setDepthWrite(False)
-        
+
     def on_update(self):
         """
         Update method called every frame. Run the transform method if the user
         is dragging, and keep it the same size on the screen.
         """
         if self.dragging:
-            self.Transform()
+            self.transform()
 
         scale = (self.getPos() - self.camera.getPos()).length() / 6
         self.setScale(scale)
@@ -39,50 +46,55 @@ class Base(NodePath, SingleTask):
         Starts the gizmo adding the task to the task manager, refreshing it
         and deselecting all axes except the default one.
         """
-        self.Refresh()
+        self.refresh()
 
         # Select the default axis, deselect all others
         for axis in self.axes:
             if axis.default:
-                axis.Select()
+                axis.select()
             else:
-                axis.Deselect()
+                axis.deselect()
 
-        self.AcceptEvents()
+        self.accept_events()
 
     def on_stop(self):
         """
-        Stops the gizmo by hiding it and removing it's update task from the
+        Stops the gizmo by hiding it and removing its update task from the
         task manager.
         """
         # Hide the gizmo and ignore all events
         self.detachNode()
-        self.ignoreAll()
 
-    def AcceptEvents(self):
+        self.demon.event_manager.remove(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
+        self.demon.event_manager.remove(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
+        self.demon.event_manager.remove(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
+        self.demon.event_manager.remove(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
+
+    def accept_events(self):
         """Bind all events for the gizmo."""
-        self.accept('mouse1-up', self.OnMouseUp)
-        self.accept('mouse2-up', self.OnMouseUp)
-        self.accept('mouse2', self.OnMouse2Down)
-        self.accept(''.join([self.name, '-mouse1']), self.OnNodeMouse1Down, [False])
-        self.accept(''.join([self.name, '-control-mouse1']), self.OnNodeMouse1Down, [True])
-        self.accept(''.join([self.name, '-mouse-over']), self.OnNodeMouseOver)
-        self.accept(''.join([self.name, '-mouse-leave']), self.OnNodeMouseLeave)
+        self.demon.accept('mouse1-up', self.on_mouse_up)
+        self.demon.accept('mouse2-up', self.on_mouse_up)
+        self.demon.accept('mouse2', self.on_mouse2_down)
 
-    def Transform(self):
+        self.demon.event_manager.register(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
+        self.demon.event_manager.register(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
+        self.demon.event_manager.register(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
+        self.demon.event_manager.register(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
+
+    def transform(self):
         """
         Override this method to provide the gizmo with transform behavior.
         """
         pass
 
-    def AttachNodePaths(self, nps):
+    def attach_nodepaths(self, nps):
         """
         Attach node paths to the gizmo. This won't affect the node's position
         in the scene graph, but will transform the objects with the gizmo.
         """
-        self.attachedNps = nps
+        self.attached_nps = nps
 
-    def SetSize(self, factor):
+    def set_size(self, factor):
         """
         Used to scale the gizmo by a factor, usually by 2 (scale up) and 0.5
         (scale down). Set both the new size for the gizmo also call set size
@@ -93,49 +105,59 @@ class Base(NodePath, SingleTask):
         # Each axis may have different rules on how to appear when scaled, so
         # call set size on each of them
         for axis in self.axes:
-            axis.SetSize(self.size)
+            axis.set_size(self.size)
 
-    def GetAxis(self, collEntry):
+    def get_axis(self, collEntry):
         """
         Iterate over all axes of the gizmo, return the axis that owns the
         solid responsible for the collision.
         """
         for axis in self.axes:
-            if collEntry.getIntoNode() in axis.collNodes:
+            if collEntry.getIntoNode() in axis.coll_nodes:
                 return axis
 
         # No match found, return None
         return None
 
-    def GetSelectedAxis(self):
+    def get_selected_axis(self):
         """Return the selected axis of the gizmo."""
         for axis in self.axes:
             if axis.selected:
                 return axis
 
-    def ResetAxes(self):
+    def reset_axes(self):
         """
         Reset the default colours and flag as unselected for all axes in the 
         gizmo.
         """
         for axis in self.axes:
-            axis.Deselect()
+            axis.deselect()
 
-    def Refresh(self):
+    def refresh(self):
         """
         If the gizmo has node paths attached to it then move the gizmo into
-        position, set its orientation and show it. Otherwise hide the gizmo.
+        position, set its orientation and show it. Otherwise, hide the gizmo.
         """
-        if self.attachedNps:
+
+        if self.attached_nps:
             # Show the gizmo
             self.reparentTo(self.rootNp)
 
             # Move the gizmo into position
-            self.setPos(self.attachedNps[0].getPos(self.rootNp))
+            if len(self.attached_nps) > 1:
+                mean_pos = Vec3()
+                for i in range(len(self.attached_nps)):
+                    mean_pos += self.attached_nps[i].getPos(self.rootNp)
+                mean_pos /= len(self.attached_nps)
+
+                self.setPos(mean_pos)
+
+            else:
+                self.setPos(self.attached_nps[0].getPos(self.rootNp))
 
             # Only set the orientation of the gizmo if in local mode
             if self.local:
-                self.setHpr(self.attachedNps[0].getHpr(self.rootNp))
+                self.setHpr(self.attached_nps[0].getHpr(self.rootNp))
             else:
                 self.setHpr(self.rootNp.getHpr())
 
@@ -144,55 +166,55 @@ class Base(NodePath, SingleTask):
             # Hide the gizmo
             self.detachNode()
 
-    def OnMouseUp(self):
+    def on_mouse_up(self):
         """
         Set the dragging flag to false and reset the size of the gizmo on the
         mouse button is released.
         """
         self.dragging = False
-        self.SetSize(1)
+        self.set_size(1)
 
-    def OnNodeMouseLeave(self, collEntry):
+    def on_node_mouse_leave(self):
         """
-        Called when the mouse leaves the the collision object. Remove the
+        Called when the mouse leaves the collision object. Remove the
         highlight from any axes which aren't selected.
         """
         for axis in self.axes:
             if not axis.selected:
-                axis.Unhighlight()
+                axis.unhighlight()
 
-    def OnNodeMouse1Down(self, planar, collEntry):
+    def on_node_mouse1_down(self, planar, collEntry):
         self.planar = planar
         self.dragging = True
 
         # Store the attached node path's transforms.
-        self.initNpXforms = [np.getTransform() for np in self.attachedNps]
+        self.init_np_xforms = [np.getTransform() for np in self.attached_nps]
 
         # Reset colours and deselect all axes, then get the one which the
         # mouse is over
-        self.ResetAxes()
-        axis = self.GetAxis(collEntry)
+        self.reset_axes()
+        axis = self.get_axis(collEntry)
         if axis is not None:
             # Select it
-            axis.Select()
+            axis.select()
 
             # Get the initial point where the mouse clicked the axis
-            self.startAxisPoint = self.GetAxisPoint(axis)
-            self.lastAxisPoint = self.GetAxisPoint(axis)
+            self.start_axis_point = self.get_axis_point(axis)
+            self.last_axis_point = self.get_axis_point(axis)
 
-    def OnMouse2Down(self):
+    def on_mouse2_down(self):
         """
         Continue transform operation if user is holding mouse2 but not over
         the gizmo.
         """
-        axis = self.GetSelectedAxis()
-        if axis is not None and self.attachedNps and self.mouseWatcherNode.hasMouse():
+        axis = self.get_selected_axis()
+        if axis is not None and self.__attached_nps and self.mouseWatcherNode.hasMouse():
             self.dragging = True
-            self.initNpXforms = [np.getTransform() for np in self.attachedNps]
-            self.startAxisPoint = self.GetAxisPoint(axis)
-            self.lastAxisPoint = self.GetAxisPoint(axis)
+            self.init_np_xforms = [np.getTransform() for np in self.__attached_nps]
+            self.start_axis_point = self.get_axis_point(axis)
+            self.last_axis_point = self.get_axis_point(axis)
 
-    def OnNodeMouseOver(self, collEntry):
+    def on_node_mouse_over(self, collEntry):
         """Highlights the different axes as the mouse passes over them."""
         # Don't change highlighting if in dragging mode
         if self.dragging:
@@ -201,25 +223,25 @@ class Base(NodePath, SingleTask):
         # Remove highlight from all unselected axes
         for axis in self.axes:
             if not axis.selected:
-                axis.Unhighlight()
+                axis.unhighlight()
 
         # Highlight the axis which the mouse is over
-        axis = self.GetAxis(collEntry)
+        axis = self.get_axis(collEntry)
         if axis is not None:
-            axis.Highlight()
+            axis.highlight()
 
-    def GetMousePlaneCollisionPoint(self, pos, nrml):
+    def get_mouse_plane_collision_point(self, pos, nrml):
         """
         Return the collision point of a ray fired through the mouse and a
         plane with the specified normal.
         """
         # Fire a ray from the camera through the mouse 
-        mp = self.mouseWatcherNode.getMouse()
+        mp = self.demon.engine.mwn.getMouse()
         p1 = Point3()
         p2 = Point3()
-        self.camera.node().getLens().extrude(mp, p1, p2)
-        p1 = self.rootNp.getRelativePoint(self.camera, p1)
-        p2 = self.rootNp.getRelativePoint(self.camera, p2)
+        self.demon.engine.cam.node().getLens().extrude(mp, p1, p2)
+        p1 = self.rootNp.getRelativePoint(self.demon.engine.cam, p1)
+        p2 = self.rootNp.getRelativePoint(self.demon.engine.cam, p2)
 
         # Get the point of intersection with a plane with the normal
         # specified
@@ -228,7 +250,7 @@ class Base(NodePath, SingleTask):
 
         return p
 
-    def GetAxisPoint(self, axis):
+    def get_axis_point(self, axis):
         """
         Return the point of intersection for the mouse picker ray and the axis
         in the gizmo root node space.
@@ -244,7 +266,7 @@ class Base(NodePath, SingleTask):
         # planar mode use the axis vector as the plane normal, otherwise
         # get the normal of a plane along the selected axis
         if self.planar or axis.planar:
-            return self.GetMousePlaneCollisionPoint(self.getPos(), axisVector)
+            return self.get_mouse_plane_collision_point(self.getPos(), axisVector)
         else:
 
             # Get the cross of the camera vector and the axis vector - a
@@ -254,6 +276,6 @@ class Base(NodePath, SingleTask):
 
             # Cross this back with the axis to get a plane's normal
             planeNormal = camAxisCross.cross(axisVector)
-            p = self.GetMousePlaneCollisionPoint(self.getPos(), planeNormal)
-            return utils.ClosestPointToLine(p, self.getPos(), self.getPos() +
-                                            axisVector)
+            p = self.get_mouse_plane_collision_point(self.getPos(), planeNormal)
+            return math.closest_point_to_line(p, self.getPos(), self.getPos() +
+                                              axisVector)

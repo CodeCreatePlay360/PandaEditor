@@ -61,10 +61,10 @@ class EventManager:
         """Registers one or more handlers to a specified event.
         This method may as well be used as a decorator for the handler."""
 
-        def _on_wrapper(*handlers: T.Callable) -> T.Callable:
+        def _on_wrapper(*handlers_: T.Callable) -> T.Callable:
             """wrapper for on decorator"""
-            self._events[event].extend(handlers)
-            return handlers[0]
+            self._events[event].extend(handlers_)
+            return handlers_[0]
 
         if handlers:
             return _on_wrapper(*handlers)
@@ -101,7 +101,7 @@ class EventManager:
         removes them when the event is first triggered.
         This method may as well be used as a decorator for the handler."""
 
-        def _once_wrapper(*handlers: T.Callable) -> T.Callable:
+        def _once_wrapper(*handlers_: T.Callable) -> T.Callable:
             """Wrapper for 'once' decorator"""
 
             def _wrapper(*args: T.Any, **kw: T.Any) -> None:
@@ -109,7 +109,7 @@ class EventManager:
                 the handlers"""
 
                 self.off(event, _wrapper)
-                for handler in handlers:
+                for handler in handlers_:
                     handler(*args, **kw)
 
             return _wrapper
