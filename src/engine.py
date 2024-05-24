@@ -30,7 +30,7 @@ class Engine(object):
 
         # display region, cam, mouse_watcher_node for 2D rendering
         self.__dr2d = None
-        self.__mouse_watcher_node_2d = None
+        # self.__mouse_watcher_node_2d = None
         self.__render2d = None  # scene graph for 2D rendering
         self.__aspect2d = None  # aspect corrected 2D scene graph
         self.__cam2d = None
@@ -47,7 +47,7 @@ class Engine(object):
         # initialize the engine and various systems
         self.create_win()
         self.setup_input_handling()
-        self.__mouse = Mouse(self)
+        self.__mouse = Mouse(self.win, self.mwn)
         self.create_3d_render()
         self.create_2d_render()
 
@@ -59,13 +59,13 @@ class Engine(object):
         # scene camera needs some references not available at time of its creation,
         # so we set them now.
         self.__scene_cam.initialize(self)
-
+        
         # reset everything, 
         self.__scene_cam.reset()
-
+        
         # reset clock
         self.reset_clock()
-
+        
     def create_win(self):
         engine = p3d.GraphicsEngine.get_global_ptr()
         pipe = p3d.GraphicsPipeSelection.get_global_ptr().make_default_pipe()
@@ -115,9 +115,7 @@ class Engine(object):
 
         # create a new scene camera
         self.__scene_cam = SceneCamera()
-
         self.__scene_cam.reparent_to(self.__render)
-        self.__scene_cam.set_pos(0, -35, 0)
 
         # and set it to display region for 3d rendering 
         self.__dr.set_camera(self.__scene_cam)
@@ -164,19 +162,12 @@ class Engine(object):
         self.__grid_np.reparent_to(self.__render)
         self.__grid_np.set_light_off()
 
-    def create_scene_cam(self):
-        self.__scene_cam = SceneCamera(self)
-
-        self.__scene_cam.reparent_to(self.__render)
-        self.__scene_cam.set_pos(0, -35, 0)
-
     def exit(self):
         self.__win.setActive(False)
         self.__engine.remove_window(self.__win)
 
     def on_evt_size(self):
         props = self.__win.getProperties()
-
         aspect = props.getXSize() / props.getYSize()
 
         if aspect == 0:
@@ -335,6 +326,9 @@ class Engine(object):
 
     @property
     def aspect_ratio(self):
+        props = self.__win.getProperties()
+        aspect = props.getXSize() / props.getYSize()
+        self.__aspect_ratio = aspect
         return self.__aspect_ratio
 
     @property
@@ -360,6 +354,10 @@ class Engine(object):
     @property
     def mwn(self):
         return self.__mouse_watcher_node
+
+    @property
+    def mouse_watchers(self):
+        return self.__mouse_watchers
 
     @property
     def render(self):

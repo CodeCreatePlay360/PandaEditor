@@ -1,6 +1,8 @@
 import panda3d.core as pm
 
 from direct.directtools.DirectUtil import ROUND_TO
+from system import Systems
+
 from utils.geometry import Cone, Square, Line
 from utils.math import snap_point, scale_point
 from .axis import Axis
@@ -157,8 +159,8 @@ class Translation(Base):
 
     def accept_events(self):
         Base.accept_events(self)
-        self.demon.accept('x', self.set_snap, [True])
-        self.demon.accept('x-up', self.set_snap, [False])
+        Systems.demon.accept('x', self.set_snap, [True])
+        Systems.demon.accept('x-up', self.set_snap, [False])
 
     def set_snap(self, val):
         self.snap = val

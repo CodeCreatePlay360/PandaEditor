@@ -6,21 +6,18 @@ class Manager(object):
     def __init__(self, **kwargs):
         object.__init__(self)
 
-        self.__demon = kwargs.pop("demon")
         self.__cam = kwargs.pop("camera")
         self.__render = kwargs.pop("render")
 
         self.__gizmos = {}
-        self.local = False
+        self.__local = False
         self.__active_gizmo = None
 
         # Create gizmo manager mouse picker
         self.__picker = MousePicker('GizmoMgrMousePicker',
-                                    demon=self.__demon,
                                     camera=self.__cam,
                                     render=self.__render,
-                                    mwn=kwargs.pop("mwn"),
-                                    evt_mgr=self.__demon.event_manager)
+                                    mwn=kwargs.pop("mwn"))
         self.__picker.start()
 
         # Create a directional light and attach it to the camera so the gizmos
@@ -71,7 +68,7 @@ class Manager(object):
             self.__active_gizmo.refresh()
 
     def set_local(self, val):
-        self.local = val
+        self.__local = val
         for gizmo in self.__gizmos.values():
             gizmo.local = val
         self.refresh_active_gizmo()
@@ -96,3 +93,7 @@ class Manager(object):
         operation, False otherwise.
         """
         return self.__active_gizmo is not None and self.__active_gizmo.dragging
+    
+    @property
+    def gizmos(self):
+        return self.__gizmos

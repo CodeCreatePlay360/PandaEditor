@@ -1,31 +1,29 @@
 from panda3d.core import GeomNode, CollisionNode
 from src.utils import Marquee, MousePicker
+from system import Systems
 
 
 class Selection:
-    def __init__(self, demon):
-
-        self.__demon = demon
-
+    def __init__(self, **kwargs):
         self.__append = False
         self.selected_nps = []
 
         # Create a marquee
         self.marquee = Marquee(
             name='Marquee',
-            camera=demon.engine.cam,
-            render2D=demon.engine.render2D,
-            mwn=demon.engine.mwn)
+            camera=Systems.cam,
+            render2D=Systems.render2d,
+            mwn=Systems.mwn)
 
         # Create node picker - set its collision mask to hit both geom nodes and collision nodes
-        bit_mask = GeomNode.getDefaultCollideMask() | CollisionNode.getDefaultCollideMask()
+        bit_mask = GeomNode.getDefaultCollideMask() | \
+        CollisionNode.getDefaultCollideMask()
+        
         self.__picker = MousePicker(name='Picker',
-                                    demon=demon,
-                                    camera=demon.engine.cam,
-                                    render=demon.engine.render,
-                                    mwn=demon.engine.mwn,
-                                    evt_mgr=demon.event_manager,
-                                    fromCollideMask=bit_mask)
+                                    camera=Systems.cam,
+                                    render=Systems.render,
+                                    mwn=Systems.mwn,
+                                    from_collide_mask=bit_mask)
 
     def set_selected(self, nps, append=False):
         if not append:
@@ -46,7 +44,7 @@ class Selection:
         """
         Start the marquee and put the tool into append mode if specified.
         """
-        if self.__demon.engine.mwn.hasMouse():
+        if Systems.mwn.hasMouse():
             self.__append = append
             self.marquee.start()
 
@@ -66,7 +64,7 @@ class Selection:
         else:
             self.deselect_all()
 
-        for pick_np in self.__demon.engine.render.findAllMatches('**'):
+        for pick_np in Systems.render.findAllMatches('**'):
             if pick_np is not None:
                 if self.marquee.is_nodepath_inside(pick_np):  # and pick_np.hasNetPythonTag(TAG_GAME_OBJECT):
                     np = pick_np
@@ -81,7 +79,7 @@ class Selection:
 
         result = []
         for np in new_selections:
-            if np == self.__demon.engine.render:
+            if np == Systems.render:
                 continue
 
             result.append(np)
@@ -102,9 +100,9 @@ class Selection:
 
     def get_top_np(self, np):
         top_np = np.get_parent()
-        if top_np == self.__demon.engine.render:
+        if top_np == Systems.render:
             return np
 
-        if top_np != self.__demon.engine.render and top_np is not None:
+        if top_np != Systems.render and top_np is not None:
             return self.get_top_np(top_np)
         return top_np

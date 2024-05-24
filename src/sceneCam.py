@@ -14,7 +14,7 @@ class SceneCamera(NodePath):
             NodePath.__init__(self, 'CamTarget')
             self.defaultPos = pos
 
-    def __init__(self, speed=0.5, default_pos=(300, 150 + 300, 100 + 300)):
+    def __init__(self, speed=0.5, default_pos=(300, 400, 350)):
         self.__axes = None
 
         # 

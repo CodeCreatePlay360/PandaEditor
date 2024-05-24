@@ -1,6 +1,7 @@
 from panda3d.core import Point3, Vec3, Plane, NodePath
 from .constants import *
 from utils import SingleTask, math
+from system import Systems
 
 
 class Base(NodePath, SingleTask):
@@ -8,8 +9,8 @@ class Base(NodePath, SingleTask):
     def __init__(self, name, *args, **kwargs):
         NodePath.__init__(self, name)
         SingleTask.__init__(self, name, *args, **kwargs)
-
-        self.demon = kwargs.pop("demon")
+        
+        self.mwn = kwargs.pop("mwn")
         self.render = kwargs.pop("render")
         self.camera = kwargs.pop("camera")
 
@@ -65,21 +66,21 @@ class Base(NodePath, SingleTask):
         # Hide the gizmo and ignore all events
         self.detachNode()
 
-        self.demon.event_manager.remove(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
-        self.demon.event_manager.remove(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
-        self.demon.event_manager.remove(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
-        self.demon.event_manager.remove(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
+        Systems.demon.event_manager.remove(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
+        Systems.demon.event_manager.remove(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
+        Systems.demon.event_manager.remove(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
+        Systems.demon.event_manager.remove(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
 
     def accept_events(self):
         """Bind all events for the gizmo."""
-        self.demon.accept('mouse1-up', self.on_mouse_up)
-        self.demon.accept('mouse2-up', self.on_mouse_up)
-        self.demon.accept('mouse2', self.on_mouse2_down)
+        Systems.demon.accept('mouse1-up', self.on_mouse_up)
+        Systems.demon.accept('mouse2-up', self.on_mouse_up)
+        Systems.demon.accept('mouse2', self.on_mouse2_down)
 
-        self.demon.event_manager.register(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
-        self.demon.event_manager.register(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
-        self.demon.event_manager.register(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
-        self.demon.event_manager.register(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
+        Systems.demon.event_manager.register(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
+        Systems.demon.event_manager.register(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
+        Systems.demon.event_manager.register(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
+        Systems.demon.event_manager.register(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
 
     def transform(self):
         """
@@ -236,12 +237,12 @@ class Base(NodePath, SingleTask):
         plane with the specified normal.
         """
         # Fire a ray from the camera through the mouse 
-        mp = self.demon.engine.mwn.getMouse()
+        mp = self.mwn.getMouse()
         p1 = Point3()
         p2 = Point3()
-        self.demon.engine.cam.node().getLens().extrude(mp, p1, p2)
-        p1 = self.rootNp.getRelativePoint(self.demon.engine.cam, p1)
-        p2 = self.rootNp.getRelativePoint(self.demon.engine.cam, p2)
+        self.camera.node().getLens().extrude(mp, p1, p2)
+        p1 = self.rootNp.getRelativePoint(self.camera, p1)
+        p2 = self.rootNp.getRelativePoint(self.camera, p2)
 
         # Get the point of intersection with a plane with the normal
         # specified

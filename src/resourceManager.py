@@ -29,23 +29,27 @@ class ResourceManager(object):
         then you can also send a list of animations in kwargs, all animations
         should be in same directory as character.
         """
-
+        
+        # TODO - convert path to OS-independent
+        
         node = None
-        loader_options = loader_options if loader_options else p3d.LoaderOptions()
-        loader_options.setFlags(loader_options.getFlags() & ~p3d.LoaderOptions.LFReportErrors)
-
-        if use_cached:
-            loader_options.setFlags(loader_options.getFlags() & ~p3d.LoaderOptions.LFNoCache)
-
-        if instanced:
-            loader_options.setFlags(loader_options.getFlags() | p3d.LoaderOptions.LFAllowInstance)
 
         if os.path.isfile(path):
             ext = os.path.splitext(path)[-1]
             if ext == ".gltf" or ext == ".glb":
                 node = gltf_loader(path, *args, **kwargs)
                 node = p3d.NodePath(node)
+
             else:
+                loader_options = loader_options if loader_options else p3d.LoaderOptions()
+                loader_options.setFlags(loader_options.getFlags() & ~p3d.LoaderOptions.LFReportErrors)
+
+                if use_cached:
+                    loader_options.setFlags(loader_options.getFlags() & ~p3d.LoaderOptions.LFNoCache)
+
+                if instanced:
+                    loader_options.setFlags(loader_options.getFlags() | p3d.LoaderOptions.LFAllowInstance)
+                
                 node = self.__loader.loadSync(p3d.Filename(path), loader_options)
                 node = p3d.NodePath(node)
         else:
@@ -63,6 +67,10 @@ class ResourceManager(object):
                      anisotropicDegree=None,
                      multiview=None,
                      *args, **kwargs):
+                         
+        if not os.path.isfile(path):
+            print("Unable to load texture, path is not a file {0}".format(path))
+            return
 
         loader_options = loader_options if loader_options else p3d.LoaderOptions()
 
@@ -80,7 +88,7 @@ class ResourceManager(object):
         # ____________________________________________________________________
         texture = None
         if not cube_map:
-            alpha_path = kwargs.pop("alpha_path")
+            alpha_path = kwargs.pop("alpha_path", None)
             if alpha_path:
                 texture = p3d.TexturePool.loadTexture(path, alpha_path, 0, 0,
                                                       readMipmaps, loader_options)

@@ -10,16 +10,39 @@ class Systems(object):
 
         def __get__(self, *a):
             return self.f.__get__(*a)()
+        
+    demon = None
+    win = None,
+    mwn = None,
+                                
+    dr = None,
+    render = None,
+    cam = None,
+                                
+    dr2d = None,
+    render2d = None,
+    aspect2d = None,
+    cam2d = None,
+                                
+    evt_mgr = None,
+    resources = None,
 
-    __demon = -1
-    __event_system = -1
-    __engine = -1
-    __resource_manager = -1
-
-    __args_list = (("demon", "_Systems__demon"),
-                   ("event_system", "_Systems__event_system"),
-                   ("engine", "_Systems__engine"),
-                   ("resource_manager", "_Systems__resource_manager"))
+    __args_list = (("demon", "demon"),
+                   
+                   ("win", "win"),
+                   ("mwn", "mwn"),
+                   
+                   ("dr", "dr"),
+                   ("render", "render"),
+                   ("cam", "cam"),
+                   
+                   ("dr2d", "dr2d"),
+                   ("render2d", "render2d"),
+                   ("aspect2d", "aspect2d"),
+                   ("cam2d", "cam2d"),
+                   
+                   ("evt_mgr", "evt_mgr"),
+                   ("resources", "resources"))
 
     def __new__(cls, **kwargs):
         if not hasattr(cls, 'instance'):
@@ -40,19 +63,3 @@ class Systems(object):
 
             if hasattr(Systems, attr):
                 setattr(Systems, attr, kwargs.pop(arg, None))
-
-    @classproperty
-    def demon(self):
-        return Systems.__demon
-
-    @classproperty
-    def event_manager(self):
-        return Systems.__event_system
-
-    @classproperty
-    def engine(self):
-        return Systems.__engine
-
-    @classproperty
-    def resource_manager(self):
-        return Systems.__resource_manager

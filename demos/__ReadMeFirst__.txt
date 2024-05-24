@@ -1,0 +1,1 @@
+To keep repository size low, demo project can be separately downloaded from.

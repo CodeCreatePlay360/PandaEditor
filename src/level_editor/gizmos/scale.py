@@ -88,7 +88,7 @@ class Scale(Base):
             if self.local:
                 np.setMat(newScaleMat * self.init_np_xforms[i].getMat())
             else:
-                transMat, rotMat, scaleMat = get_trs_matrices(self.initNpXforms[i])
+                transMat, rotMat, scaleMat = get_trs_matrices(self.init_np_xforms[i])
                 np.setMat(scaleMat * rotMat * newScaleMat * transMat)
 
     def on_node_mouse1_down(self, planar, collEntry):

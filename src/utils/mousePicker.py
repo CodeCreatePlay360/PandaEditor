@@ -1,6 +1,7 @@
 from panda3d.core import CollisionTraverser, CollisionHandlerQueue, BitMask32
 from panda3d.core import CollisionNode, CollisionRay
 from .singleTask import SingleTask
+from system import Systems
 
 
 class MousePicker(SingleTask):
@@ -11,15 +12,13 @@ class MousePicker(SingleTask):
     def __init__(self, name, **kwargs):
         SingleTask.__init__(self, name, **kwargs)
 
-        self.__demon = kwargs.pop("demon")
-        self.__camera = kwargs.pop("camera")
-        self.__render = kwargs.pop("render")
         self.__mwn = kwargs.pop("mwn")
-        self.__evt_mgr = kwargs.pop("evt_mgr", None)
+        self.__render = kwargs.pop("render")
+        self.__camera = kwargs.pop("camera")
         
-        self.__from_collide_mask = kwargs.pop('fromCollideMask', None)
-        self.__node = None
+        self.__from_collide_mask = kwargs.pop('from_collide_mask', None)
         self.__coll_entry = None
+        self.__node = None
 
         # Create collision nodes
         self.__coll_trav = CollisionTraverser()
@@ -40,8 +39,7 @@ class MousePicker(SingleTask):
 
         # Bind mouse button events
         for event_name in ['mouse1', 'control-mouse1', 'mouse1-up']:
-            self.__demon.accept(event_name, self.fire_event, event_name)
-            # self.accept(eventName, self.FireEvent, [eventName])
+            Systems.demon.accept(event_name, self.fire_event, event_name)
 
     def on_update(self, x=None, y=None):
         # Update the ray's position
@@ -67,16 +65,13 @@ class MousePicker(SingleTask):
             # event to the last node, and a mouse enter to the new node
             if node != self.__node:
                 if self.__node is not None:
-                    self.__evt_mgr.trigger('%s-mouse-leave' % self.__node.getName())
-                    # messenger.send('%s-mouse-leave' % self.__node.getName(), [self.__coll_entry])
+                    Systems.evt_mgr.trigger('%s-mouse-leave' % self.__node.getName())
 
-                self.__evt_mgr.trigger('%s-mouse-enter' % node.getName(), [collEntry])
-                # messenger.send('%s-mouse-enter' % node.getName(), [collEntry])
+                Systems.evt_mgr.trigger('%s-mouse-enter' % node.getName(), [collEntry])
 
             # Send a message containing the node name and the event over name,
             # including the collision entry as arguments
-            self.__evt_mgr.trigger('%s-mouse-over' % node.getName(), collEntry)
-            # messenger.send('%s-mouse-over' % node.getName(), [collEntry])
+            Systems.evt_mgr.trigger('%s-mouse-over' % node.getName(), collEntry)
 
             # Keep these values
             self.__coll_entry = collEntry
@@ -97,8 +92,8 @@ class MousePicker(SingleTask):
 
         if self.__node is not None:
             args = [False, self.__coll_entry]
-            self.__demon.event_manager.trigger('%s-%s' % (self.__node.getName(), event), False, self.__coll_entry)
-            # messenger.send('%s-%s' % (self.__node.getName(), event), [self.__coll_entry])
+            Systems.evt_mgr.trigger('%s-%s' % (self.__node.getName(), event),
+                                    False, self.__coll_entry)
 
     def get_first_np(self):
         """

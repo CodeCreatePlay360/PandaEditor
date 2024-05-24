@@ -2,11 +2,11 @@ from panda3d.core import MouseButton
 
 
 class Mouse(object):
-    def __init__(self, engine):
+    def __init__(self, win, mwn):
         object.__init__(self)
 
-        self.__mouse_watcher_node = engine.mwn
-        self.__win = engine.win
+        self.__win = win
+        self.__mwn = mwn
 
         # 
         self.__center_mouse = False
@@ -32,12 +32,12 @@ class Mouse(object):
 
     def update(self):
         # for mouse move input
-        if not self.__mouse_watcher_node.hasMouse():
+        if not self.__mwn.hasMouse():
             return
 
         # update mouse buttons
         for btn in self.__mouse_btns:
-            self.__mouse_btns[btn] = self.__mouse_watcher_node.is_button_down(btn)
+            self.__mouse_btns[btn] = self.__mwn.is_button_down(btn)
 
         # Get pointer from screen, calculate delta
         self.__mp = self.__win.getPointer(0)  # mouse position
@@ -61,7 +61,7 @@ class Mouse(object):
 
     @property
     def has_mouse(self):
-        return self.__mouse_watcher_node.hasMouse()
+        return self.__mwn.hasMouse()
 
     @property
     def mouse_btns(self):
