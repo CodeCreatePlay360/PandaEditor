@@ -2,9 +2,7 @@ import panda3d.core as p3d
 from system import Systems
 from commons.constants import *
 
-from .selection import Selection
-from .directoryWatcher import DirWatcher
-from .project import Project
+from .selection import MousePicker, Selection
 from .constants import GizmoIconsPaths
 
 from . import gizmos
@@ -36,11 +34,7 @@ class LevelEditor(object):
         # editor render to keep editor only geometry out of
         # main / game rendering
         self.__ed_render = None
-        
-        # project
-        self.__dir_watcher = None
-        self.__project = None
-        
+                
         # selection system
         self.__selection = None
         
@@ -51,14 +45,9 @@ class LevelEditor(object):
         
         # load shader
         self.load_shaders()
-        
-        # initialize project and game related systems
-        self.__dir_watcher = DirWatcher(any_evt_callback=self.on_dir_event)
-        self.__project = Project(self.__demon)
-        self.create_default_scene()
-        
+
         # setup selection and gizmo manager
-        self.__selection = Selection(demon=self.__demon)
+        self.__selection = Selection(self.__ed_render)
         self.setup_xform_gizmos()
         
         # finally, setup editor window rendering
@@ -104,34 +93,14 @@ class LevelEditor(object):
         ed_cam_node = self.__demon.engine.cam.node()
         ed_cam_node.setCameraMask(ED_CAMERA_MASK|GAME_CAMERA_MASK)
         
-        self.__project.game.cam.node().setCameraMask(GAME_CAMERA_MASK)
-        
+        self.__demon.project.game.cam.node().setCameraMask(GAME_CAMERA_MASK)
+
     def load_shaders(self):
-        billboard_vert = "src/shaders/billboard.vert"
-        gizmos_frag = "src/shaders/gizmo.frag"
-        
-        # gizmo shader
-        shader = p3d.Shader.load(p3d.Shader.SL_GLSL,
-                                 vertex=billboard_vert,
-                                 fragment=gizmos_frag)
-                                 
-        self.__gizmo_shader = shader
+        pass
         
     def on_update(self, task):
         return task.DS_cont
         
-    def on_dir_event(self):
-        print("on_any_dir_event")
-
-    def set_project(self, proj_path):
-        self.__project.set_project(proj_path)
-        self.__dir_watcher.schedule(self.__project.path)
-        # self.__project.game.active_scene.create_default_sun()
-
-    def create_default_scene(self):
-        scene = self.__project.game.add_new_scene("DefaultScene")
-        # self.add_light(LightType.Point)
-
     def on_mouse1(self, shift=False):
         if not self.__xform_gizmo_mgr.is_dragging() and \
         not self.__demon.engine.mwn.is_button_down(p3d.KeyboardButton.alt()):
@@ -177,18 +146,19 @@ class LevelEditor(object):
 
         kwargs = {
             "camera": Systems.cam,
-            "render": self.__ed_render,
+            "rootNP": root_np,
             "render2D": Systems.render2d,
             "win": Systems.win,
             "mwn": Systems.mwn,  # mouse watcher node,
-            "rootNP": root_np,
         }
-
-        self.__xform_gizmo_mgr = gizmos.Manager(**kwargs)
-        self.__xform_gizmo_mgr.add_gizmo(gizmos.Translation(POS_GIZMO, **kwargs))
-        self.__xform_gizmo_mgr.add_gizmo(gizmos.Rotation(ROT_GIZMO, **kwargs))
-        self.__xform_gizmo_mgr.add_gizmo(gizmos.Scale(SCALE_GIZMO, **kwargs))
         
+        gizmo_mgr = gizmos.Manager(**kwargs)
+        
+        pos_gizmo = gizmo_mgr.add_gizmo(gizmos.Translation(POS_GIZMO, **kwargs))
+        rot_gizmo = gizmo_mgr.add_gizmo(gizmos.Rotation(ROT_GIZMO, **kwargs))
+        scale_gizmo = gizmo_mgr.add_gizmo(gizmos.Scale(SCALE_GIZMO, **kwargs))
+        
+        self.__xform_gizmo_mgr = gizmo_mgr
         self.__xform_gizmo_np = root_np
 
     def set_active_gizmo(self, gizmo):
@@ -224,6 +194,7 @@ class LevelEditor(object):
         elif light.Ambient:
             light_type_node = GizmoIconsPaths.point_light()
             
+        '''
         rm = self.__demon.engine.resource_manager
         icon = rm.load_texture(path_)
         gizmo_np.setTexture(icon, 1)
@@ -236,6 +207,7 @@ class LevelEditor(object):
         
         # create panda3D light object
         light_np = self.__project.game.active_scene.add_light(light_type)
+        '''
         
         # finally, add it to render
         render = self.__project.game.active_scene.render
@@ -243,4 +215,7 @@ class LevelEditor(object):
         light_np.reparent_to(gizmo_np)
 
     def add_camera(self):
+        pass
+    
+    def add_node(self, path):
         pass

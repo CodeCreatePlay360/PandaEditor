@@ -1,4 +1,4 @@
-
+# TODO replace this with xml
 # paths
 class GizmoIconsPaths:
     @staticmethod
@@ -20,3 +20,6 @@ class GizmoIconsPaths:
     @staticmethod
     def camera():
         return "src/resources/gizmos/Camera.tif"
+
+
+selectable_node_tag = "Selectable_Node"

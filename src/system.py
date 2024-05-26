@@ -12,20 +12,23 @@ class Systems(object):
             return self.f.__get__(*a)()
         
     demon = None
-    win = None,
-    mwn = None,
+    win = None
+    mwn = None
                                 
-    dr = None,
-    render = None,
-    cam = None,
+    dr = None
+    render = None
+    cam = None
                                 
-    dr2d = None,
-    render2d = None,
-    aspect2d = None,
-    cam2d = None,
+    dr2d = None
+    render2d = None
+    aspect2d = None
+    cam2d = None
                                 
-    evt_mgr = None,
-    resources = None,
+    evt_mgr = None
+    resources = None
+    
+    coll_trav = None
+    coll_handler = None
 
     __args_list = (("demon", "demon"),
                    
@@ -42,7 +45,10 @@ class Systems(object):
                    ("cam2d", "cam2d"),
                    
                    ("evt_mgr", "evt_mgr"),
-                   ("resources", "resources"))
+                   ("resources", "resources"),
+                   
+                   ("coll_trav", "coll_trav"),
+                   ("coll_handler", "coll_handler"))
 
     def __new__(cls, **kwargs):
         if not hasattr(cls, 'instance'):
@@ -57,7 +63,6 @@ class Systems(object):
     @staticmethod
     def update(**kwargs):
         for val in Systems.__args_list:
-
             arg = val[0]
             attr = val[1]
 

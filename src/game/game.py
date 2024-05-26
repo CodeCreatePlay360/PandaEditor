@@ -2,6 +2,7 @@ import panda3d.core as p3d
 
 from panda3d.core import WindowProperties
 from game.scene import Scene
+from utils.moduleImporter import import_modules
 
 # some static globals constants
 DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or
@@ -10,10 +11,9 @@ DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or
 
 class Game:
     """Game is entry point to what will go into your final build"""
-
-    def __init__(self, proj_path, demon):
+ 
+    def __init__(self, demon):
         self.__demon = demon
-        self.__path = proj_path
         self.__is_editor = False
 
         # top level game render, individual scene renders should be
@@ -23,6 +23,13 @@ class Game:
         self.__dr = None
         self.__dr_2D = None
 
+        self.__runtime_modules = {}  # loaded runtime modules
+        self.__components = {}
+        self.__all_modules = {}      # runtime modules + components
+        self.__scenes = []           # all scenes in this game
+        self.__active_scene = None
+
+    def init(self):
         # create a new main camera for game world and a lens for it
         self.__main_cam = p3d.NodePath(p3d.Camera("MainCamera"))
         self.__main_cam.reparent_to(self.__render)
@@ -36,20 +43,40 @@ class Game:
         self.setup_dr_3D()
         
         self.set_active_cam(self.__main_cam)
-
-        self.__runtime_modules = {}  # loaded runtime modules
-        self.__all_modules = {}      # runtime modules + components
-        self.__scenes = []           # all scenes in this game
-        self.__active_scene = None
         
         # finally, start the game update task
         # finally, start the level editor update
         task = p3d.PythonTask(self.on_update, "GameUpdate")
         p3d.AsyncTaskManager.getGlobalPtr().add(task)
         
+        print("-- Game init successfully")
+        
     def on_update(self, task):
         self.__active_scene.update()
         return task.cont
+        
+    def setup_dr_2D(self):
+        self.__dr_2D = self.__demon.engine.win.makeDisplayRegion()
+        self.__dr_2D.setSort(2)
+        self.__dr_2D.setActive(True)
+        self.__dr_2D.set_dimensions((0, 0.4, 0, 0.35))
+
+    def setup_dr_3D(self):
+        self.__dr = self.__demon.engine.win.makeDisplayRegion(0, 0.4, 0, 0.35)
+        self.__dr.setSort(1)
+        self.__dr.setClearColorActive(True)
+        self.__dr.setClearDepthActive(True)
+        self.__dr.setClearColor((0.65, 0.65, 0.65, 1.0))
+
+    def set_active_cam(self, cam):
+        self.__dr.set_active(True)
+        self.__dr.set_camera(cam)
+        cam.node().getLens().setAspectRatio(self.__demon.engine.aspect_ratio)
+        self.__main_cam = cam
+        
+    def clear_active_dr_3d(self):
+        self.__dr.setActive(False)
+        self.__dr.setCamera(p3d_core.NodePath())
         
     def add_new_scene(self, name: str):
         """creates a new scene, the active should be first cleared by
@@ -62,6 +89,7 @@ class Game:
         scene = Scene(self, name)
         self.__active_scene = scene
         self.__scenes.append(scene)
+        print("-- New scene created successfully")
         return scene
     
     def save_scene(self):
@@ -74,10 +102,12 @@ class Game:
             return
 
         print("Scene removed")
-
-    def clear_active_dr_3d(self):
-        self.__dr.setActive(False)
-        self.__dr.setCamera(p3d_core.NodePath())
+        
+    def reload_resources(self, path):
+        pass
+        
+    def set_runtime_modules(self, modules: dict):
+        self.__runtime_modules = modules
 
     def start(self):
         self.__all_modules = {}
@@ -156,28 +186,6 @@ class Game:
 
         self.__all_modules.clear()
 
-    def setup_dr_2D(self):
-        self.__dr_2D = self.__demon.engine.win.makeDisplayRegion()
-        self.__dr_2D.setSort(2)
-        self.__dr_2D.setActive(True)
-        self.__dr_2D.set_dimensions((0, 0.4, 0, 0.35))
-
-    def setup_dr_3D(self):
-        self.__dr = self.__demon.engine.win.makeDisplayRegion(0, 0.4, 0, 0.35)
-        self.__dr.setSort(1)
-        self.__dr.setClearColorActive(True)
-        self.__dr.setClearDepthActive(True)
-        self.__dr.setClearColor((0.65, 0.65, 0.65, 1.0))
-
-    def set_active_cam(self, cam):
-        self.__dr.set_active(True)
-        self.__dr.set_camera(cam)
-        cam.node().getLens().setAspectRatio(self.__demon.engine.aspect_ratio)
-        self.__main_cam = cam
-
-    def set_runtime_modules(self, modules: dict):
-        self.__runtime_modules = modules
-
     def get_module(self, module_path: str):
         for key in self.__runtime_modules.keys():
             if key == module_path:
@@ -200,7 +208,7 @@ class Game:
 
         return modules
 
-    def user_modules_sort_orders(self):
+    def print_modules_sort_orders(self):
         all_modules = self.get_all_modules()
         for mod in all_modules:
             if isinstance(mod, Component):

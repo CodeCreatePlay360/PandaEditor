@@ -24,28 +24,29 @@ demos = {}
 
 class DemonApp(Demon):    
     def __init__(self, *args, **kwargs):
-        Demon.__init__(self, *args, **kwargs)
-                
-        # parse input arguments
-        args = parser.parse_args()
         
+        # parse input arguments
+        cmd_args = parser.parse_args()
+        
+        Demon.__init__(self, cmd_args.ProjPath, *args, **kwargs)
+                
         # load the demo program if specified in input args
-        if args.Demo:
+        if cmd_args.Demo:
             demo = None
             try:
-                demo = demos[args.Scene]
+                demo = demos[cmd_args.Scene]
             except KeyError:
-                print("-- Demo {0} not found".format(args.Scene))
+                print("-- Demo {0} not found".format(cmd_args.Scene))
                 demo = None
             finally:
                 if demo:
-                    self.demo = demos[args.Scene](self.engine)
-
-        if args.LE and args.LE == "Off":
+                    self.demo = demos[cmd_args.Scene](self.engine)
+                    
+        if cmd_args.LE and cmd_args.LE == "Off":
             print("-- LevelEditor Off")
         else:
             print("-- Starting LevelEditor")
-            self.start_level_editor(args.ProjPath)
+            self.start_level_editor()
 
 
 app = DemonApp()

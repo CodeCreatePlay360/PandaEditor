@@ -1,5 +1,5 @@
 from panda3d.core import DirectionalLight
-from utils.mousePicker import MousePicker
+from level_editor.selection import MousePicker
 
 
 class Manager(object):
@@ -7,19 +7,20 @@ class Manager(object):
         object.__init__(self)
 
         self.__cam = kwargs.pop("camera")
-        self.__render = kwargs.pop("render")
+        self.__root_np = kwargs.pop("rootNP")
 
         self.__gizmos = {}
         self.__local = False
         self.__active_gizmo = None
-
+        
         # Create gizmo manager mouse picker
-        self.__picker = MousePicker('GizmoMgrMousePicker',
+        self.__picker = MousePicker('XformGizmoMousePicker',
+                                    create_update_task=True,
                                     camera=self.__cam,
-                                    render=self.__render,
+                                    render=self.__root_np,
                                     mwn=kwargs.pop("mwn"))
-        self.__picker.start()
-
+        # self.__picker.start()
+        
         # Create a directional light and attach it to the camera so the gizmos
         # don't look flat
         dl = DirectionalLight('GizmoManagerSunLight')
@@ -27,11 +28,13 @@ class Manager(object):
 
     def add_gizmo(self, gizmo):
         """Add a gizmo to be managed by the gizmo manager."""
-        gizmo.rootNp = self.__render
+        gizmo.rootNp = self.__root_np
         self.__gizmos[gizmo.getName()] = gizmo
 
         for axis in gizmo.axes:
             axis.setLight(self.__directional_light)
+            
+        return gizmo
 
     def get_gizmo(self, name):
         """

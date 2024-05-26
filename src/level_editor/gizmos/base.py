@@ -11,7 +11,7 @@ class Base(NodePath, SingleTask):
         SingleTask.__init__(self, name, *args, **kwargs)
         
         self.mwn = kwargs.pop("mwn")
-        self.render = kwargs.pop("render")
+        self.render = kwargs.pop("rootNP")
         self.camera = kwargs.pop("camera")
 
         self.attached_nps = []
@@ -209,7 +209,7 @@ class Base(NodePath, SingleTask):
         the gizmo.
         """
         axis = self.get_selected_axis()
-        if axis is not None and self.__attached_nps and self.mouseWatcherNode.hasMouse():
+        if axis is not None and self.attached_nps and self.mouseWatcherNode.hasMouse():
             self.dragging = True
             self.init_np_xforms = [np.getTransform() for np in self.__attached_nps]
             self.start_axis_point = self.get_axis_point(axis)
