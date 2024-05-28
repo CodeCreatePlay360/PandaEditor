@@ -1,6 +1,5 @@
 import os.path
 from panda3d.core import get_model_path, Filename
-from game import Game
 
 
 class Project(object):
@@ -8,7 +7,7 @@ class Project(object):
  
         self.__name = ""
         self.__path = ""
-        self.__game = Game(demon)
+        self.__game = demon.game
         
     def set_project(self, path: str):
         assert os.path.exists(path), "Path does not exists."
@@ -26,8 +25,6 @@ class Project(object):
         get_model_path().prependDirectory(panda_path)
         
         print("-- Project created successfully")
-        
-        self.__game.init()
         
     @property
     def game(self):

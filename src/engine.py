@@ -18,7 +18,7 @@ class Engine(object):
 
         # display region, cam, mouse_watcher_node for 3D rendering
         self.__dr = None
-        self.__mouse_watcher_node = None
+        self.__mouse_watcher = None
         self.__render = None  # scene graph for 3D rendering
         self.__scene_cam = None
 
@@ -30,7 +30,7 @@ class Engine(object):
 
         # display region, cam, mouse_watcher_node for 2D rendering
         self.__dr2d = None
-        # self.__mouse_watcher_node_2d = None
+        self.__mouse_watcher_2d = None
         self.__render2d = None  # scene graph for 2D rendering
         self.__aspect2d = None  # aspect corrected 2D scene graph
         self.__cam2d = None
@@ -47,7 +47,7 @@ class Engine(object):
         # initialize the engine and various systems
         self.create_win()
         self.setup_input_handling()
-        self.__mouse = Mouse(self.win, self.mwn)
+        self.__mouse = Mouse(self.win, self.__mouse_watcher.node())
         self.create_3d_render()
         self.create_2d_render()
 
@@ -111,7 +111,7 @@ class Engine(object):
 
         # constrain primary mouse watcher node to display region for
         # 3D rendering
-        self.__mouse_watcher_node.setDisplayRegion(self.__dr)
+        self.__mouse_watcher.node().setDisplayRegion(self.__dr)
 
         # create a new scene camera
         self.__scene_cam = SceneCamera()
@@ -135,7 +135,7 @@ class Engine(object):
         self.__aspect2d = self.__render2d.attachNewNode(p3d.PGTop('Aspect2d'))
 
         # also inform 2D gui systems of our mouse watcher
-        self.__aspect2d.node().setMouseWatcher(self.__mouse_watcher_node)
+        self.__aspect2d.node().setMouseWatcher(self.__mouse_watcher.node())
 
         # create a 2d camera
         self.__cam2d = p3d.NodePath(p3d.Camera('Camera2d'))
@@ -149,9 +149,10 @@ class Engine(object):
         # set this 2d camera to 2d display region        
         self.__dr2d.setCamera(self.__cam2d)
 
+        self.__mouse_watcher.node().setDisplayRegion(self.__dr2d)
         # see https://docs.panda3d.org/1.10/python/reference/panda3d.core.PGMouseWatcherBackground
         # for explanation on this
-        self.__mouse_watcher_node.addRegion(p3d.PGMouseWatcherBackground())
+        self.__mouse_watcher.node().addRegion(p3d.PGMouseWatcherBackground())
 
     def create_default_scene(self):
         pass
@@ -280,14 +281,14 @@ class Engine(object):
 
         # 
         self.__mouse_watchers.append(mouse_watcher)
-        self.__mouse_watcher_node = mouse_watcher_node
+        self.__mouse_watcher = mouse_watcher
 
     def set_event_hook(self, hook):
         self.__evt_hook = hook
 
     def update(self):
         # keep taskmanager updated
-        if self.__mouse_watcher_node.has_mouse():
+        if self.__mouse_watcher.node().has_mouse():
             p3d.AsyncTaskManager.getGlobalPtr().poll()
 
         # traverse the data graph.  This reads all the control
@@ -352,8 +353,8 @@ class Engine(object):
         return self.__mouse
 
     @property
-    def mwn(self):
-        return self.__mouse_watcher_node
+    def mw(self):
+        return self.__mouse_watcher
 
     @property
     def mouse_watchers(self):

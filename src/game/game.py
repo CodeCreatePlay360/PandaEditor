@@ -16,12 +16,13 @@ class Game:
         self.__demon = demon
         self.__is_editor = False
 
-        # top level game render, individual scene renders should be
-        # re-parented to this.
-        self.__render = self.__demon.engine.render  
+        self.__render = None    # individual scene renders should be
+        self.__render2d = None  # re-parented render and render2d
 
         self.__dr = None
-        self.__dr_2D = None
+        self.__dr2d = None  
+
+        self.__mouse_watcher = None
 
         self.__runtime_modules = {}  # loaded runtime modules
         self.__components = {}
@@ -29,21 +30,25 @@ class Game:
         self.__scenes = []           # all scenes in this game
         self.__active_scene = None
 
-    def init(self):
-        # create a new main camera for game world and a lens for it
-        self.__main_cam = p3d.NodePath(p3d.Camera("MainCamera"))
-        self.__main_cam.reparent_to(self.__render)
-
-        lens = p3d.PerspectiveLens()
-        lens.set_fov(60)
-        lens.setAspectRatio(800 / 600)
-        self.__main_cam.node().setLens(lens)
+    def init(self):        
+        # ------------------------------------
+        # 3d and 2d rendering setup
+        self.__render = p3d.NodePath("GameRender")
         
-        self.setup_dr_2D()
-        self.setup_dr_3D()
+        self.__render2d = p3d.NodePath("GameRender2d")        
+        self.__render2d.setDepthTest(0)
+        self.__render2d.setDepthWrite(0)
+        self.__render2d.setMaterialOff(1)
+        self.__render2d.setTwoSided(1)
         
-        self.set_active_cam(self.__main_cam)
+        # display region
+        self.create_dr3d()
+        self.create_dr2d()
         
+        self.create_mouse_watcher_3d()
+        self.__mouse_watcher.node().setDisplayRegion(self.__dr2d)
+        
+        # -----------------------------------------------------------
         # finally, start the game update task
         # finally, start the level editor update
         task = p3d.PythonTask(self.on_update, "GameUpdate")
@@ -55,25 +60,29 @@ class Game:
         self.__active_scene.update()
         return task.cont
         
-    def setup_dr_2D(self):
-        self.__dr_2D = self.__demon.engine.win.makeDisplayRegion()
-        self.__dr_2D.setSort(2)
-        self.__dr_2D.setActive(True)
-        self.__dr_2D.set_dimensions((0, 0.4, 0, 0.35))
+    def create_dr2d(self):
+        self.__dr2d = self.__demon.engine.win.makeDisplayRegion(0, 0.4, 0, 0.35)
+        self.__dr2d.setClearDepthActive(False)
+        self.__dr2d.setSort(20)
+        self.__dr2d.setActive(True)
 
-    def setup_dr_3D(self):
+    def create_dr3d(self):
         self.__dr = self.__demon.engine.win.makeDisplayRegion(0, 0.4, 0, 0.35)
-        self.__dr.setSort(1)
+        self.__dr.setSort(10)
         self.__dr.setClearColorActive(True)
         self.__dr.setClearDepthActive(True)
         self.__dr.setClearColor((0.65, 0.65, 0.65, 1.0))
-
-    def set_active_cam(self, cam):
-        self.__dr.set_active(True)
-        self.__dr.set_camera(cam)
-        cam.node().getLens().setAspectRatio(self.__demon.engine.aspect_ratio)
-        self.__main_cam = cam
         
+    def create_mouse_watcher_3d(self):
+        mk = self.__demon.engine.mw.getParent()
+        mouse_watcher = p3d.MouseWatcher()
+        mouse_watcher = mk.attachNewNode(mouse_watcher)
+        self.__mouse_watcher = mouse_watcher
+        
+        # see https://docs.panda3d.org/1.10/python/reference/panda3d.core.PGMouseWatcherBackground
+        # for explanation on this
+        self.__mouse_watcher.node().addRegion(p3d.PGMouseWatcherBackground())
+
     def clear_active_dr_3d(self):
         self.__dr.setActive(False)
         self.__dr.setCamera(p3d_core.NodePath())
@@ -223,42 +232,32 @@ class Game:
 
     def on_resize_event(self):
         """should be called after a window has been resized"""
-        
-        ar = self.__demon.engine.aspect_ratio
-        
-        if self.__main_camera:
-            self.__main_camera.node().getLens().setAspectRatio(ar)
-
-        self.__aspect_2D.set_scale(1.0 / ar, 1.0, 1.0)
-
-    @property
-    def cam(self):
-        return self.__main_cam
-
-    @property
-    def path(self):
-        return self.__path
-
-    @property
-    def win(self):
-        return self.__demon.engine.win
-
-    @property
-    def dr(self):
-        return self.__dr
-
-    @property
-    def dr_2d(self):
-        return self.__dr_2D
+        self.__active_scene.on_resize_event()
 
     @property
     def demon(self):
         return self.__demon
 
     @property
-    def render(self):
-        return self.__render
+    def dr(self):
+        return self.__dr
+
+    @property
+    def dr2d(self):
+        return self.__dr2d
 
     @property
     def active_scene(self):
         return self.__active_scene
+    
+    @property
+    def mouse_watcher(self):
+        return self.__mouse_watcher
+
+    @property
+    def render(self):
+        return self.__render
+    
+    @property
+    def render2d(self):
+        return self.__render2d

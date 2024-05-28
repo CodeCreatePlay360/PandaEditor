@@ -3,6 +3,7 @@ import panda3d.core as p3d
 from eventManager import EventManager
 from engine import Engine
 from directoryWatcher import DirWatcher
+from game import Game
 from project import Project
 from system import Systems
 from level_editor import LevelEditor
@@ -23,6 +24,8 @@ class Demon(object):
         # self.__engine.add_update_callback(self.on_update)
         
         # project
+        self.__game = Game(self)
+        self.__game.init()
         self.__dir_watcher = DirWatcher(any_evt_callback=self.on_dir_event)
         self.__project = Project(self)
         
@@ -39,7 +42,7 @@ class Demon(object):
         self.__editor = Systems(
                                 demon=self,
                                 win=self.__engine.win,
-                                mwn=self.__engine.mwn,
+                                mw=self.__engine.mw,
                                 
                                 dr=self.__engine.dr3d,
                                 render=self.__engine.render,
@@ -60,7 +63,6 @@ class Demon(object):
         self.__le = None
                                 
         # other
-        self.__is_btn_down = self.engine.mwn.is_button_down
         self.__default_sun = False
         self.__shift = False
         
@@ -99,7 +101,17 @@ class Demon(object):
 
     def on_any_event(self, evt, *args):
         """event sent from c++ side can be handled here"""
-
+        
+        '''
+        if evt.name == "TaskManager-addTask":
+           print("%s%s" % ("added", args))
+        elif evt.name == "TaskManager-removeTask":
+           print("%s%s" % ("removed", args))
+        '''
+                
+        if evt.name == "window-event":
+           self.__game.on_resize_event()
+        
         if evt.name in self.__evt_map.keys():
             res = self.__evt_map[evt.name]
 
@@ -130,6 +142,10 @@ class Demon(object):
     @property
     def engine(self):
         return self.__engine
+
+    @property
+    def game(self):
+        return self.__game
 
     @property
     def project(self):

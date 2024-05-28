@@ -10,22 +10,23 @@ class Scene:
 
         # create a 3d rendering setup
         self.__render = None
-
+        self.__main_cam = None
+        
         # create a 2d rendering setup
-        self.__render_2D = None
-        self.__aspect_2d = None
-        self.__camera_2D = None
+        self.__render2d = None
+        self.__aspect2d = None
+        self.__camera2d = None
         
         # create 2D and 3D rendering
-        self.setup_render_3D()
-        self.setup_render_2D()
+        self.setup_render3d()
+        self.create_render2d()
         
         #
         self.__default_sunlight = None
         
         # other
         self.__shift = False
-        self.__is_btn_down = self.__game.demon.engine.mwn.is_button_down
+        self.__is_btn_down = self.__game.demon.engine.mw.node().is_button_down
         
     def update(self):
         if self.__default_sunlight:
@@ -39,34 +40,56 @@ class Scene:
                 self.orbit_default_sun(dy=-1) if self.__shift else\
                 self.orbit_default_sun(dy=1)
         
-    def setup_render_3D(self):
+    def on_resize_event(self):
+        props = self.__game.demon.engine.win.getProperties()
+        aspect = (props.getXSize() * 0.4) / (props.getYSize() * 0.35)
+        
+        if self.__main_cam:
+            self.__main_cam.node().getLens().setAspectRatio(aspect)
+            
+        if self.render:
+            self.render.setScale(1.0 / aspect, 1.0, 1.0 / aspect)
+            
+        if self.__aspect2d:
+            self.__aspect2d.set_scale(1.0 / aspect, 1.0, 1.0)
+        
+    def setup_render3d(self):
+        name_ = "%s%s" % (self.__name, "Render")
         self.__render = p3d.NodePath(self.__name)
         self.__render.reparent_to(self.__game.render)
+        
+        # create a new main camera for game world and a lens for it
+        self.__main_cam = p3d.NodePath(p3d.Camera("MainCamera"))
+        self.__main_cam.reparent_to(self.__render)
 
-    def setup_render_2D(self):
+        lens = p3d.PerspectiveLens()
+        lens.set_fov(60)
+        lens.setAspectRatio(800 / 600)
+        self.__main_cam.node().setLens(lens)
+        
+        self.__game.dr.set_camera(self.__main_cam)
+        
+    def create_render2d(self):
         """setup a 2d rendering"""
 
         # create a 2d scene graph
-        self.__render_2D = p3d.NodePath("Render2d")
-        self.__render_2D.setDepthTest(False)
-        self.__render_2D.setDepthWrite(False)
-
-        self.__aspect_2d = self.__render_2D.attachNewNode(p3d.PGTop("__aspect2D__"))
-        aspect_ratio = self.__game.demon.engine.aspect_ratio
-        self.__aspect_2d.set_scale(1.0 / aspect_ratio, 1.0, 1.0)
+        name_ = "%s%s" % (self.__name, "Render2d")
+        self.__render2d = self.__game.render2d.attachNewNode(name_)
+        self.__aspect2d = self.__render2d.attachNewNode(p3d.PGTop("Aspect2d"))
         
-        mwn = self.__game.demon.engine.mwn
-        self.__aspect_2d.node().set_mouse_watcher(mwn)
+        mw = self.__game.mouse_watcher
+        self.__aspect2d.node().set_mouse_watcher(mw.node())
 
         # create a 2d-camera
-        self.__camera_2D = p3d.NodePath(p3d.Camera("__camera2D__"))
+        self.__camera2d = p3d.NodePath(p3d.Camera("__camera2D__"))
         lens = p3d.OrthographicLens()
         lens.setFilmSize(2, 2)
         lens.setNearFar(-1000, 1000)
-        self.__camera_2D.node().setLens(lens)
-        self.__camera_2D.reparent_to(self.__render_2D)
-
-        self.__game.dr_2d.setCamera(self.__camera_2D)
+        self.__camera2d.node().setLens(lens)
+        self.__camera2d.reparent_to(self.__render2d)
+        
+        self.__game.mouse_watcher.node().addRegion(p3d.PGMouseWatcherBackground())
+        self.__game.dr2d.setCamera(self.__camera2d)
         
     def create_default_sun(self):
         # --------------------------------------------------------------------
@@ -137,17 +160,17 @@ class Scene:
         pass
         
     @property
-    def camera_2D(self):
-        return self.__camera_2D
+    def camera2d(self):
+        return self.__camera2d
 
     @property
     def render(self):
         return self.__render
 
     @property
-    def render_2D(self):
-        return self.__render_2D
+    def render2d(self):
+        return self.__render2d
 
     @property
-    def aspect_2D(self):
-        return self.__aspect_2d
+    def aspect2d(self):
+        return self.__aspect2d

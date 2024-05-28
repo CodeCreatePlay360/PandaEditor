@@ -13,7 +13,7 @@ class Systems(object):
         
     demon = None
     win = None
-    mwn = None
+    mw = None
                                 
     dr = None
     render = None
@@ -33,7 +33,7 @@ class Systems(object):
     __args_list = (("demon", "demon"),
                    
                    ("win", "win"),
-                   ("mwn", "mwn"),
+                   ("mw", "mw"),
                    
                    ("dr", "dr"),
                    ("render", "render"),

@@ -17,7 +17,7 @@ class Selection:
             name='Marquee',
             camera=Systems.cam,
             render2D=Systems.render2d,
-            mwn=Systems.mwn)
+            mwn=Systems.mw.node())
 
         # mouse picker to detect collision and geo nodes under mouse
         # Create node picker - set its collision mask to hit both geom nodes 
@@ -29,7 +29,7 @@ class Selection:
         self.__picker = MousePicker(name='EdSelectionMousePicker',
                                     camera=Systems.cam,
                                     render=Systems.render,
-                                    mwn=Systems.mwn,
+                                    mwn=Systems.mw.node(),
                                     from_collide_mask=bit_mask)
 
     def set_selected(self, nps, append=False):
@@ -51,7 +51,7 @@ class Selection:
         """
         Start the marquee and put the tool into append mode if specified.
         """
-        if Systems.mwn.hasMouse():
+        if Systems.mw.node().hasMouse():
             self.__append = append
             self.marquee.start()
 

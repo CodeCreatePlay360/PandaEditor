@@ -68,7 +68,7 @@ class SceneCamera(NodePath):
 
     def initialize(self, engine):
         self.__win = engine.win
-        self.__mouse_watcher_node = engine.mwn
+        self.__mouse_watcher_node = engine.mw.node()
         self.__aspect2d = engine.aspect2d
         self.__mouse = engine.mouse
 

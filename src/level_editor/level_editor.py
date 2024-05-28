@@ -77,7 +77,7 @@ class LevelEditor(object):
         # 02. reparent editor only geo to ed_render
         self.__demon.engine.cam.reparent_to(self.__ed_render)
         self.__demon.engine.grid_np.reparentTo(self.__ed_render)
-        
+
         # 03. set bitmaks on editor only geo to hide from cameras with
         # with GAME_CAMERA_MASK
         self.__demon.engine.grid_np.hide(GAME_CAMERA_MASK)
@@ -92,8 +92,6 @@ class LevelEditor(object):
         # camera would render game geo only.
         ed_cam_node = self.__demon.engine.cam.node()
         ed_cam_node.setCameraMask(ED_CAMERA_MASK|GAME_CAMERA_MASK)
-        
-        self.__demon.project.game.cam.node().setCameraMask(GAME_CAMERA_MASK)
 
     def load_shaders(self):
         pass
@@ -103,7 +101,7 @@ class LevelEditor(object):
         
     def on_mouse1(self, shift=False):
         if not self.__xform_gizmo_mgr.is_dragging() and \
-        not self.__demon.engine.mwn.is_button_down(p3d.KeyboardButton.alt()):
+        not self.__demon.engine.mw.node().is_button_down(p3d.KeyboardButton.alt()):
             self.__selection.start_drag_select(shift)
 
         elif self.__xform_gizmo_mgr.is_dragging():
@@ -149,7 +147,7 @@ class LevelEditor(object):
             "rootNP": root_np,
             "render2D": Systems.render2d,
             "win": Systems.win,
-            "mwn": Systems.mwn,  # mouse watcher node,
+            "mwn": Systems.mw.node(),  # mouse watcher node,
         }
         
         gizmo_mgr = gizmos.Manager(**kwargs)

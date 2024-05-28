@@ -10,7 +10,7 @@ class ResourceManager(object):
         self.__loader = p3d.Loader.getGlobalPtr()
 
     def load_model(self, path, loader_options=None, use_cached=False,
-                   instanced=False, *args, **kwargs):
+                   instanced=False, create_np=True, *args, **kwargs):
         """
         path = path of model on disk,
         
@@ -51,7 +51,8 @@ class ResourceManager(object):
                     loader_options.setFlags(loader_options.getFlags() | p3d.LoaderOptions.LFAllowInstance)
                 
                 node = self.__loader.loadSync(p3d.Filename(path), loader_options)
-                node = p3d.NodePath(node)
+                if create_np:
+                    node = p3d.NodePath(node)
         else:
             print("Not a file {0}".format(path))
 
