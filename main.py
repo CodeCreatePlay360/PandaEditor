@@ -28,21 +28,32 @@ class DemonApp(Demon):
         # parse input arguments
         cmd_args = parser.parse_args()
         
-        Demon.__init__(self, cmd_args.ProjPath, *args, **kwargs)
+        # check if user defined project project path exists,
+        # otherwise use default
+        if cmd_args.ProjPath:
+            assert os.path.exists(cmd_args.ProjPath),\
+            "Project path does not exists."
+        
+        if cmd_args.ProjPath:
+            proj_path = cmd_args.ProjPath
+        else:
+            proj_path = os.path.join(current_dir, "defaultProject")
+            
+        Demon.__init__(self, proj_path, *args, **kwargs)
                 
         # load the demo program if specified in input args
         if cmd_args.Demo:
             demo = None
             try:
-                demo = demos[cmd_args.Scene]
+                demo = demos[cmd_args.Demo]
             except KeyError:
-                print("-- Demo {0} not found".format(cmd_args.Scene))
+                print("-- DemoProject '{0}' not found.".format(cmd_args.Demo))
                 demo = None
             finally:
                 if demo:
-                    self.demo = demos[cmd_args.Scene](self.engine)
+                    self.demo = demos[cmd_args.Demo](self.engine)
                     
-        if cmd_args.LE and cmd_args.LE == "Off":
+        if cmd_args.LE and cmd_args.LE == "off":
             print("-- LevelEditor Off")
         else:
             print("-- Starting LevelEditor")

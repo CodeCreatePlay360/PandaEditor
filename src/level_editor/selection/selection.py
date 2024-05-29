@@ -36,8 +36,7 @@ class Selection:
         if not append:
             self.deselect_all()
 
-        for np in nps:
-            self.selected_nps.append(np)
+        self.selected_nps = [*self.selected_nps, *nps]
 
         for np in self.selected_nps:
             np.showTightBounds()
@@ -55,7 +54,7 @@ class Selection:
             self.__append = append
             self.marquee.start()
 
-    def stop_drag_select(self):
+    def stop_drag_select(self, double_click=False):
         """
         Stop the marquee and get all the node paths under it with the correct
         tag. Also append any node which was under the mouse at the end of the
@@ -70,35 +69,39 @@ class Selection:
                 new_selections.append(np)
         else:
             self.deselect_all()
-                        
-        for pick_np in self.render.findAllMatches('**'):
-            if pick_np is None:
+        
+        new_np = None
+        
+        for np in self.render.findAllMatches('**'):
+            if np is None:
                 continue
                 
-            if not self.marquee.is_nodepath_inside(pick_np):
+            if not self.marquee.is_nodepath_inside(np):
                 continue
+    
+            if not np.hasNetTag(selectable_node_tag):
+                continue
+            
+            new_np = self.get_selected_np(np)
+            
+            if new_np not in new_selections:
+                new_selections.append(new_np)
+
+        # Add any node path which was under the mouse at the time of
+        # selection.
+        new_np = self.get_np_under_mouse()
+        if new_np is not None and new_np.hasNetTag(selectable_node_tag):
+            if not double_click:
+                new_np = self.get_selected_np(new_np)
+            if new_np not in new_selections:
+                new_selections.append(new_np)
                 
-            if pick_np in new_selections:
-                continue
-            
-            if not pick_np.hasNetTag(selectable_node_tag):
-                continue
-            
-            new_selections.append(pick_np)
-
-
-        # Add any node path which was under the mouse to the selection.
-        np = self.get_np_under_mouse()
-        if np is not None and np.hasNetTag(selectable_node_tag):
-            if np not in new_selections:
-                new_selections.append(np)
-
-        result = []
-        for np in new_selections:
-            result.append(np)
+        self.set_selected(new_selections)
+                
+        for np in self.selected_nps:
             print("Selected {0}".format(np.getName()))
-
-        return result
+                
+        return self.selected_nps
 
     def get_np_under_mouse(self):
         """
@@ -107,12 +110,17 @@ class Selection:
         self.__picker.update(None)
         picked_np = self.__picker.get_first_np()
         return picked_np
-
-    def get_top_np(self, np):
+    
+    def get_selected_np(self, np):
         top_np = np.get_parent()
-        if top_np == Systems.render:
+        
+        if not top_np.hasNetTag(selectable_node_tag):
+            return np
+        
+        if top_np.getTag(selectable_node_tag):
             return np
 
-        if top_np != Systems.render and top_np is not None:
-            return self.get_top_np(top_np)
+        if not np.getTag(selectable_node_tag) and top_np is not None:
+            return self.get_selected_np(top_np)
+        
         return top_np

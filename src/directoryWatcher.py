@@ -12,12 +12,7 @@ class DirEventProcessor(FileSystemEventHandler):
         self.__delay = 3.5
         self.__set = False
 
-    def on_any_event(self, event):
-        '''
-        print("-- [Directory Watcher] RecievedEvent  Path: '{0}' Type '{1}'".format(
-               event.src_path, event.event_type))
-        '''
-                
+    def on_any_event(self, event):                
         '''
         # ignore event we are not interested in
         if event.event_type == "opened" or event.event_type == "modified":
@@ -38,6 +33,13 @@ class DirEventProcessor(FileSystemEventHandler):
             return
         '''
         
+        if os.path.isfile(evt.src_path):
+            if evt.src_path.split(".")[-1] == "pyc":
+                return
+            
+        print("-- [Directory Watcher] RecievedEvent  Path: '{0}' Type '{1}'".format(
+               event.src_path, event.event_type))
+               
         if not self.__set:
             timer = threading.Timer(self.__delay, self.reset)
             timer.start()

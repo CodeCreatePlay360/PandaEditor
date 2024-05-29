@@ -112,9 +112,7 @@ class LevelEditor(object):
             last_selections = [np for np in self.__selection.selected_nps]
             nps = self.__selection.stop_drag_select()
 
-            # select nps and start transform
             if len(nps) > 0:
-                self.__selection.set_selected(nps)
                 # update gizmos
                 self.__xform_gizmo_mgr.attach_nodepaths(nps)
                 self.__xform_gizmo_mgr.refresh_active_gizmo()
