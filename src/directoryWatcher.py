@@ -3,53 +3,51 @@ import threading
 from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from direct.task.TaskManagerGlobal import taskMgr
 
 
 class DirEventProcessor(FileSystemEventHandler):
     def __init__(self, **kwargs):
         self.__any_evt_callback = kwargs.pop("any_evt_callback", None)
         self.__delay = 3.5
-        self.__set = False
+        
+        self.__thread = None
+        self.__stop_event = threading.Event()
 
-    def on_any_event(self, event):                
-        '''
-        # ignore event we are not interested in
-        if event.event_type == "opened" or event.event_type == "modified":
+    def on_any_event(self, event):
+        print(event)
+        if os.path.isdir(event.src_path):
+            return
+                
+        if event.src_path.split(".")[-1] == "pyc":
             return
         
-        # ignore cache dirs / files
-        # TODO check type of os and set split operator accordingly
-        src_path = str(Path(event.src_path))
-        
-        if "__pycache__" in src_path.split("//"):
-            return
-        
-        if src_path.split(".")[-1] == "pyc":
-            return
-        
-        if event.event_type == "created" and os.path.isdir(src_path):
-            print("empty dir event")
-            return
-        '''
-        
-        if os.path.isfile(evt.src_path):
-            if evt.src_path.split(".")[-1] == "pyc":
-                return
-            
         print("-- [Directory Watcher] RecievedEvent  Path: '{0}' Type '{1}'".format(
                event.src_path, event.event_type))
                
-        if not self.__set:
-            timer = threading.Timer(self.__delay, self.reset)
-            timer.start()
-            self.__set = True
-        
+        self.start()
+
+    def start(self):
+        self.stop()  # Ensure any existing timer is stopped before starting a new one
+        self.__stop_event.clear()
+        self.__thread = threading.Thread(target=self._run)
+        self.__thread.start()
+        # print("DirWatcher Timer started.")
+            
+    def _run(self):
+        if not self.__stop_event.wait(self.__delay):
+            self.reset()
+            
+    def stop(self):
+        if self.__thread is not None:
+            self.__stop_event.set()
+            self.__thread.join()
+            self.__thread = None
+            # print("DirWatcher Timer stopped.")
+
     def reset(self):
-        self.__set = False
-        
         if self.__any_evt_callback:
             self.__any_evt_callback()
+        self.__thread = None
 
 
 class DirWatcher:
