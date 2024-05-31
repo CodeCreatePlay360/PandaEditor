@@ -2,7 +2,7 @@ import panda3d.core as p3d
 
 from sceneCam import SceneCamera
 from axisGrid import ThreeAxisGrid
-from resourceManager import ResourceManager
+from resourceHandler import ResourceHandler
 from src.utils import Mouse
 
 
@@ -54,7 +54,7 @@ class Engine(object):
         self.create_axis_grid()
         self.create_default_scene()
 
-        self.__resource_handler = ResourceManager()
+        self.__resource_handler = ResourceHandler()
 
         # scene camera needs some references not available at time of its creation,
         # so we set them now.
@@ -369,7 +369,7 @@ class Engine(object):
         return self.__render2d
 
     @property
-    def resource_manager(self):
+    def resource_handler(self):
         return self.__resource_handler
 
     @property

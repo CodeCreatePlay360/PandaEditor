@@ -1,4 +1,6 @@
 import os.path
+from pathlib import Path
+from directoryWatcher import DirWatcher
 from panda3d.core import get_model_path, Filename
 
 
@@ -7,7 +9,10 @@ class Project(object):
  
         self.__name = ""
         self.__path = ""
+        self.__demon = demon
         self.__game = demon.game
+        
+        self.__dir_watcher = DirWatcher(any_evt_callback=demon.on_dir_event)
         
     def set_project(self, path: str):
         assert os.path.exists(path), "Path does not exists."
@@ -20,15 +25,22 @@ class Project(object):
         # set window title
         pass
 
-        # clear panda3d's current model paths and set new according to new project path
-        panda_path = Filename.fromOsSpecific(path)
-        get_model_path().prependDirectory(panda_path)
+        # clear panda3d's current model paths and set
+        # new according to new project path
+        # panda_path = Filename.fromOsSpecific(path)
+        get_model_path().prependDirectory(path)
+        
+        self.__dir_watcher.schedule(path)
         
         print("-- Project created successfully")
         
-    @property
-    def game(self):
-        return self.__game
+    def reload(self):
+        pass
+        
+    def get_all_scripts(self):
+        ext = "py"
+        path = Path(self.__path)
+        return [str(file) for file in path.rglob(f'*{ext}')]
 
     @property
     def path(self):

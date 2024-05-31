@@ -1,15 +1,16 @@
 import sys
 import importlib
+from importlib import util
 from pathlib import Path
 
 
 def import_module(path):
     file = Path(path)
-    mod_name = file.split(".")[0]
+    mod_name = file.stem  # Using .stem to get the file name without extension
     cls_name_ = mod_name[0].upper() + mod_name[1:]
 
     # load the module
-    spec = importlib.util.spec_from_file_location(mod_name, path)
+    spec = importlib.util.spec_from_file_location(mod_name, str(file))
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)

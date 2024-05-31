@@ -2,7 +2,6 @@ import math
 import panda3d.core as p3d
 from eventManager import EventManager
 from engine import Engine
-from directoryWatcher import DirWatcher
 from game import Game
 from project import Project
 from system import Systems
@@ -26,7 +25,6 @@ class Demon(object):
         # project
         self.__game = Game(self)
         self.__game.init()
-        self.__dir_watcher = DirWatcher(any_evt_callback=self.on_dir_event)
         self.__project = Project(self)
         
         # initialize project and game related systems
@@ -54,7 +52,7 @@ class Demon(object):
                                 cam2d=self.__engine.cam,
                                 
                                 evt_mgr=self.__event_manager,
-                                resources=self.__engine.resource_manager,
+                                resources=self.__engine.resource_handler,
                                 
                                 coll_trav=self.__coll_trav,
                                 coll_handler=self.__coll_handler)
@@ -76,17 +74,19 @@ class Demon(object):
 
     def exit(self):
         pass
-        
+
     def on_dir_event(self):
-        print("on_any_dir_event")
+        paths = self.__project.get_all_scripts()
+        runtimescripts, comps = self.engine.resource_handler.load_scripts(paths)
+        self.__game.set_runtime_scripts(runtimescripts)
+        self.__game.set_components(comps)
 
     def set_project(self, proj_path):
         self.__project.set_project(proj_path)
-        self.__dir_watcher.schedule(self.__project.path)
         # self.__project.game.active_scene.create_default_sun()
 
     def create_default_scene(self):
-        scene = self.__project.game.add_new_scene("DefaultScene")
+        scene = self.__game.add_new_scene("DefaultScene")
         # self.add_light(LightType.Point)
         
     def start_level_editor(self):

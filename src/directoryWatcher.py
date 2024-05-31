@@ -14,16 +14,17 @@ class DirEventProcessor(FileSystemEventHandler):
         self.__stop_event = threading.Event()
 
     def on_any_event(self, event):
-        print(event)
         if os.path.isdir(event.src_path):
             return
                 
         if event.src_path.split(".")[-1] == "pyc":
             return
         
+        '''
         print("-- [Directory Watcher] RecievedEvent  Path: '{0}' Type '{1}'".format(
                event.src_path, event.event_type))
-               
+        '''
+        
         self.start()
 
     def start(self):

@@ -1,8 +1,5 @@
 import panda3d.core as p3d
-
-from panda3d.core import WindowProperties
 from game.scene import Scene
-from utils.moduleImporter import import_modules
 
 # some static globals constants
 DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or
@@ -24,9 +21,9 @@ class Game:
 
         self.__mouse_watcher = None
 
-        self.__runtime_modules = {}  # loaded runtime modules
+        self.__runtime_scripts = {}  # loaded runtime scripts
         self.__components = {}
-        self.__all_modules = {}      # runtime modules + components
+
         self.__scenes = []           # all scenes in this game
         self.__active_scene = None
 
@@ -111,12 +108,12 @@ class Game:
             return
 
         print("Scene removed")
-        
-    def reload_resources(self, path):
+
+    def set_runtime_scripts(self, scripts):
         pass
         
-    def set_runtime_modules(self, modules: dict):
-        self.__runtime_modules = modules
+    def set_components(self, components):
+        pass
 
     def start(self):
         self.__all_modules = {}

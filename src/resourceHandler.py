@@ -1,14 +1,60 @@
 import os
 import panda3d.core as p3d
+from utils.moduleImporter import import_modules
 from loader.gltf_loader import load_model as gltf_loader
+from game.resources import RuntimeScript, Component
 
 
-class ResourceManager(object):
+class ResourceHandler(object):
     def __init__(self):
+        """ResourceHandler is responsible for importing, loading and unloading
+        resources (models, sounds, scripts etc.) from disk."""
+        
         object.__init__(self)
-
         self.__loader = p3d.Loader.getGlobalPtr()
+        
+    def load_scripts(self, paths):
+        components = []
+        scripts_data = import_modules(paths)
+        runtimescripts = {}
+        comps = {}
+        
+        # cache
+        obj = obj_type = cls_instance = None
+        
+        for path, mod, cls_name in scripts_data:
+            # only import modules  if module name and class name match
+            if hasattr(mod, cls_name):
+                obj = getattr(mod, cls_name)
+                obj_type = None
 
+                # try getting last parent class 
+                try:
+                    obj_type = obj.__mro__[1]
+                except AttributeError:
+                    pass
+
+                # object must be a runtime script, component or editor plugin
+                cls_instance = None
+                try:
+                    if obj_type == RuntimeScript:
+                        cls_instance = obj(cls_name, path)
+                        
+                    elif obj_type == Component:
+                        cls_instance = obj(cls_name, path)
+
+                except Exception as exception:
+                    print(exception)
+                    
+                # collect instances
+                if isinstance(cls_instance, RuntimeScript):
+                    runtimescripts[cls_name] = cls_instance
+
+                if isinstance(cls_instance, Component):
+                    comps[cls_name] = cls_instance
+        
+        return runtimescripts, comps
+    
     def load_model(self, path, loader_options=None, use_cached=False,
                    instanced=False, create_np=True, *args, **kwargs):
         """

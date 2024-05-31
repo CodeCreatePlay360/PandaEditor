@@ -3,6 +3,7 @@ import os
 import sys
 
 import panda3d.core as p3d
+from pathlib import Path
 
 current_script_path = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_script_path)
@@ -33,12 +34,13 @@ class DemonApp(Demon):
         if cmd_args.ProjPath:
             assert os.path.exists(cmd_args.ProjPath),\
             "Project path does not exists."
-        
-        if cmd_args.ProjPath:
-            proj_path = cmd_args.ProjPath
-        else:
+
+        proj_path = str(Path(cmd_args.ProjPath)) if cmd_args.ProjPath else None
+
+        if not proj_path:
             proj_path = os.path.join(current_dir, "defaultProject")
-            
+
+        # start demon
         Demon.__init__(self, proj_path, *args, **kwargs)
                 
         # load the demo program if specified in input args
@@ -53,11 +55,13 @@ class DemonApp(Demon):
                 if demo:
                     self.demo = demos[cmd_args.Demo](self.engine)
                     
+        # start level editor
         if cmd_args.LE and cmd_args.LE == "off":
             print("-- LevelEditor Off")
         else:
             print("-- Starting LevelEditor")
             self.start_level_editor()
+            self.on_dir_event()
 
 
 app = DemonApp()
