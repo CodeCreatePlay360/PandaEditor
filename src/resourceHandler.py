@@ -41,17 +41,18 @@ class ResourceHandler(object):
                         cls_instance = obj(cls_name, path)
                         
                     elif obj_type == Component:
-                        cls_instance = obj(cls_name, path)
+                        cls_instance = None
 
                 except Exception as exception:
                     print(exception)
                     
                 # collect instances
-                if isinstance(cls_instance, RuntimeScript):
-                    runtimescripts[cls_name] = cls_instance
-
-                if isinstance(cls_instance, Component):
-                    comps[cls_name] = cls_instance
+                if cls_instance is None:
+                    if obj_type == Component:
+                        comps[path] = obj
+                else:
+                    if isinstance(cls_instance, RuntimeScript):
+                        runtimescripts[path] = cls_instance
         
         return runtimescripts, comps
     

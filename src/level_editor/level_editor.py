@@ -54,21 +54,31 @@ class LevelEditor(object):
         self.setup_editor_rendering()
         
         # accept and bind events
-        self.__demon.accept("mouse1", self.on_mouse1)
-        self.__demon.accept("shift-mouse1", self.on_mouse1, True)
-        self.__demon.accept("mouse1-up", self.on_mouse1_up)
+        self.__evt_ids = []
+        
+        self.accept_event("mouse1", self.on_mouse1)
+        self.accept_event("shift-mouse1", self.on_mouse1, True)
+        self.accept_event("mouse1-up", self.on_mouse1_up),
 
-        self.__demon.accept("w", self.set_active_gizmo, POS_GIZMO)
-        self.__demon.accept("r", self.set_active_gizmo, ROT_GIZMO)
-        self.__demon.accept("s", self.set_active_gizmo, SCALE_GIZMO)
-        self.__demon.accept("q", self.set_active_gizmo, None)
-        self.__demon.accept("space", self.__xform_gizmo_mgr.set_local,
+        self.accept_event("w", self.set_active_gizmo, POS_GIZMO),
+        self.accept_event("r", self.set_active_gizmo, ROT_GIZMO),
+        self.accept_event("s", self.set_active_gizmo, SCALE_GIZMO),
+        self.accept_event("q", self.set_active_gizmo, None),
+        self.accept_event("x", self.__xform_gizmo_mgr.set_local,
                             lambda: (not self.__xform_gizmo_mgr.local))
-                
+        # self.ignore_events()
         # finally, start the level editor update
         task = p3d.PythonTask(self.on_update, "LEUpdate")
         p3d.AsyncTaskManager.getGlobalPtr().add(task)
         
+    def accept_event(self, evt, callback, *args):
+        id = self.__demon.accept(evt, callback, *args)
+        self.__evt_ids.append((evt, id))
+        
+    def ignore_events(self):
+        for evt, id in self.__evt_ids:
+            self.__demon.ignore(evt, id)
+
     def setup_editor_rendering(self):
         # 01. reparent render to ed_render to keep editor only geo out of
         # main scene graph

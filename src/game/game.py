@@ -1,9 +1,6 @@
 import panda3d.core as p3d
+from os import path as ospath
 from game.scene import Scene
-
-# some static globals constants
-DEFAULT_UPDATE_TASK_SORT_VALUE = 2  # default sort value for a UserModule or
-                                    # Component regular UpdateTask
 
 
 class Game:
@@ -22,7 +19,8 @@ class Game:
         self.__mouse_watcher = None
 
         self.__runtime_scripts = {}  # loaded runtime scripts
-        self.__components = {}
+        self.__components = {}       # path: component
+        self.__attached_comps = {}   # comp: list component instances
 
         self.__scenes = []           # all scenes in this game
         self.__active_scene = None
@@ -85,8 +83,7 @@ class Game:
         self.__dr.setCamera(p3d_core.NodePath())
         
     def add_new_scene(self, name: str):
-        """creates a new scene, the active should be first cleared by
-         the level editor"""
+        """creates a new scene"""
          
         # remove current scene
         if self.__active_scene:
@@ -108,124 +105,77 @@ class Game:
             return
 
         print("Scene removed")
-
-    def set_runtime_scripts(self, scripts):
-        pass
         
-    def set_components(self, components):
-        pass
+    def attach_component(self, np, comp_path):        
+        if self.__attached_comps.__contains__(np):
+            # check if component already attached
+            for comp in self.__attached_comps[np]:
+                if comp.path() == comp_path:
+                    print("Component already exists")
+                    return
+        else:
+            self.__attached_comps[np] = []
+            
+        # init the component and 
+        # get name from path
+        head, tail = ospath.split(comp_path)
+        comp_name = tail.split(".")[0]  # name
+        
+        comp = self.__components[comp_path]
+        instance = comp(comp_name, comp_path, np)
+        self.__attached_comps[np].append(instance)
+        
+    def set_runtime_scripts(self, scripts):
+        self.__runtime_scripts.clear()
+        self.__runtime_scripts = {**scripts}
+    
+    def set_components(self, comps):
+        self.__components.clear()
+        self.__components = {**comps}
 
     def start(self):
-        self.__all_modules = {}
-        # get all runtime modules
-        for key, value in self.__runtime_modules.items():
-            self.__all_modules[key] = value
+        __all_modules = {**self.__runtime_scripts, **self.__attached_comps}
+        
+        # classify all scripts according to their respective task sort values
+        # so that they are started in right order.
+        scripts_exec_order = {}  # [sort_value] = [script1, ....]
+        
+        # sort runtime scripts
+        for key, value in self.__runtime_scripts.items():
+            if not scripts_exec_order.__contains__(value.sort()):
+                scripts_exec_order[value.sort()] = []
+                
+            scripts_exec_order[value.sort()].append(value)
+            
+        # sort np components
+        for key, value in self.__attached_comps.items():
+            for item in value:
+                if not scripts_exec_order.__contains__(item.sort()):
+                    scripts_exec_order[item.sort()] = []
+                scripts_exec_order[item.sort()].append(item)
 
-        # get all components
-        components = self.components
-        for np in components.keys():
-            for component in components[np]:
-                self.__all_modules[component.path+component.class_instance.getPythonTag("__GAME_OBJECT__").uid] =\
-                    component
+        # finally start
+        for scripts in scripts_exec_order.values():
+            for script in scripts: 
+                try:
+                    _res = script.start()
+                except Exception as execption:
+                    print(execption)
+                    success = False
+                    break
 
-        # classify all modules according to task sort values
-        mod_exec_order = {}  # mod_exec_order[sort_value] = [mod1, mod2,....]
-
-        for key in self.__all_modules:
-            mod = self.__all_modules[key]
-            sort_value = mod.class_instance.sort
-            if mod_exec_order.__contains__(sort_value):
-                mod_exec_order[sort_value].append(mod)
-            else:
-                mod_exec_order[sort_value] = []
-                mod_exec_order[sort_value].append(mod)
-
-        def _start(j, _late_update_sort):
-            for _mod in mod_exec_order[j]:
-                cls_instance = _mod.class_instance
-                _mod.save_data()
-
-                # start module's update
-                _res = cls_instance.start(late_update_sort=_late_update_sort)
-                if not _res:
-                    return False
-            return True
-
-        # copy modules execution sort orders as an int list
-        lst = [*mod_exec_order.keys()]
-
-        if len(lst) == 0:
-            return
-
-        # sort modules execution order in ascending order
-        lst.sort()
-
-        # late updates are to be executed after all updates have been executed
-        # the sort order of all updates should be set in a way, that messenger executes them after all updates
-        start = lst[0]
-        stop = lst[len(lst) - 1]
-        late_update_sort = stop + 1
-
-        for i in range(start, stop + 1):
-            res = _start(i, late_update_sort)
-            if not res:
-                break
-            late_update_sort += 1
+        if not success:
+            self.stop()
 
     def stop(self):
-        for key in self.__all_modules:
-            module = self.__all_modules[key]
-            module.class_instance.ignore_all()
-            module.class_instance.stop()
-            module.reload_data(remove_differences=True)
+        for value in self.__runtime_scripts.values():
+            if value.is_running():
+                value.stop()
 
-            self.hide_cursor(False)
-
-        for np in self.__active_scene.render_2D.getChildren():
-            if np.get_name() == "__aspect_2D__" or np.get_name() == "__camera2D__":
-                pass
-            else:
-                np.remove_node()
-
-        for np in self.__active_scene.aspect_2D.getChildren():
-            np.remove_node()
-
-        self.__all_modules.clear()
-
-    def get_module(self, module_path: str):
-        for key in self.__runtime_modules.keys():
-            if key == module_path:
-                return self.__runtime_modules[key].class_instance
-        return None
-
-    def get_all_modules(self):
-        """returns all runtime user modules including NodePaths as list"""
-
-        modules = []
-
-        # append all runtime modules
-        for path in self.__runtime_modules:
-            modules.append(self.__runtime_modules[path].class_instance)
-
-        # append all np-components
-        for np in self.components:
-            for comp in self.components[np]:
-                modules.append(comp.class_instance)
-
-        return modules
-
-    def print_modules_sort_orders(self):
-        all_modules = self.get_all_modules()
-        for mod in all_modules:
-            if isinstance(mod, Component):
-                print("[Module] {0} -- [Sort] {1}".format(mod.get_name(), mod.sort))
-            else:
-                print("[Module] {0} -- [Sort] {1}".format(mod.name, mod.sort))
-
-    def is_runtime_module(self, path):
-        if self.__runtime_modules.__contains__(path):
-            return True
-        return False
+        for key, value in self.__attached_comps.items():
+            for item in value:
+                if item.is_running():
+                    item.stop()
 
     def on_resize_event(self):
         """should be called after a window has been resized"""

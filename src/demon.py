@@ -60,6 +60,9 @@ class Demon(object):
         # instance of level editor
         self.__le = None
                                 
+        # accept events
+        self.accept("space", self.__game.start)
+                                
         # other
         self.__default_sun = False
         self.__shift = False
@@ -94,10 +97,20 @@ class Demon(object):
         self.__le.init()
         
     def accept(self, evt, callback, *args):
+        if not isinstance(evt, str) or not callable(callback):
+           print("Incorret arguments to demon.accept")
+           return
+            
         if not self.__evt_map.__contains__(evt):
-            self.__evt_map[evt] = []  # TODO -- replace this with tuple
+            self.__evt_map[evt] = []
 
         self.__evt_map[evt].append((callback, args))
+        
+        return len(self.__evt_map[evt]) - 1
+        
+    def ignore(self, evt, id):
+        if self.__evt_map.__contains__(evt) and id < len(self.__evt_map[evt]): 
+           self.__evt_map[evt].pop(id)
 
     def on_any_event(self, evt, *args):
         """event sent from c++ side can be handled here"""

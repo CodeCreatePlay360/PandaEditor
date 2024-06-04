@@ -5,10 +5,9 @@ from system import Systems
 
 
 class Base(NodePath, SingleTask):
-
     def __init__(self, name, *args, **kwargs):
         NodePath.__init__(self, name)
-        SingleTask.__init__(self, name, *args, **kwargs)
+        SingleTask.__init__(self, name)
         
         self.mwn = kwargs.pop("mwn")
         self.render = kwargs.pop("rootNP")
@@ -65,23 +64,44 @@ class Base(NodePath, SingleTask):
         """
         # Hide the gizmo and ignore all events
         self.detachNode()
-
-        Systems.demon.event_manager.remove(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
-        Systems.demon.event_manager.remove(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
-        Systems.demon.event_manager.remove(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
-        Systems.demon.event_manager.remove(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
+        
+        evt_mgr = Systems.demon.event_manager
+        
+        evt_mgr.remove(''.join([self.name, '-mouse1']),
+                       self.on_node_mouse1_down)
+                       
+        evt_mgr.remove(''.join([self.name, '-control-mouse1']),
+                       self.on_node_mouse1_down)
+                       
+        evt_mgr.remove(''.join([self.name, '-mouse-over']),
+                       self.on_node_mouse_over)
+                       
+        evt_mgr.remove(''.join([self.name, '-mouse-leave']),
+                       self.on_node_mouse_leave)
 
     def accept_events(self):
         """Bind all events for the gizmo."""
         Systems.demon.accept('mouse1-up', self.on_mouse_up)
         Systems.demon.accept('mouse2-up', self.on_mouse_up)
         Systems.demon.accept('mouse2', self.on_mouse2_down)
-
-        Systems.demon.event_manager.register(''.join([self.name, '-mouse1']), self.on_node_mouse1_down)
-        Systems.demon.event_manager.register(''.join([self.name, '-control-mouse1']), self.on_node_mouse1_down)
-        Systems.demon.event_manager.register(''.join([self.name, '-mouse-over']), self.on_node_mouse_over)
-        Systems.demon.event_manager.register(''.join([self.name, '-mouse-leave']), self.on_node_mouse_leave)
-
+        
+        evt_mgr = Systems.demon.event_manager
+        
+        evt_mgr.register(''.join([self.name, '-mouse1']),
+                         self.on_node_mouse1_down)
+                         
+        evt_mgr.register(''.join([self.name, '-control-mouse1']),
+                         self.on_node_mouse1_down)
+                                
+        evt_mgr.register(''.join([self.name, '-mouse-over']),
+                         self.on_node_mouse_over)
+                         
+        evt_mgr.register(''.join([self.name, '-mouse-leave']),
+                         self.on_node_mouse_leave)
+                         
+    def ignore_events(self):
+        pass
+                         
     def transform(self):
         """
         Override this method to provide the gizmo with transform behavior.

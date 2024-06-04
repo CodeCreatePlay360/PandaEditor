@@ -9,7 +9,7 @@ class Marquee(NodePath, SingleTask):
     """Class representing a 2D marquee drawn by the mouse."""
     
     def __init__(self, name, **kwargs):
-        SingleTask.__init__(self, name, **kwargs)
+        SingleTask.__init__(self, name)
         
         self.cam = kwargs.pop("camera")
         self.render2d = kwargs.pop("render2D")
