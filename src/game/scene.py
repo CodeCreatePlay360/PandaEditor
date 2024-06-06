@@ -26,7 +26,7 @@ class Scene:
         
         # other
         self.__shift = False
-        self.__is_btn_down = self.__game.demon.engine.mw.node().is_button_down
+        self.__is_btn_down = self.__game.engine.mw.node().is_button_down
         
     def update(self):
         if self.__default_sunlight:
@@ -41,7 +41,7 @@ class Scene:
                 self.orbit_default_sun(dy=1)
         
     def on_resize_event(self):
-        props = self.__game.demon.engine.win.getProperties()
+        props = self.__game.engine.win.getProperties()
         aspect = (props.getXSize() * 0.4) / (props.getYSize() * 0.35)
         
         if self.__main_cam:

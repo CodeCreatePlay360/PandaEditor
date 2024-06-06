@@ -122,7 +122,7 @@ class Game:
         comp_name = tail.split(".")[0]  # name
         
         comp = self.__components[comp_path]
-        instance = comp(comp_name, comp_path, np)
+        instance = comp(comp_path, comp_name, np)
         self.__attached_comps[np].append(instance)
         
     def set_runtime_scripts(self, scripts):
@@ -180,10 +180,14 @@ class Game:
     def on_resize_event(self):
         """should be called after a window has been resized"""
         self.__active_scene.on_resize_event()
+        
+    listen = lambda self, evt, callback, *args: self.__demon.accept(evt,
+                                                                    callback,
+                                                                    *args)
 
     @property
-    def demon(self):
-        return self.__demon
+    def engine(self):
+        return self.__demon.engine
 
     @property
     def dr(self):
@@ -192,10 +196,6 @@ class Game:
     @property
     def dr2d(self):
         return self.__dr2d
-
-    @property
-    def active_scene(self):
-        return self.__active_scene
     
     @property
     def mouse_watcher(self):
@@ -208,3 +208,7 @@ class Game:
     @property
     def render2d(self):
         return self.__render2d
+    
+    @property
+    def active_scene(self):
+        return self.__active_scene

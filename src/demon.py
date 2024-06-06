@@ -5,7 +5,7 @@ from engine import Engine
 from game import Game
 from project import Project
 from system import Systems
-from level_editor import LevelEditor
+from levelEditor import LevelEditor
 
 
 class Demon(object):
@@ -33,7 +33,6 @@ class Demon(object):
         
         # some other defaults
         self.__coll_trav = p3d.CollisionTraverser()
-        self.__coll_handler = p3d.CollisionHandlerQueue()
         
         # initialize globals, this provides easy access to all commonly 
         # used systems
@@ -55,7 +54,8 @@ class Demon(object):
                                 resources=self.__engine.resource_handler,
                                 
                                 coll_trav=self.__coll_trav,
-                                coll_handler=self.__coll_handler)
+                                
+                                game=self.__game)
                                 
         # instance of level editor
         self.__le = None

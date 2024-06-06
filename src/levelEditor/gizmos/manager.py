@@ -1,5 +1,5 @@
 from panda3d.core import DirectionalLight
-from level_editor.selection import MousePicker
+from levelEditor.selection import MousePicker
 
 
 class Manager(object):

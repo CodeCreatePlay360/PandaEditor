@@ -3,6 +3,7 @@ import panda3d.core as p3d
 from utils.moduleImporter import import_modules
 from loader.gltf_loader import load_model as gltf_loader
 from game.resources import RuntimeScript, Component
+from system import Systems
 
 
 class ResourceHandler(object):
@@ -38,8 +39,8 @@ class ResourceHandler(object):
                 cls_instance = None
                 try:
                     if obj_type == RuntimeScript:
-                        cls_instance = obj(cls_name, path)
-                        
+                        cls_instance = obj(path, cls_name)
+
                     elif obj_type == Component:
                         cls_instance = None
 

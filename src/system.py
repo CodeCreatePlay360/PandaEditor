@@ -28,7 +28,8 @@ class Systems(object):
     resources = None
     
     coll_trav = None
-    coll_handler = None
+    
+    game = None
 
     __args_list = (("demon", "demon"),
                    
@@ -48,13 +49,13 @@ class Systems(object):
                    ("resources", "resources"),
                    
                    ("coll_trav", "coll_trav"),
-                   ("coll_handler", "coll_handler"))
+                   
+                   ("game", "game"))
 
     def __new__(cls, **kwargs):
         if not hasattr(cls, 'instance'):
             cls.instance = super(Systems, cls).__new__(cls)
             cls.update(**kwargs)
-            # cls.__event_system = kwargs.pop("event_manager", None)
         else:
             print("Tried to instantiate singleton class '{0}' twice.".format("System"))
 

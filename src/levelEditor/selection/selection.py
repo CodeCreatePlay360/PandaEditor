@@ -1,5 +1,5 @@
 from panda3d.core import GeomNode, CollisionNode, BitMask32
-from level_editor.constants import selectable_node_tag
+from levelEditor.constants import selectable_node_tag
 from system import Systems
 from utils import Marquee
 from . import MousePicker

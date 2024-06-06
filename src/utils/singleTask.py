@@ -1,4 +1,5 @@
 from panda3d.core import AsyncTaskManager, PythonTask
+from system import Systems
 
 
 class SingleTask(object):
@@ -25,8 +26,12 @@ class SingleTask(object):
 
     def update(self, task):
         """Run on_update method - return task.cont if there was no return value"""
-        
-        self.on_update()
+        try:
+            self.on_update()
+        except Exception as exception:
+            print(exception)
+            Systems.game.stop()
+
         return task.DS_cont
 
     def stop(self):
